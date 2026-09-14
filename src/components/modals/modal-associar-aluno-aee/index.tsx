@@ -294,7 +294,7 @@ export function ModalAssociarAlunoAEE({
       const formattedFim = horarioFim.length === 5 ? `${horarioFim}:00` : horarioFim
       const cargoProfissional = currentProfObj?.cargo || profissionalCargo || 'Outros'
 
-      const { error } = await supabase
+      let { error } = await supabase
         .from('emaee_especialidades_vinculadas')
         .insert({
           emaee_matricula_id: alunoSelecionadoId,
@@ -307,6 +307,22 @@ export function ModalAssociarAlunoAEE({
           horario_fim: formattedFim,
           ativo: true
         } as any)
+
+      if (error && (error.code === '42703' || error.message?.includes('data_inicio'))) {
+        const fallbackRes = await supabase
+          .from('emaee_especialidades_vinculadas')
+          .insert({
+            emaee_matricula_id: alunoSelecionadoId,
+            profissional_id: selectedProfId,
+            especialidade: cargoProfissional,
+            frequencia: frequencia,
+            dia_semana: diaSemana,
+            horario_inicio: formattedInicio,
+            horario_fim: formattedFim,
+            ativo: true
+          } as any)
+        error = fallbackRes.error
+      }
 
       if (error) throw error
 

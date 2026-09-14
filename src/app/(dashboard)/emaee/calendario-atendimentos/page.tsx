@@ -275,8 +275,11 @@ export default function CalendarioAtendimentosPage() {
 
     setLoading(true)
     try {
-      // 1. Busca todos os atendimentos/especialidades ativas vinculadas no EMAEE
-      const { data: espData, error: espError } = await supabase
+      // 1. Busca todos os atendimentos/especialidades ativas vinculadas no EMAEE (com fallback resiliente se data_inicio não tiver sido migrada)
+      let espData: any[] | null = null
+      let espError: any = null
+
+      const res = await supabase
         .from('emaee_especialidades_vinculadas')
         .select(`
           id,
@@ -323,6 +326,63 @@ export default function CalendarioAtendimentosPage() {
         .eq('ativo', true)
         .order('dia_semana', { ascending: true })
         .order('horario_inicio', { ascending: true })
+
+      espData = res.data
+      espError = res.error
+
+      // Se der erro de coluna inexistente (migration pendente), faz fallback para a query sem data_inicio
+      if (espError && (espError.code === '42703' || espError.message?.includes('data_inicio'))) {
+        console.warn('[calendario-atendimentos] Coluna data_inicio ainda não existe no banco, executando fallback compatível.')
+        const fallbackRes = await supabase
+          .from('emaee_especialidades_vinculadas')
+          .select(`
+            id,
+            emaee_matricula_id,
+            profissional_id,
+            especialidade,
+            especialidade_outros,
+            frequencia,
+            dia_semana,
+            horario_inicio,
+            horario_fim,
+            ativo,
+            created_at,
+            funcionarios:profissional_id (
+              id,
+              nome,
+              cargo,
+              foto_url,
+              foto_avatar_path,
+              foto_visualizacao_path,
+              foto_updated_at,
+              telefone
+            ),
+            emaee_matriculas:emaee_matricula_id (
+              id,
+              numero_matricula_emaee,
+              status,
+              turno_atendimento,
+              escola_atendimento_id,
+              principal_queixa,
+              cid_codigo,
+              alunos:aluno_id (
+                id,
+                nome,
+                cpf,
+                data_nascimento,
+                nome_mae,
+                telefone,
+                endereco
+              )
+            )
+          `)
+          .eq('ativo', true)
+          .order('dia_semana', { ascending: true })
+          .order('horario_inicio', { ascending: true })
+
+        espData = fallbackRes.data
+        espError = fallbackRes.error
+      }
 
       if (espError) throw espError
 

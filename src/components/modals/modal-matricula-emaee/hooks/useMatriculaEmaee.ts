@@ -681,14 +681,33 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
       if (mat.id) {
         (async () => {
           try {
-            const { data: vincData, error } = await supabase
+            let vincData: any[] | null = null
+            let error: any = null
+
+            const res = await supabase
               .from('emaee_especialidades_vinculadas')
               .select(`
-                id, profissional_id, especialidade, frequencia, dia_semana, data_inicio, horario_inicio, horario_fim, ativo,
+                id, profissional_id, especialidade, frequencia, dia_semana, data_inicio, horario_inicio, horario_fim, ativo, created_at,
                 funcionarios ( id, nome, cargo, foto_url, foto_avatar_path, foto_visualizacao_path, foto_updated_at )
               `)
               .eq('emaee_matricula_id', mat.id)
               .eq('ativo', true)
+
+            vincData = res.data
+            error = res.error
+
+            if (error && (error.code === '42703' || error.message?.includes('data_inicio'))) {
+              const fallbackRes = await supabase
+                .from('emaee_especialidades_vinculadas')
+                .select(`
+                  id, profissional_id, especialidade, frequencia, dia_semana, horario_inicio, horario_fim, ativo, created_at,
+                  funcionarios ( id, nome, cargo, foto_url, foto_avatar_path, foto_visualizacao_path, foto_updated_at )
+                `)
+                .eq('emaee_matricula_id', mat.id)
+                .eq('ativo', true)
+              vincData = fallbackRes.data
+              error = fallbackRes.error
+            }
 
             if (!error && vincData && isMountedRef.current) {
               const mapeados: VinculoAEEConfig[] = vincData.map((v: any) => {
@@ -1483,19 +1502,29 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
         // 5. Atualizar vínculos existentes que foram editados
         const existentesParaAtualizar = vinculosAEE.filter((v): v is VinculoAEEConfig & { id: string } => Boolean(v.id && v.isEditado))
         for (const vinc of existentesParaAtualizar) {
-          await supabase
+          const updatePayload: any = {
+            profissional_id: vinc.profissionalId,
+            especialidade: vinc.profissionalCargo || 'Especialista AEE',
+            frequencia: vinc.frequencia,
+            dia_semana: vinc.diaSemana,
+            data_inicio: vinc.dataInicio || getHojeBrasilia(),
+            horario_inicio: vinc.horarioInicio.length === 5 ? `${vinc.horarioInicio}:00` : vinc.horarioInicio,
+            horario_fim: vinc.horarioFim.length === 5 ? `${vinc.horarioFim}:00` : vinc.horarioFim,
+            ativo: true
+          }
+
+          let { error: errUpd } = await supabase
             .from('emaee_especialidades_vinculadas')
-            .update({
-              profissional_id: vinc.profissionalId,
-              especialidade: vinc.profissionalCargo || 'Especialista AEE',
-              frequencia: vinc.frequencia,
-              dia_semana: vinc.diaSemana,
-              data_inicio: vinc.dataInicio || getHojeBrasilia(),
-              horario_inicio: vinc.horarioInicio.length === 5 ? `${vinc.horarioInicio}:00` : vinc.horarioInicio,
-              horario_fim: vinc.horarioFim.length === 5 ? `${vinc.horarioFim}:00` : vinc.horarioFim,
-              ativo: true
-            })
+            .update(updatePayload)
             .eq('id', vinc.id)
+
+          if (errUpd && (errUpd.code === '42703' || errUpd.message?.includes('data_inicio'))) {
+            delete updatePayload.data_inicio
+            await supabase
+              .from('emaee_especialidades_vinculadas')
+              .update(updatePayload)
+              .eq('id', vinc.id)
+          }
         }
 
         // 6. Inserir novos vínculos adicionados
@@ -1514,9 +1543,17 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
           }))
 
         if (novosParaInserir.length > 0) {
-          const { error: errVinc } = await supabase
+          let { error: errVinc } = await supabase
             .from('emaee_especialidades_vinculadas')
             .insert(novosParaInserir as any)
+
+          if (errVinc && (errVinc.code === '42703' || errVinc.message?.includes('data_inicio'))) {
+            const semDataInicio = novosParaInserir.map(({ data_inicio, ...rest }) => rest)
+            const fallbackRes = await supabase
+              .from('emaee_especialidades_vinculadas')
+              .insert(semDataInicio as any)
+            errVinc = fallbackRes.error
+          }
 
           if (errVinc) {
             console.error('Erro ao salvar especialidades vinculadas no EMAEE:', errVinc)
@@ -1878,9 +1915,17 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
           ativo: true
         }))
 
-        const { error: errVinc } = await supabase
+        let { error: errVinc } = await supabase
           .from('emaee_especialidades_vinculadas')
           .insert(novosParaInserir as any)
+
+        if (errVinc && (errVinc.code === '42703' || errVinc.message?.includes('data_inicio'))) {
+          const semDataInicio = novosParaInserir.map(({ data_inicio, ...rest }) => rest)
+          const fallbackRes = await supabase
+            .from('emaee_especialidades_vinculadas')
+            .insert(semDataInicio as any)
+          errVinc = fallbackRes.error
+        }
 
         if (errVinc) {
           console.error('Erro ao salvar especialidades vinculadas na nova matrícula EMAEE:', errVinc)
