@@ -684,7 +684,7 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
             const { data: vincData, error } = await supabase
               .from('emaee_especialidades_vinculadas')
               .select(`
-                id, profissional_id, especialidade, frequencia, dia_semana, horario_inicio, horario_fim, ativo,
+                id, profissional_id, especialidade, frequencia, dia_semana, data_inicio, horario_inicio, horario_fim, ativo,
                 funcionarios ( id, nome, cargo, foto_url, foto_avatar_path, foto_visualizacao_path, foto_updated_at )
               `)
               .eq('emaee_matricula_id', mat.id)
@@ -694,6 +694,9 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
               const mapeados: VinculoAEEConfig[] = vincData.map((v: any) => {
                 const func = v.funcionarios || {}
                 const avatar = getAvatarUrl(func) || func.foto_url
+                const dataIni = v.data_inicio
+                  ? (v.data_inicio.includes('T') ? v.data_inicio.split('T')[0] : v.data_inicio)
+                  : (v.created_at ? v.created_at.split('T')[0] : getHojeBrasilia())
                 return {
                   id: v.id,
                   tempId: v.id,
@@ -703,6 +706,7 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
                   profissionalFoto: avatar,
                   frequencia: v.frequencia ?? 'SEMANAL',
                   diaSemana: v.dia_semana ?? 1,
+                  dataInicio: dataIni,
                   horarioInicio: (v.horario_inicio || '08:00').substring(0, 5),
                   horarioFim: (v.horario_fim || '09:00').substring(0, 5),
                   isNovo: false
@@ -1486,6 +1490,7 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
               especialidade: vinc.profissionalCargo || 'Especialista AEE',
               frequencia: vinc.frequencia,
               dia_semana: vinc.diaSemana,
+              data_inicio: vinc.dataInicio || getHojeBrasilia(),
               horario_inicio: vinc.horarioInicio.length === 5 ? `${vinc.horarioInicio}:00` : vinc.horarioInicio,
               horario_fim: vinc.horarioFim.length === 5 ? `${vinc.horarioFim}:00` : vinc.horarioFim,
               ativo: true
@@ -1502,6 +1507,7 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
             especialidade: v.profissionalCargo || 'Especialista AEE',
             frequencia: v.frequencia,
             dia_semana: v.diaSemana,
+            data_inicio: v.dataInicio || getHojeBrasilia(),
             horario_inicio: v.horarioInicio.length === 5 ? `${v.horarioInicio}:00` : v.horarioInicio,
             horario_fim: v.horarioFim.length === 5 ? `${v.horarioFim}:00` : v.horarioFim,
             ativo: true
@@ -1866,6 +1872,7 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
           especialidade: v.profissionalCargo || 'Especialista AEE',
           frequencia: v.frequencia,
           dia_semana: v.diaSemana,
+          data_inicio: v.dataInicio || getHojeBrasilia(),
           horario_inicio: v.horarioInicio.length === 5 ? `${v.horarioInicio}:00` : v.horarioInicio,
           horario_fim: v.horarioFim.length === 5 ? `${v.horarioFim}:00` : v.horarioFim,
           ativo: true

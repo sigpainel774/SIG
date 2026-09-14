@@ -1971,6 +1971,7 @@ export type Database = {
         Row: {
           ativo: boolean | null
           created_at: string | null
+          data_inicio: string | null
           dia_semana: number
           emaee_matricula_id: string
           especialidade: string
@@ -1984,6 +1985,7 @@ export type Database = {
         Insert: {
           ativo?: boolean | null
           created_at?: string | null
+          data_inicio?: string | null
           dia_semana: number
           emaee_matricula_id: string
           especialidade: string
@@ -1997,6 +1999,7 @@ export type Database = {
         Update: {
           ativo?: boolean | null
           created_at?: string | null
+          data_inicio?: string | null
           dia_semana?: number
           emaee_matricula_id?: string
           especialidade?: string

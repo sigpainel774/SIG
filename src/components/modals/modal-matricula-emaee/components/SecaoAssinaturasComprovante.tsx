@@ -153,6 +153,12 @@ export function SecaoAssinaturasComprovante() {
                         <span className="bg-primary/10 text-primary border border-primary/20 px-2 py-0.5 rounded-md font-bold">
                           {v.frequencia}
                         </span>
+                        {v.dataInicio && (
+                          <span className="bg-muted dark:bg-[#1f1f23] text-foreground border border-border px-2 py-0.5 rounded-md flex items-center gap-1">
+                            <CalendarDays className="w-3 h-3 text-muted-foreground" />
+                            Início: {v.dataInicio.includes('-') ? v.dataInicio.split('-').reverse().join('/') : v.dataInicio}
+                          </span>
+                        )}
                         <span className="bg-muted dark:bg-[#1f1f23] text-foreground border border-border px-2 py-0.5 rounded-md flex items-center gap-1">
                           <CalendarDays className="w-3 h-3 text-muted-foreground" />
                           {DIAS_SEMANA_MAP[v.diaSemana] || 'Dia não def.'}

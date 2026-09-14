@@ -55,9 +55,24 @@ export function ModalAssociarAlunoAEE({
   const [termoBusca, setTermoBusca] = useState<string>('')
   const [alunoSelecionadoId, setAlunoSelecionadoId] = useState<string>('')
   const [frequencia, setFrequencia] = useState<string>('SEMANAL')
+  const [dataInicio, setDataInicio] = useState<string>(() => new Date().toISOString().split('T')[0])
   const [diaSemana, setDiaSemana] = useState<number>(1)
   const [horarioInicio, setHorarioInicio] = useState<string>('')
   const [horarioFim, setHorarioFim] = useState<string>('')
+
+  const handleDataInicioChange = (novaData: string) => {
+    setDataInicio(novaData)
+    if (novaData) {
+      const [ano, mes, dia] = novaData.split('-').map(Number)
+      if (ano && mes && dia) {
+        const dt = new Date(ano, mes - 1, dia)
+        const jsDay = dt.getDay() // 0=Dom, 1=Seg...
+        if (jsDay >= 1 && jsDay <= 6) {
+          setDiaSemana(jsDay)
+        }
+      }
+    }
+  }
 
   const supabase = useMemo(() => createClient(), [])
 
@@ -287,6 +302,7 @@ export function ModalAssociarAlunoAEE({
           especialidade: cargoProfissional,
           frequencia: frequencia,
           dia_semana: diaSemana,
+          data_inicio: dataInicio || new Date().toISOString().split('T')[0],
           horario_inicio: formattedInicio,
           horario_fim: formattedFim,
           ativo: true
@@ -497,10 +513,10 @@ export function ModalAssociarAlunoAEE({
           </div>
 
           {/* Frequência de Atendimento */}
-          <div>
+          <div className="space-y-2">
             <Label className="text-xs font-semibold text-foreground">Frequência de Atendimento</Label>
             <Select value={frequencia} onValueChange={(val) => setFrequencia(val || 'SEMANAL')}>
-              <SelectTrigger className="bg-background border-border text-foreground mt-1 text-xs">
+              <SelectTrigger className="bg-background border-border text-foreground text-xs">
                 <SelectValue placeholder="Selecione a frequência..." />
               </SelectTrigger>
               <SelectContent className="bg-popover border-border text-popover-foreground">
@@ -509,12 +525,33 @@ export function ModalAssociarAlunoAEE({
                 <SelectItem value="MENSAL">Mensal (1x por mês)</SelectItem>
               </SelectContent>
             </Select>
+
+            {frequencia === 'QUINZENAL' && (
+              <p className="text-[11px] text-amber-600 dark:text-amber-400 bg-amber-500/10 border border-amber-500/20 rounded-lg p-2 leading-relaxed">
+                💡 <strong>Atendimento Quinzenal:</strong> A data inicial definirá a semana de início do ciclo de 15 dias no calendário.
+              </p>
+            )}
           </div>
 
-          {/* Dia da Semana e Horários */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          {/* Data Inicial e Dia da Semana */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <Label className="text-xs font-semibold text-foreground">Dia da Semana</Label>
+              <Label className="text-xs font-semibold text-foreground">
+                Data Inicial do Atendimento <span className="text-destructive">*</span>
+              </Label>
+              <input
+                type="date"
+                value={dataInicio}
+                onChange={(e) => handleDataInicioChange(e.target.value)}
+                className="w-full bg-background border border-border text-foreground rounded-xl p-2 text-xs mt-1 outline-none focus:border-primary transition-colors"
+                required
+              />
+            </div>
+
+            <div>
+              <Label className="text-xs font-semibold text-foreground">
+                Dia da Semana <span className="text-destructive">*</span>
+              </Label>
               <Select value={String(diaSemana)} onValueChange={(val) => setDiaSemana(Number(val) || 1)}>
                 <SelectTrigger className="bg-background border-border text-foreground mt-1 text-xs">
                   <SelectValue placeholder="Dia da Semana" />
@@ -525,10 +562,14 @@ export function ModalAssociarAlunoAEE({
                   <SelectItem value="3">Quarta-feira</SelectItem>
                   <SelectItem value="4">Quinta-feira</SelectItem>
                   <SelectItem value="5">Sexta-feira</SelectItem>
+                  <SelectItem value="6">Sábado</SelectItem>
                 </SelectContent>
               </Select>
             </div>
+          </div>
 
+          {/* Horários */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <Label className="text-xs font-semibold text-foreground">
                 Horário de Início <span className="text-destructive">*</span>

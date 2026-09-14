@@ -31,6 +31,7 @@ export interface VinculoAEEConfig {
   profissionalFoto?: string | null
   frequencia: 'SEMANAL' | 'QUINZENAL'
   diaSemana: number
+  dataInicio?: string // 'YYYY-MM-DD'
   horarioInicio: string
   horarioFim: string
   isNovo?: boolean // Flag local para indicar inserção pendente
@@ -77,6 +78,7 @@ export function ModalVincularProfissionalAlunoAEE({
 
   // Estados da Escala / Atendimento
   const [frequencia, setFrequencia] = useState<'SEMANAL' | 'QUINZENAL'>('SEMANAL')
+  const [dataInicio, setDataInicio] = useState<string>(() => new Date().toISOString().split('T')[0])
   const [diaSemana, setDiaSemana] = useState<number>(1)
   const [horarioInicio, setHorarioInicio] = useState('08:00')
   const [horarioFim, setHorarioFim] = useState('09:00')
@@ -89,6 +91,21 @@ export function ModalVincularProfissionalAlunoAEE({
       isMounted.current = false
     }
   }, [])
+
+  // Handler para sincronizar dia da semana a partir da data de início escolhida
+  const handleDataInicioChange = (novaData: string) => {
+    setDataInicio(novaData)
+    if (novaData) {
+      const [ano, mes, dia] = novaData.split('-').map(Number)
+      if (ano && mes && dia) {
+        const dt = new Date(ano, mes - 1, dia)
+        const jsDay = dt.getDay() // 0=Dom, 1=Seg, 2=Ter, 3=Qua, 4=Qui, 5=Sex, 6=Sab
+        if (jsDay >= 1 && jsDay <= 6) {
+          setDiaSemana(jsDay)
+        }
+      }
+    }
+  }
 
   // Reset / Inicialização ao fechar/abrir
   useEffect(() => {
@@ -106,6 +123,7 @@ export function ModalVincularProfissionalAlunoAEE({
           foto_updated_at: null,
         })
         setFrequencia(vinculoParaEditar.frequencia || 'SEMANAL')
+        setDataInicio(vinculoParaEditar.dataInicio || new Date().toISOString().split('T')[0])
         setDiaSemana(vinculoParaEditar.diaSemana || 1)
         setHorarioInicio(vinculoParaEditar.horarioInicio?.slice(0, 5) || '08:00')
         setHorarioFim(vinculoParaEditar.horarioFim?.slice(0, 5) || '09:00')
@@ -116,6 +134,7 @@ export function ModalVincularProfissionalAlunoAEE({
         setProfSelecionado(null)
         setTermoBusca('')
         setFrequencia('SEMANAL')
+        setDataInicio(new Date().toISOString().split('T')[0])
         setDiaSemana(1)
         setHorarioInicio('08:00')
         setHorarioFim('09:00')
@@ -231,6 +250,7 @@ export function ModalVincularProfissionalAlunoAEE({
         profissionalFoto: avatarUrl,
         frequencia,
         diaSemana,
+        dataInicio,
         horarioInicio,
         horarioFim,
         isEditado: true
@@ -249,6 +269,7 @@ export function ModalVincularProfissionalAlunoAEE({
       profissionalFoto: avatarUrl,
       frequencia,
       diaSemana,
+      dataInicio,
       horarioInicio,
       horarioFim,
       isNovo: true
@@ -427,7 +448,7 @@ export function ModalVincularProfissionalAlunoAEE({
             </div>
 
             {/* Configurações de Atendimento */}
-            <div className="space-y-3 p-4 rounded-xl border border-border bg-card dark:bg-[#141416]">
+            <div className="space-y-3.5 p-4 rounded-xl border border-border bg-card dark:bg-[#141416]">
               {/* 1. Periodicidade */}
               <div className="space-y-1.5">
                 <Label className="text-xs font-bold text-foreground flex items-center gap-1.5">
@@ -458,29 +479,51 @@ export function ModalVincularProfissionalAlunoAEE({
                     Quinzenal (A cada 15 dias)
                   </button>
                 </div>
+
+                {frequencia === 'QUINZENAL' && (
+                  <p className="text-[11px] text-amber-600 dark:text-amber-400 bg-amber-500/10 border border-amber-500/20 rounded-lg p-2 leading-relaxed">
+                    💡 <strong>Atendimento Quinzenal:</strong> A data inicial abaixo definirá em qual semana o ciclo de 15 dias começará, alternando as semanas automaticamente na agenda.
+                  </p>
+                )}
               </div>
 
-              {/* 2. Dia da Semana */}
-              <div className="space-y-1.5">
-                <Label className="text-xs font-bold text-foreground flex items-center gap-1.5">
-                  <CalendarDays className="w-3.5 h-3.5 text-primary" />
-                  Dia da Semana
-                </Label>
-                <Select
-                  value={String(diaSemana)}
-                  onValueChange={(val) => setDiaSemana(Number(val))}
-                >
-                  <SelectTrigger className="h-9 bg-background dark:bg-[#181818] border-border text-foreground text-xs rounded-xl">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent className="bg-card dark:bg-[#181818] border-border text-foreground text-xs">
-                    {DIAS_SEMANA.map((dia) => (
-                      <SelectItem key={dia.valor} value={String(dia.valor)}>
-                        {dia.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+              {/* 2. Data Inicial e Dia da Semana */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-bold text-foreground flex items-center gap-1.5">
+                    <CalendarDays className="w-3.5 h-3.5 text-primary" />
+                    Data Inicial do Atendimento <span className="text-rose-500">*</span>
+                  </Label>
+                  <Input
+                    type="date"
+                    value={dataInicio}
+                    onChange={(e) => handleDataInicioChange(e.target.value)}
+                    required
+                    className="h-9 bg-background dark:bg-[#181818] border-border text-foreground text-xs rounded-xl"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-bold text-foreground flex items-center gap-1.5">
+                    <CalendarDays className="w-3.5 h-3.5 text-primary" />
+                    Dia da Semana <span className="text-rose-500">*</span>
+                  </Label>
+                  <Select
+                    value={String(diaSemana)}
+                    onValueChange={(val) => setDiaSemana(Number(val))}
+                  >
+                    <SelectTrigger className="h-9 bg-background dark:bg-[#181818] border-border text-foreground text-xs rounded-xl">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="bg-card dark:bg-[#181818] border-border text-foreground text-xs">
+                      {DIAS_SEMANA.map((dia) => (
+                        <SelectItem key={dia.valor} value={String(dia.valor)}>
+                          {dia.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
 
               {/* 3. Horários (Início e Término) */}

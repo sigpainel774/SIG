@@ -286,6 +286,7 @@ export default function CalendarioAtendimentosPage() {
           especialidade_outros,
           frequencia,
           dia_semana,
+          data_inicio,
           horario_inicio,
           horario_fim,
           ativo,
@@ -534,6 +535,32 @@ export default function CalendarioAtendimentosPage() {
     })
   }, [vinculos, termoBusca, filtroProfissional, filtroEspecialidade, filtroDiaSemana, filtroTurno])
 
+  // --------------------------------------------------------------------------
+  // Lógica de Alternância Quinzenal (Ciclo de 15 dias baseado na data inicial)
+  // --------------------------------------------------------------------------
+  const isAtendimentoNaSemana = useCallback((item: any, dataSessao: Date): boolean => {
+    if (item.frequencia !== 'QUINZENAL') return true
+    const dataInicioStr = item.data_inicio || item.created_at
+    if (!dataInicioStr) return true
+
+    const dInicioStr = dataInicioStr.includes('T') ? dataInicioStr.split('T')[0] : dataInicioStr
+    const [anoI, mesI, diaI] = dInicioStr.split('-').map(Number)
+    if (!anoI || !mesI || !diaI) return true
+    const dInicio = new Date(anoI, mesI - 1, diaI)
+
+    const segInicio = getSegundaFeira(dInicio)
+    const segSessao = getSegundaFeira(dataSessao)
+
+    const diffMs = segSessao.getTime() - segInicio.getTime()
+    const diffSemanas = Math.round(diffMs / (7 * 24 * 60 * 60 * 1000))
+
+    // Se a semana visualizada for anterior à data de início, não ocorre
+    if (diffSemanas < 0) return false
+
+    // Ocorre nas semanas 0, 2, 4, 6... (a cada 15 dias a partir da data inicial)
+    return diffSemanas % 2 === 0
+  }, [])
+
   // Estatísticas e KPIs
   const kpis = useMemo(() => {
     const totalSessoes = vinculos.length
@@ -542,7 +569,10 @@ export default function CalendarioAtendimentosPage() {
 
     const diaJs = hoje.getDay()
     const diaAeeHoje = diaJs === 0 ? 7 : diaJs
-    const atendimentosHoje = vinculos.filter((v) => v.dia_semana === diaAeeHoje).length
+    const atendimentosHoje = vinculos.filter((v) => {
+      if (v.dia_semana !== diaAeeHoje) return false
+      return isAtendimentoNaSemana(v, hoje)
+    }).length
 
     // Contagem de realizados e não realizados na semana atual
     let totalRealizadosSemana = 0
@@ -561,7 +591,7 @@ export default function CalendarioAtendimentosPage() {
       totalRealizadosSemana,
       totalNaoRealizadosSemana,
     }
-  }, [vinculos, hoje, registrosSemana])
+  }, [vinculos, hoje, registrosSemana, isAtendimentoNaSemana])
 
   // Cores por Especialidade
   const getColorByCargo = (cargo: string | null) => {
@@ -608,14 +638,17 @@ export default function CalendarioAtendimentosPage() {
     }
   }
 
-  // Agrupamento por dia da semana para a Grade Semanal
+  // Agrupamento por dia da semana para a Grade Semanal (respeitando quinzenas)
   const gradePorDia = useMemo(() => {
     const dias = [1, 2, 3, 4, 5]
     const agrupado: Record<number, any[]> = { 1: [], 2: [], 3: [], 4: [], 5: [] }
 
     atendimentosFiltrados.forEach((item) => {
-      if (agrupado[item.dia_semana]) {
-        agrupado[item.dia_semana].push(item)
+      const diaObj = diasDaSemanaObj.find((d) => d.diaSemana === item.dia_semana)
+      if (diaObj && agrupado[item.dia_semana]) {
+        if (isAtendimentoNaSemana(item, diaObj.data)) {
+          agrupado[item.dia_semana].push(item)
+        }
       }
     })
 
@@ -624,7 +657,7 @@ export default function CalendarioAtendimentosPage() {
     })
 
     return agrupado
-  }, [atendimentosFiltrados])
+  }, [atendimentosFiltrados, diasDaSemanaObj, isAtendimentoNaSemana])
 
   // --------------------------------------------------------------------------
   // Abertura do Modal com Registro da Sessão Específica
@@ -768,7 +801,9 @@ export default function CalendarioAtendimentosPage() {
       const diaJs = dataObj.getDay()
       const diaAee = diaJs === 0 ? 7 : diaJs
 
-      const sessoesNesteDia = atendimentosFiltrados.filter((v) => v.dia_semana === diaAee)
+      const sessoesNesteDia = atendimentosFiltrados.filter(
+        (v) => v.dia_semana === diaAee && isAtendimentoNaSemana(v, dataObj),
+      )
 
       dias.push({
         numero: d,
@@ -784,7 +819,7 @@ export default function CalendarioAtendimentosPage() {
       })
     }
     return dias
-  }, [anoSelecionado, mesSelecionado, atendimentosFiltrados, hoje])
+  }, [anoSelecionado, mesSelecionado, atendimentosFiltrados, hoje, isAtendimentoNaSemana])
 
   const handleNavegarMes = (direcao: 'anterior' | 'proximo') => {
     if (direcao === 'anterior') {
