@@ -35,6 +35,7 @@ export interface ServidorNominalPrint {
   id: string
   nome: string
   cpf?: string | null
+  registro_profissional?: string | null
   cargo?: string | null
   status: string
   orgao?: string | null
@@ -237,7 +238,7 @@ export function PrintRelatorioServidores({
 
         {/* Conteúdo Dinâmico: Modo Sintético vs Modo Nominal */}
         {isSintetico ? (
-          /* Tabela Consolidada por Cargo */
+          /* Tabela Consolidada por Cargo e Sumário Hierárquico */
           <div className="mb-6 print-section">
             <div className="flex items-center justify-between mb-2 text-[10px] font-bold uppercase text-gray-800 border-b border-gray-300 pb-1">
               <div className="flex items-center gap-1.5">
@@ -247,7 +248,7 @@ export function PrintRelatorioServidores({
               <span className="text-gray-500">Valores em número de ocupações</span>
             </div>
 
-            <table className="w-full text-left border-collapse text-[10px]">
+            <table className="w-full text-left border-collapse text-[10px] mb-6">
               <thead>
                 <tr className="border-y-2 border-black bg-gray-100 font-bold uppercase text-gray-900">
                   <th className="py-2 px-2">Cargo / Função</th>
@@ -276,7 +277,7 @@ export function PrintRelatorioServidores({
               </tbody>
               <tfoot className="border-t-2 border-black font-black bg-gray-100 text-gray-900 text-[10.5px]">
                 <tr>
-                  <td className="py-2 px-2 uppercase">TOTAL GERAL MUNICIPAL</td>
+                  <td className="py-2 px-2 uppercase">TOTAL DA UNIDADE ADMINISTRATIVA</td>
                   <td className="py-2 px-2 text-center text-blue-900">{resumo.total_cargos_ocupados ?? 0}</td>
                   <td className="py-2 px-2 text-center">{resumo.total_regular ?? 0}</td>
                   <td className="py-2 px-2 text-center text-amber-900">{resumo.total_eja ?? 0}</td>
@@ -287,6 +288,78 @@ export function PrintRelatorioServidores({
                 </tr>
               </tfoot>
             </table>
+
+            {/* Sumário Estruturado de Cargos e Relação de Servidores (Estilo 1 e 1.1) */}
+            <div className="mt-6 pt-4 border-t-2 border-gray-300">
+              <div className="flex items-center justify-between mb-3 text-[10.5px] font-black uppercase text-gray-900 border-b border-gray-300 pb-1">
+                <span>Relação Sumarizada de Servidores por Cargo</span>
+                <span className="text-gray-500 font-normal">Estrutura Oficial de Lotação</span>
+              </div>
+
+              <div className="space-y-4">
+                {cargos.map((cargoItem, cIdx) => {
+                  const servidoresDoCargo = servidoresNominais.filter((s) => {
+                    const c1 = (s.cargo || '').trim().toLowerCase()
+                    const c2 = cargoItem.cargo.trim().toLowerCase()
+                    return c1 === c2
+                  })
+
+                  return (
+                    <div key={cIdx} className="break-inside-auto">
+                      {/* Título do Cargo no estilo de Sumário "1", "2", etc. */}
+                      <div className="flex items-center justify-between bg-gray-100 border-l-4 border-blue-900 px-3 py-1.5 rounded-r">
+                        <span className="font-extrabold text-[11px] text-gray-900">
+                          {cIdx + 1}. {cargoItem.cargo.toUpperCase()}
+                        </span>
+                        <span className="text-[9.5px] font-bold text-gray-700">
+                          Total: {cargoItem.ocupacoes} {cargoItem.ocupacoes === 1 ? 'ocupação' : 'ocupações'}
+                        </span>
+                      </div>
+
+                      {/* Lista de Servidores no estilo "1.1", "1.2", sem estar em negrito */}
+                      <div className="pl-4 pt-1.5 space-y-1">
+                        {servidoresDoCargo.map((serv, sIdx) => {
+                          const matriculaDisplay = serv.registro_profissional?.trim()
+                            ? serv.registro_profissional
+                            : serv.cpf
+                            ? `CPF: ${serv.cpf}`
+                            : 'Não informada'
+
+                          return (
+                            <div
+                              key={serv.id || sIdx}
+                              className="flex items-baseline justify-between text-[10px] text-gray-800 font-normal py-1 border-b border-dotted border-gray-200"
+                              style={{ pageBreakInside: 'avoid', breakInside: 'avoid' }}
+                            >
+                              <div className="flex items-baseline gap-1.5">
+                                <span className="font-mono text-gray-500 text-[9.5px] min-w-7">
+                                  {cIdx + 1}.{sIdx + 1}
+                                </span>
+                                <span className="font-normal text-gray-900">{serv.nome}</span>
+                                <span className="text-gray-500 font-normal text-[9px] ml-1">
+                                  — Matrícula: {matriculaDisplay}
+                                </span>
+                              </div>
+                              <div className="text-[9px] text-gray-500 flex items-center gap-2">
+                                <span>{serv.modalidade_ensino ?? 'Regular'}</span>
+                                <span>•</span>
+                                <span>{serv.vinculo_tipo ?? 'Não inf.'}</span>
+                              </div>
+                            </div>
+                          )
+                        })}
+
+                        {servidoresDoCargo.length === 0 && (
+                          <div className="text-[9.5px] text-gray-400 italic py-1 pl-3">
+                            Nenhum servidor vinculado a este cargo nos filtros atuais.
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
           </div>
         ) : (
           /* Tabela Nominal de Servidores */
@@ -304,7 +377,7 @@ export function PrintRelatorioServidores({
                 <tr className="border-y-2 border-black bg-gray-100 font-bold uppercase text-gray-900">
                   <th className="py-2 px-1 text-center w-8">#</th>
                   <th className="py-2 px-2">Nome Completo</th>
-                  <th className="py-2 px-2">CPF</th>
+                  <th className="py-2 px-2">Matrícula / CPF</th>
                   <th className="py-2 px-2">Cargo / Função</th>
                   <th className="py-2 px-2">Unidade / Órgão</th>
                   <th className="py-2 px-2 text-center w-20">Modalidade</th>
@@ -317,7 +390,9 @@ export function PrintRelatorioServidores({
                   <tr key={serv.id || idx} className="hover:bg-gray-50">
                     <td className="py-1.5 px-1 text-center font-bold text-gray-500">{idx + 1}</td>
                     <td className="py-1.5 px-2 font-bold text-gray-900">{serv.nome}</td>
-                    <td className="py-1.5 px-2 font-mono text-[9px] text-gray-700">{serv.cpf ?? '—'}</td>
+                    <td className="py-1.5 px-2 font-mono text-[9px] text-gray-700">
+                      {serv.registro_profissional?.trim() || serv.cpf || '—'}
+                    </td>
                     <td className="py-1.5 px-2 font-semibold text-gray-800">{serv.cargo ?? '—'}</td>
                     <td className="py-1.5 px-2 text-gray-700">{serv.orgao ?? '—'}</td>
                     <td className="py-1.5 px-2 text-center font-bold">

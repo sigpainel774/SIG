@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { createClient } from '@/lib/supabaseClient'
 import { useSchoolStore } from '@/store/useSchoolStore'
 import { useAuthStore } from '@/store/useAuthStore'
@@ -17,7 +17,10 @@ import {
   FileSpreadsheet,
   Printer,
   Eye,
-  Search
+  Search,
+  ChevronDown,
+  ChevronsUpDown,
+  ChevronRight
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
@@ -61,6 +64,7 @@ interface OcupanteCargo {
   vinculo_id: string
   nome: string
   cpf?: string | null
+  registro_profissional?: string | null
   cargoCalculado: string
   orgao: string
   modalidade: string
@@ -214,6 +218,7 @@ export default function RelatorioServidores() {
             id,
             nome,
             cpf,
+            registro_profissional,
             status,
             cargo,
             modalidade_ensino,
@@ -281,6 +286,7 @@ export default function RelatorioServidores() {
               vinculo_id: v.id,
               nome: f.nome,
               cpf: f.cpf,
+              registro_profissional: f.registro_profissional,
               cargoCalculado: cargoFinal,
               orgao: v.escolas?.nome ?? 'Escola Não Informada',
               modalidade: modalidadeFinal,
@@ -333,6 +339,34 @@ export default function RelatorioServidores() {
     }
   }, [selectedEscola, escolaAtivaId, isSuperAdminOrNivel1])
 
+  // Estado de Expansão dos Cargos na Tabela
+  const [expandedCargos, setExpandedCargos] = useState<Set<string>>(new Set())
+
+  const toggleCargoExpand = useCallback((cargoName: string) => {
+    setExpandedCargos((prev) => {
+      const next = new Set(prev)
+      if (next.has(cargoName)) {
+        next.delete(cargoName)
+      } else {
+        next.add(cargoName)
+      }
+      return next
+    })
+  }, [])
+
+  const isAllExpanded = useMemo(() => {
+    if (!reportData.cargos || reportData.cargos.length === 0) return false
+    return reportData.cargos.every((c) => expandedCargos.has(c.cargo))
+  }, [reportData.cargos, expandedCargos])
+
+  const toggleExpandAll = useCallback(() => {
+    if (isAllExpanded) {
+      setExpandedCargos(new Set())
+    } else {
+      setExpandedCargos(new Set(reportData.cargos.map((c) => c.cargo)))
+    }
+  }, [isAllExpanded, reportData.cargos])
+
   // Busca lista única de cargos disponíveis para o select de filtro
   const listaCargosDisponiveis = useMemo(() => {
     if (!reportData.cargos || reportData.cargos.length === 0) return []
@@ -348,7 +382,8 @@ export default function RelatorioServidores() {
       const escolaAlvo = filtroEscolaId ? escolas.find(e => e.id === filtroEscolaId) : null
       const effectiveEscolaId = (filtroEscolaId && escolaAlvo?.tipo !== 'SECRETARIA') ? filtroEscolaId : undefined
 
-      const { data, error } = await supabase.rpc('get_relatorio_servidores', {
+      // 1. Carrega dados consolidados do RPC
+      const rpcPromise = supabase.rpc('get_relatorio_servidores', {
         p_escola_id: effectiveEscolaId,
         p_cargo: filtroCargo || undefined,
         p_modalidade: filtroModalidade === 'Todos' ? undefined : filtroModalidade,
@@ -356,16 +391,42 @@ export default function RelatorioServidores() {
         p_status: filtroStatus === 'Todos' ? undefined : filtroStatus,
       })
 
-      if (!isMountedRef.current || currentRequest !== requestCounter.current) return
+      // 2. Carrega lista nominal de servidores com matrículas para accordion e impressão
+      let queryNominal = supabase
+        .from('vinculos_funcionarios')
+        .select(`
+          id,
+          cargo,
+          escola_id,
+          escolas (nome),
+          funcionarios!inner (
+            id,
+            nome,
+            cpf,
+            registro_profissional,
+            status,
+            modalidade_ensino,
+            tipo_vinculo,
+            is_conta_especial,
+            deleted_at
+          )
+        `)
+        .eq('ativo', true)
+        .is('funcionarios.deleted_at', null)
 
-      if (error) {
-        console.error('Erro ao buscar RPC get_relatorio_servidores:', error)
-        toast.error('Erro ao carregar dados do relatório de servidores.')
-        return
+      if (effectiveEscolaId) {
+        queryNominal = queryNominal.eq('escola_id', effectiveEscolaId)
       }
 
-      if (data) {
-        const payload = data as any
+      const [rpcResult, nominalResult] = await Promise.all([rpcPromise, queryNominal])
+
+      if (!isMountedRef.current || currentRequest !== requestCounter.current) return
+
+      if (rpcResult.error) {
+        console.error('Erro ao buscar RPC get_relatorio_servidores:', rpcResult.error)
+        toast.error('Erro ao carregar dados do relatório de servidores.')
+      } else if (rpcResult.data) {
+        const payload = rpcResult.data as any
         setReportData({
           resumo: payload.resumo ?? {
             total_servidores_unicos: 0,
@@ -380,6 +441,35 @@ export default function RelatorioServidores() {
           cargos: Array.isArray(payload.cargos) ? payload.cargos : [],
         })
       }
+
+      if (nominalResult.data) {
+        const mapped: ServidorNominalPrint[] = (nominalResult.data as any[])
+          .filter((v) => !v.funcionarios?.is_conta_especial)
+          .map((v) => {
+            const f = v.funcionarios
+            return {
+              id: f.id,
+              nome: f.nome,
+              cpf: f.cpf,
+              registro_profissional: f.registro_profissional,
+              cargo: v.cargo || f.cargo || 'Cargo não informado',
+              status: f.status || 'ativo',
+              orgao: v.escolas?.nome || 'Escola Não Informada',
+              modalidade_ensino: f.modalidade_ensino || 'Regular',
+              vinculo_tipo: f.tipo_vinculo || 'Não informado',
+            }
+          })
+          .filter((s) => {
+            const matchCargo = !filtroCargo || s.cargo?.toLowerCase() === filtroCargo.toLowerCase()
+            const matchMod = filtroModalidade === 'Todos' || (s.modalidade_ensino ?? '').toUpperCase().includes(filtroModalidade.toUpperCase())
+            const matchVinc = filtroVinculo === 'Todos' || (s.vinculo_tipo ?? '').toUpperCase().includes(filtroVinculo.toUpperCase())
+            const matchStatus = filtroStatus === 'Todos' || (s.status ?? '').toLowerCase() === filtroStatus.toLowerCase()
+            return matchCargo && matchMod && matchVinc && matchStatus
+          })
+          .sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'))
+
+        setServidoresNominais(mapped)
+      }
     } catch (err) {
       if (!isMountedRef.current || currentRequest !== requestCounter.current) return
       console.error('Exceção no carregamento do relatório de servidores:', err)
@@ -389,7 +479,7 @@ export default function RelatorioServidores() {
         setIsLoading(false)
       }
     }
-  }, [supabase, filtroEscolaId, filtroCargo, filtroModalidade, filtroVinculo, filtroStatus])
+  }, [supabase, filtroEscolaId, filtroCargo, filtroModalidade, filtroVinculo, filtroStatus, escolas])
 
   useEffect(() => {
     if (activeTab === 'geral') {
@@ -397,75 +487,21 @@ export default function RelatorioServidores() {
     }
   }, [loadRelatorio, activeTab])
 
-  // Ação de abertura da impressão (Sintética A4 ou Lista Nominal)
-  const handleAbrirImpressao = async (modo: 'sintetico' | 'nominal') => {
-    setPrintModoView(modo)
-    if (modo === 'nominal') {
-      setIsLoadingNominal(true)
-      try {
-        let query = supabase
-          .from('vinculos_funcionarios')
-          .select(`
-            id,
-            cargo,
-            escola_id,
-            escolas (nome),
-            funcionarios!inner (
-              id,
-              nome,
-              cpf,
-              status,
-              modalidade_ensino,
-              tipo_vinculo,
-              is_conta_especial,
-              deleted_at
-            )
-          `)
-          .eq('ativo', true)
-          .is('funcionarios.deleted_at', null)
-
-        const escolaAlvo = filtroEscolaId ? escolas.find(e => e.id === filtroEscolaId) : null
-        if (filtroEscolaId && escolaAlvo?.tipo !== 'SECRETARIA') {
-          query = query.eq('escola_id', filtroEscolaId)
-        }
-
-        const { data, error } = await query
-        if (error) throw error
-
-        if (data) {
-          const mapped = (data as any[])
-            .filter((v) => !v.funcionarios?.is_conta_especial)
-            .map((v) => {
-              const f = v.funcionarios
-              return {
-                id: f.id,
-                nome: f.nome,
-                cpf: f.cpf,
-                cargo: v.cargo || f.cargo,
-                status: f.status || 'ativo',
-                orgao: v.escolas?.nome || 'Escola Não Informada',
-                modalidade_ensino: f.modalidade_ensino || 'Regular',
-                vinculo_tipo: f.tipo_vinculo || 'Não informado',
-              }
-            })
-            .filter((s) => {
-              const matchCargo = !filtroCargo || s.cargo === filtroCargo
-              const matchMod = filtroModalidade === 'Todos' || (s.modalidade_ensino ?? '').toUpperCase().includes(filtroModalidade.toUpperCase())
-              const matchVinc = filtroVinculo === 'Todos' || (s.vinculo_tipo ?? '').toUpperCase().includes(filtroVinculo.toUpperCase())
-              const matchStatus = filtroStatus === 'Todos' || (s.status ?? '').toLowerCase() === filtroStatus.toLowerCase()
-              return matchCargo && matchMod && matchVinc && matchStatus
-            })
-            .sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'))
-
-          setServidoresNominais(mapped)
-        }
-      } catch (err) {
-        console.error('Erro ao buscar lista nominal de servidores:', err)
-        toast.error('Erro ao gerar lista nominal para impressão.')
-      } finally {
-        setIsLoadingNominal(false)
-      }
+  // Mapa de servidores agrupados por cargo
+  const servidoresPorCargo = useMemo(() => {
+    const map = new Map<string, ServidorNominalPrint[]>()
+    for (const s of servidoresNominais) {
+      const cargoNome = (s.cargo || '').trim().toLowerCase()
+      const list = map.get(cargoNome) || []
+      list.push(s)
+      map.set(cargoNome, list)
     }
+    return map
+  }, [servidoresNominais])
+
+  // Ação de abertura da impressão (Sintética A4 ou Lista Nominal)
+  const handleAbrirImpressao = (modo: 'sintetico' | 'nominal') => {
+    setPrintModoView(modo)
     setIsPrintModalOpen(true)
   }
 
@@ -952,7 +988,24 @@ export default function RelatorioServidores() {
                 <table className="w-full text-left text-xs">
                   <thead className="bg-secondary/70 text-muted-foreground uppercase text-[10px] tracking-wider border-b border-border">
                     <tr>
-                      <th className="py-3 px-4 font-bold">Cargo / Função</th>
+                      <th className="py-3 px-4 font-bold">
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={toggleExpandAll}
+                            className="p-1 rounded-md bg-secondary hover:bg-primary/20 text-muted-foreground hover:text-primary transition-colors cursor-pointer border border-border"
+                            title={isAllExpanded ? "Recolher todos os cargos" : "Expandir todos os cargos"}
+                          >
+                            <ChevronDown
+                              className={cn(
+                                "w-3.5 h-3.5 transition-transform duration-200",
+                                !isAllExpanded && "-rotate-90"
+                              )}
+                            />
+                          </button>
+                          <span>Cargo / Função</span>
+                        </div>
+                      </th>
                       <th className="py-3 px-4 font-bold text-center">Total Ocupações</th>
                       <th className="py-3 px-4 font-bold text-center">Ensino Regular</th>
                       <th className="py-3 px-4 font-bold text-center">EJA</th>
@@ -963,56 +1016,145 @@ export default function RelatorioServidores() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border">
-                    {reportData.cargos.map((item, idx) => (
-                      <tr
-                        key={idx}
-                        className="hover:bg-hoverCustom/60 transition-colors text-foreground font-medium"
-                      >
-                        <td className="py-3 px-4 font-semibold text-foreground">
-                          <button
-                            onClick={() => handleOpenCargoModal(item.cargo)}
-                            className="flex items-center gap-2 group cursor-pointer text-left focus:outline-none"
-                            title="Clique para ver a lista de ocupantes deste cargo"
-                          >
-                            <div className="w-2 h-2 rounded-full bg-primary shrink-0 group-hover:scale-125 transition-transform" />
-                            <span className="text-primary font-bold group-hover:underline group-hover:text-primary/80 transition-colors">
-                              {item.cargo}
-                            </span>
-                            <Eye className="w-3.5 h-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity ml-0.5" />
-                          </button>
-                        </td>
-                        <td className="py-3 px-4 text-center font-bold text-primary">
-                          {item.ocupacoes}
-                        </td>
-                        <td className="py-3 px-4 text-center">{item.regular}</td>
-                        <td className="py-3 px-4 text-center">
-                          {item.eja > 0 ? (
-                            <span className="bg-amber-500/10 text-amber-400 font-semibold px-2 py-0.5 rounded-full border border-amber-500/20">
-                              {item.eja}
-                            </span>
-                          ) : (
-                            '0'
+                    {reportData.cargos.map((item, idx) => {
+                      const isExpanded = expandedCargos.has(item.cargo)
+                      const servidoresDoCargo = servidoresPorCargo.get(item.cargo.trim().toLowerCase()) || []
+
+                      return (
+                        <React.Fragment key={idx}>
+                          <tr className="hover:bg-hoverCustom/60 transition-colors text-foreground font-medium">
+                            <td className="py-3 px-4 font-semibold text-foreground">
+                              <div className="flex items-center gap-1.5">
+                                <div className="w-2 h-2 rounded-full bg-primary shrink-0" />
+                                <button
+                                  type="button"
+                                  onClick={() => toggleCargoExpand(item.cargo)}
+                                  className="p-1 rounded-md hover:bg-muted text-muted-foreground hover:text-primary transition-colors cursor-pointer focus:outline-none"
+                                  title={isExpanded ? "Recolher servidores" : "Expandir servidores deste cargo"}
+                                >
+                                  <ChevronDown
+                                    className={cn(
+                                      "w-3.5 h-3.5 transition-transform duration-200",
+                                      !isExpanded && "-rotate-90"
+                                    )}
+                                  />
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => toggleCargoExpand(item.cargo)}
+                                  className="text-left font-bold text-foreground hover:text-primary hover:underline transition-colors cursor-pointer focus:outline-none"
+                                >
+                                  {item.cargo}
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleOpenCargoModal(item.cargo)}
+                                  className="p-1 text-muted-foreground hover:text-primary cursor-pointer opacity-60 hover:opacity-100 transition-opacity ml-auto"
+                                  title="Abrir modal de ocupantes"
+                                >
+                                  <Eye className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
+                            </td>
+                            <td className="py-3 px-4 text-center font-bold text-primary">
+                              {item.ocupacoes}
+                            </td>
+                            <td className="py-3 px-4 text-center">{item.regular}</td>
+                            <td className="py-3 px-4 text-center">
+                              {item.eja > 0 ? (
+                                <span className="bg-amber-500/10 text-amber-500 dark:text-amber-400 font-semibold px-2 py-0.5 rounded-full border border-amber-500/20">
+                                  {item.eja}
+                                </span>
+                              ) : (
+                                '0'
+                              )}
+                            </td>
+                            <td className="py-3 px-4 text-center text-blue-500 dark:text-blue-400 font-semibold">
+                              {item.concursados}
+                            </td>
+                            <td className="py-3 px-4 text-center text-emerald-500 dark:text-emerald-400 font-semibold">
+                              {item.contratados}
+                            </td>
+                            <td className="py-3 px-4 text-center text-purple-500 dark:text-purple-400 font-semibold">
+                              {item.nomeados}
+                            </td>
+                            <td className="py-3 px-4 text-center text-muted-foreground">
+                              {item.outros}
+                            </td>
+                          </tr>
+
+                          {/* Accordion / Sub-linha com os servidores deste cargo */}
+                          {isExpanded && (
+                            <tr className="bg-muted/30 border-b border-border animate-in fade-in duration-150">
+                              <td colSpan={8} className="py-3 px-6">
+                                <div className="bg-card border border-border rounded-xl p-3.5 shadow-sm space-y-2">
+                                  <div className="flex items-center justify-between pb-2 border-b border-border text-[11px]">
+                                    <span className="font-bold text-foreground flex items-center gap-1.5">
+                                      <Users className="w-3.5 h-3.5 text-primary" />
+                                      Servidores vinculados ao cargo <strong className="text-primary">{item.cargo}</strong> ({servidoresDoCargo.length})
+                                    </span>
+                                    <span className="text-muted-foreground text-[10px]">
+                                      Unidade: {nomeEscolaAtiva}
+                                    </span>
+                                  </div>
+
+                                  {servidoresDoCargo.length === 0 ? (
+                                    <p className="text-xs text-muted-foreground italic py-1">
+                                      Nenhum servidor encontrado para este cargo com os filtros atuais.
+                                    </p>
+                                  ) : (
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                                      {servidoresDoCargo.map((serv, sIdx) => {
+                                        const matricula = serv.registro_profissional?.trim()
+                                          ? serv.registro_profissional
+                                          : serv.cpf
+                                          ? `CPF: ${serv.cpf}`
+                                          : 'Não informada'
+
+                                        return (
+                                          <div
+                                            key={serv.id || sIdx}
+                                            className="flex items-center justify-between bg-background border border-border rounded-lg px-3 py-2 text-xs hover:border-primary/40 transition-colors"
+                                          >
+                                            <div className="flex items-center gap-2 min-w-0 pr-2">
+                                              <span className="font-mono text-[10px] text-muted-foreground font-bold w-5 shrink-0">
+                                                {sIdx + 1}.
+                                              </span>
+                                              <div className="truncate">
+                                                <span className="font-bold text-foreground block truncate">
+                                                  {serv.nome}
+                                                </span>
+                                                <span className="text-[10px] text-muted-foreground font-mono block">
+                                                  Matrícula: {matricula}
+                                                </span>
+                                              </div>
+                                            </div>
+
+                                            <div className="flex items-center gap-1.5 shrink-0 text-[10px]">
+                                              <span className="px-2 py-0.5 rounded-md bg-secondary text-secondary-foreground font-medium">
+                                                {serv.modalidade_ensino || 'Regular'}
+                                              </span>
+                                              <span className="px-2 py-0.5 rounded-md bg-primary/10 text-primary font-semibold border border-primary/20">
+                                                {serv.vinculo_tipo || 'Não inf.'}
+                                              </span>
+                                            </div>
+                                          </div>
+                                        )
+                                      })}
+                                    </div>
+                                  )}
+                                </div>
+                              </td>
+                            </tr>
                           )}
-                        </td>
-                        <td className="py-3 px-4 text-center text-blue-400 font-semibold">
-                          {item.concursados}
-                        </td>
-                        <td className="py-3 px-4 text-center text-emerald-400 font-semibold">
-                          {item.contratados}
-                        </td>
-                        <td className="py-3 px-4 text-center text-purple-400 font-semibold">
-                          {item.nomeados}
-                        </td>
-                        <td className="py-3 px-4 text-center text-muted-foreground">
-                          {item.outros}
-                        </td>
-                      </tr>
-                    ))}
+                        </React.Fragment>
+                      )
+                    })}
                   </tbody>
                   {/* Linha de Totais da Tabela */}
                   <tfoot className="bg-secondary/80 font-bold text-foreground border-t-2 border-border text-xs">
                     <tr>
-                      <td className="py-3.5 px-4">TOTAL GERAL MUNICIPAL</td>
+                      <td className="py-3.5 px-4">TOTAL DA UNIDADE ADMINISTRATIVA</td>
                       <td className="py-3.5 px-4 text-center text-primary font-extrabold text-sm">
                         <button
                           onClick={() => handleAbrirDiscriminadosModal('Total')}
