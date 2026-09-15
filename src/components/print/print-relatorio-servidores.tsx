@@ -95,24 +95,51 @@ export function PrintRelatorioServidores({
   const totalCargosCalculado = resumo.total_cargos_ocupados ?? 0
 
   return createPortal(
-    <div className="fixed inset-0 z-[9999] bg-[#09090b]/95 flex items-center justify-center p-4 overflow-y-auto print:static print:block print:p-0 print:bg-white print:overflow-visible print-portal-container">
+    <div className="print-portal-container">
       <style>{`
+        @media screen {
+          .print-portal-container {
+            position: fixed;
+            inset: 0;
+            z-index: 9999;
+            background-color: rgba(9,9,11,0.95);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+            overflow-y: auto;
+          }
+        }
         @media print {
           @page {
             size: ${isSintetico ? 'portrait' : 'landscape'};
             margin: 8mm 10mm;
           }
-          body > *:not(.print-portal-container) {
-            display: none !important;
-          }
-          .print-portal-container {
-            position: absolute !important;
-            left: 0 !important;
-            top: 0 !important;
-            width: 100% !important;
-            height: auto !important;
+          html, body {
+            margin: 0 !important;
+            padding: 0 !important;
             background: white !important;
             color: black !important;
+          }
+          body > *:not(.print-portal-container) {
+            display: none !important;
+            visibility: hidden !important;
+          }
+          .print-portal-container {
+            display: block !important;
+            visibility: visible !important;
+            position: static !important;
+            width: 100% !important;
+            min-height: 0 !important;
+            background: white !important;
+            color: black !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            inset: auto !important;
+            overflow: visible !important;
+          }
+          .print-portal-container * {
+            visibility: visible !important;
           }
           .no-print {
             display: none !important;

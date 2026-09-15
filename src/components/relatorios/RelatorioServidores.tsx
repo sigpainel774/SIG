@@ -16,11 +16,8 @@ import {
   DollarSign,
   FileSpreadsheet,
   Printer,
-  Eye,
   Search,
   ChevronDown,
-  ChevronsUpDown,
-  ChevronRight
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
@@ -1045,14 +1042,6 @@ export default function RelatorioServidores() {
                                   className="text-left font-bold text-foreground hover:text-primary hover:underline transition-colors cursor-pointer focus:outline-none"
                                 >
                                   {item.cargo}
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => handleOpenCargoModal(item.cargo)}
-                                  className="p-1 text-muted-foreground hover:text-primary cursor-pointer opacity-60 hover:opacity-100 transition-opacity ml-auto"
-                                  title="Abrir modal de ocupantes"
-                                >
-                                  <Eye className="w-3.5 h-3.5" />
                                 </button>
                               </div>
                             </td>
