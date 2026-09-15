@@ -6,7 +6,7 @@ import { getAvatarUrl } from '@/lib/photoHelper';
 import { MapContainer, TileLayer, LayersControl, Marker, Popup, useMapEvents } from 'react-leaflet';
 import MarkerClusterGroup from 'react-leaflet-cluster';
 import L from 'leaflet';
-import { Search, MapPin, Filter, Navigation, ZoomIn, X } from 'lucide-react';
+import { Search, MapPin, Filter, Navigation, ZoomIn, X, Eye, EyeOff } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useSchoolStore } from '@/store/useSchoolStore';
 import { preloadFotos, prewarmSapeacuTiles, formatPhotoUrlWithTimestamp } from '@/lib/mapCache';
@@ -39,11 +39,21 @@ export interface AlunoMapeado {
 
 interface MapaAlunosProps {
   alunos: AlunoMapeado[];
+  mostrarLocalidades?: boolean;
+  onToggleLocalidades?: () => void;
 }
 
-export default function MapaAlunos({ alunos }: MapaAlunosProps) {
+export default function MapaAlunos({
+  alunos,
+  mostrarLocalidades,
+  onToggleLocalidades,
+}: MapaAlunosProps) {
   const selectedEscola = useSchoolStore((state) => state.selectedEscola);
   const isEmaee = selectedEscola?.tipo === 'EMAEE';
+
+  const [localidadesInterno, setLocalidadesInterno] = useState(true);
+  const exibirLocalidades = mostrarLocalidades !== undefined ? mostrarLocalidades : localidadesInterno;
+  const toggleLocalidades = onToggleLocalidades || (() => setLocalidadesInterno((prev) => !prev));
 
   const [busca, setBusca] = useState('');
   const buscaDebounced = React.useDeferredValue(busca);
@@ -460,6 +470,21 @@ export default function MapaAlunos({ alunos }: MapaAlunosProps) {
 
         <button
           type="button"
+          onClick={toggleLocalidades}
+          className={cn(
+            "inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg border transition-all cursor-pointer",
+            exibirLocalidades
+              ? "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30 hover:bg-amber-500/20"
+              : "bg-muted text-muted-foreground border-border hover:text-foreground"
+          )}
+          title={exibirLocalidades ? "Ocultar nomes de localidades cadastradas" : "Exibir nomes de localidades cadastradas"}
+        >
+          {exibirLocalidades ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+          <span>{exibirLocalidades ? "Ocultar Localidades" : "Mostrar Localidades"}</span>
+        </button>
+
+        <button
+          type="button"
           onClick={recentralizarSapeacu}
           className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded-lg text-xs font-semibold transition-colors cursor-pointer"
           title="Centralizar visualização do mapa em Sapeaçu - BA"
@@ -496,7 +521,7 @@ export default function MapaAlunos({ alunos }: MapaAlunosProps) {
               />
             </LayersControl.BaseLayer>
           </LayersControl>
-          <LocalidadesLayer />
+          <LocalidadesLayer visivel={exibirLocalidades} />
           <MarkerClusterGroup
             iconCreateFunction={criarIconeCluster}
             chunkedLoading

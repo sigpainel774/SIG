@@ -8,6 +8,10 @@ import { useLocalidades } from '@/hooks/useLocalidades';
 
 interface LocalidadesLayerProps {
   /**
+   * Se false, oculta a camada de localidades do mapa.
+   */
+  visivel?: boolean;
+  /**
    * Lista customizada de localidades (útil para preview em tempo real no editor).
    * Se não fornecida, carrega automaticamente do banco via useLocalidades(true).
    */
@@ -55,6 +59,7 @@ interface BoundingBox {
 }
 
 export default function LocalidadesLayer({
+  visivel = true,
   localidadesCustom,
   onSelectLocalidade,
   highlightId,
@@ -81,6 +86,10 @@ export default function LocalidadesLayer({
   // Algoritmo matemático de projeção de tela e detecção de colisão AABB
   const calcularVisibilidade = useCallback(() => {
     if (!map) return;
+    if (!visivel) {
+      setVisibleLocs([]);
+      return;
+    }
 
     if (rAFRef.current) {
       cancelAnimationFrame(rAFRef.current);
@@ -159,7 +168,7 @@ export default function LocalidadesLayer({
 
       setVisibleLocs(aceitas);
     });
-  }, [map, localidades, highlightId, desativarAnticolisao]);
+  }, [map, localidades, highlightId, desativarAnticolisao, visivel]);
 
   // Registra os listeners de eventos do Leaflet (moveend, zoomend, viewreset)
   useEffect(() => {
@@ -242,6 +251,8 @@ export default function LocalidadesLayer({
     },
     []
   );
+
+  if (!visivel) return null;
 
   return (
     <>

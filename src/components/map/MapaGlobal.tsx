@@ -6,7 +6,7 @@ import { getAvatarUrl } from '@/lib/photoHelper';
 import { MapContainer, TileLayer, LayersControl, Marker, Popup, useMapEvents } from 'react-leaflet';
 import MarkerClusterGroup from 'react-leaflet-cluster';
 import L from 'leaflet';
-import { Search, MapPin, Filter, Navigation, ZoomIn, X } from 'lucide-react';
+import { Search, MapPin, Filter, Navigation, ZoomIn, X, Eye, EyeOff } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuthStore } from '@/store/useAuthStore';
 import { prewarmSapeacuTiles, preloadFotos, formatPhotoUrlWithTimestamp } from '@/lib/mapCache';
@@ -40,11 +40,22 @@ export interface FuncionarioMapeado {
 interface MapaGlobalProps {
   funcionarios: FuncionarioMapeado[];
   isEmaee?: boolean;
+  mostrarLocalidades?: boolean;
+  onToggleLocalidades?: () => void;
 }
 
-export default function MapaGlobal({ funcionarios, isEmaee }: MapaGlobalProps) {
+export default function MapaGlobal({
+  funcionarios,
+  isEmaee,
+  mostrarLocalidades,
+  onToggleLocalidades,
+}: MapaGlobalProps) {
   const isAdminGlobalOrRoot = useAuthStore((state) => state.isAdminGlobalOrRoot);
   const isLevel1OrSuperadmin = isAdminGlobalOrRoot();
+
+  const [localidadesInterno, setLocalidadesInterno] = useState(true);
+  const exibirLocalidades = mostrarLocalidades !== undefined ? mostrarLocalidades : localidadesInterno;
+  const toggleLocalidades = onToggleLocalidades || (() => setLocalidadesInterno((prev) => !prev));
 
   const [busca, setBusca] = useState('');
   const buscaDebounced = useDeferredValue(busca);
@@ -407,6 +418,21 @@ export default function MapaGlobal({ funcionarios, isEmaee }: MapaGlobalProps) {
 
         <button
           type="button"
+          onClick={toggleLocalidades}
+          className={cn(
+            "inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg border transition-all cursor-pointer",
+            exibirLocalidades
+              ? "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30 hover:bg-amber-500/20"
+              : "bg-muted text-muted-foreground border-border hover:text-foreground"
+          )}
+          title={exibirLocalidades ? "Ocultar nomes de localidades cadastradas" : "Exibir nomes de localidades cadastradas"}
+        >
+          {exibirLocalidades ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+          <span>{exibirLocalidades ? "Ocultar Localidades" : "Mostrar Localidades"}</span>
+        </button>
+
+        <button
+          type="button"
           onClick={recentralizarSapeacu}
           className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-sky-400 bg-sky-500/10 border border-sky-500/20 rounded-lg hover:bg-sky-500/20 transition-colors cursor-pointer"
           title="Recentralizar Mapa em Sapeaçu"
@@ -445,7 +471,7 @@ export default function MapaGlobal({ funcionarios, isEmaee }: MapaGlobalProps) {
               />
             </LayersControl.BaseLayer>
           </LayersControl>
-          <LocalidadesLayer />
+          <LocalidadesLayer visivel={exibirLocalidades} />
           <MarkerClusterGroup
             iconCreateFunction={criarIconeCluster}
             chunkedLoading

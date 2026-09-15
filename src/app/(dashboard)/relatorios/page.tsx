@@ -58,7 +58,9 @@ import {
   Heart,
   TrendingDown,
   BookOpenCheck,
-  Award
+  Award,
+  Eye,
+  EyeOff
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
@@ -220,6 +222,7 @@ export default function RelatoriosPage() {
   const [isLoadingMap, setIsLoadingMap] = useState(false)
   const [isLoadingMapAlunos, setIsLoadingMapAlunos] = useState(false)
   const [mapaAba, setMapaAba] = useState<MapaAba>('funcionarios')
+  const [mostrarLocalidades, setMostrarLocalidades] = useState<boolean>(true)
 
   // Redefine relatório ativo se a escola selecionada não for mais EMAEE
   useEffect(() => {
@@ -652,13 +655,29 @@ export default function RelatoriosPage() {
         ) : activeReport === 'mapa' ? (
           <div className="space-y-6">
             <div className="bg-card border border-border rounded-2xl p-6">
-              <div className="flex items-center justify-between mb-4 border-b border-border pb-4">
+              <div className="flex flex-wrap items-center justify-between gap-3 mb-4 border-b border-border pb-4">
                 <div>
                   <span className="text-xs font-bold uppercase tracking-wider text-primary">Relatório Logístico</span>
                   <h3 className="text-xl font-bold text-foreground mt-0.5">Mapa de Geolocalização</h3>
                 </div>
-                <div className="flex items-center gap-2">
-                  <div className="bg-purple-500/10 text-purple-300 border border-purple-500/20 px-3 py-1 rounded-xl text-xs font-semibold">
+                <div className="flex items-center gap-2.5">
+                  {/* Botão de Ocultar/Exibir Nomes de Localidades */}
+                  <button
+                    type="button"
+                    onClick={() => setMostrarLocalidades(prev => !prev)}
+                    className={cn(
+                      "flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all cursor-pointer shadow-2xs",
+                      mostrarLocalidades
+                        ? "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30 hover:bg-amber-500/20"
+                        : "bg-muted text-muted-foreground border-border hover:text-foreground"
+                    )}
+                    title={mostrarLocalidades ? "Ocultar nomes de localidades cadastradas no mapa" : "Exibir nomes de localidades cadastradas no mapa"}
+                  >
+                    {mostrarLocalidades ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                    <span>{mostrarLocalidades ? "Ocultar Localidades" : "Mostrar Localidades"}</span>
+                  </button>
+
+                  <div className="bg-purple-500/10 text-purple-600 dark:text-purple-300 border border-purple-500/20 px-3 py-1.5 rounded-xl text-xs font-semibold">
                     {selectedEscola ? 'Visão da Unidade' : 'Visão Geral da Rede'}
                   </div>
                 </div>
@@ -699,7 +718,12 @@ export default function RelatoriosPage() {
                     <span className="text-sm font-semibold">Buscando dados geográficos...</span>
                   </div>
                 ) : (
-                  <MapaGlobal funcionarios={mapData} isEmaee={isEMAEE} />
+                  <MapaGlobal
+                    funcionarios={mapData}
+                    isEmaee={isEMAEE}
+                    mostrarLocalidades={mostrarLocalidades}
+                    onToggleLocalidades={() => setMostrarLocalidades(p => !p)}
+                  />
                 )
               ) : (
                 isLoadingMapAlunos ? (
@@ -707,7 +731,11 @@ export default function RelatoriosPage() {
                     <span className="text-sm font-semibold">Buscando dados geográficos dos alunos...</span>
                   </div>
                 ) : (
-                  <MapaAlunos alunos={mapDataAlunos} />
+                  <MapaAlunos
+                    alunos={mapDataAlunos}
+                    mostrarLocalidades={mostrarLocalidades}
+                    onToggleLocalidades={() => setMostrarLocalidades(p => !p)}
+                  />
                 )
               )}
             </div>
