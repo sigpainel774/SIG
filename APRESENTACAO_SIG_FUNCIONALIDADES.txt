@@ -1,0 +1,365 @@
+﻿================================================================================
+          SISTEMA INTEGRADO DE GESTÃO MUNICIPAL (SIG)
+       DOCUMENTO COMPLETO DE CAPACIDADES E FUNCIONALIDADES
+                 BASE ESTRUTURADA PARA APRESENTAÇÃO
+================================================================================
+
+1. VISÃO GERAL E PROPOSTA DE VALOR
+--------------------------------------------------------------------------------
+O SIG (Sistema Integrado de Gestão) é uma solução tecnológica completa, moderna
+e unificada para a gestão 360° da administração pública municipal.
+
+Originalmente estruturado com foco na excelência da gestão escolar e pedagógica,
+o sistema possui arquitetura modular escalável, sendo plenamente capaz de
+abarcar e integrar TODAS AS SECRETARIAS MUNICIPAIS (Educação, Saúde, Assistência
+Social, Administração, Finanças, Serviços Públicos, Segurança e Planejamento),
+adaptando suas rotinas, fluxos e formulários às necessidades e peculiaridades
+de cada pasta governamental.
+
+Destaques Estratégicos:
+• Gestão Centralizada da Rede Municipal com dados integrados em tempo real.
+• Banco de Dados 100% em Nuvem com Sistema Robusto de Backups Automáticos e
+  Alta Disponibilidade (zero custo com servidores locais físicos e zero risco
+  de perda de informações).
+• Plataforma Multi-Acesso: Acessível via computadores, tablets e smartphones,
+  com aplicativos dedicados e tecnologia que permite uso mesmo em locais com
+  instabilidade de internet.
+• Cuidado Integral e Inclusão: Módulo especializado na área da saúde e
+  acompanhamento de Atendimento Educacional Especializado (AEE).
+• Gestão de Recursos Humanos e Servidores: Pasta digital individual, controle
+  de lotações, controle de ponto com cerca eletrônica e emissão de documentos.
+• Controle de Suprimentos e Almoxarifado com rastreabilidade total.
+• Segurança da Informação de Nível Governamental com auditoria e controle
+  rigoroso de acessos por perfil.
+
+
+================================================================================
+2. PILARES ESTRUTURAIS E CAPACIDADES FUNCIONAIS
+================================================================================
+
+--------------------------------------------------------------------------------
+[MÓDULO 1] SECRETARIA ESCOLAR 360° E GESTÃO ACADÊMICA
+--------------------------------------------------------------------------------
+Unifica e desburocratiza todos os procedimentos da vida escolar dos estudantes
+e das secretarias das unidades de ensino:
+
+• Gestão Multi-Escolas e Multi-Turnos:
+  - Controle centralizado de todas as unidades escolares do município.
+  - Suporte a turnos Matutino, Vespertino, Noturno e Tempo Integral.
+  - Parametrização por etapas: Educação Infantil (Creche e Pré-Escola),
+    Ensino Fundamental I e II e Modalidades Especiais.
+
+• Matrículas e Rematrículas Inteligentes:
+  - Geração automática do número sequencial de matrícula único por escola e ano.
+  - Controle automatizado de vagas por turma, turno e capacidade de sala.
+  - Fila de espera e transparência no processo de matrículas municipais.
+
+• Trâmite Digital de Transferências:
+  - Protocolo digital de transferência entre escolas da rede municipal ou externas.
+  - Notificação imediata de saída e confirmação formal de aceite na escola de destino,
+    evitando duplicidade de alunos e retenção indevida de vagas.
+
+• Cadastro Completo de Alunos e Responsáveis:
+  - Dossiê detalhado do estudante: dados civis, contatos, endereço georreferenciado,
+    composição familiar, NIS/Bolsa Família, cartão SUS, alergias e restrições.
+  - Vínculo direto e seguro com pais e responsáveis legais.
+
+• Gestão e Emissão de Documentos Escolares Padronizados:
+  - Emissão com um clique de Históricos Escolares, Declarações de Matrícula,
+    Declarações de Frequência, Certificados de Conclusão e Guias de Transferência.
+  - Cabeçalho oficial municipal padronizado em todas as escolas da rede.
+
+• Ocorrências, Atestados e Portaria Escolar:
+  - Registro de ocorrências disciplinares e pedagógicas com aviso aos pais.
+  - Registro digital de atestados médicos e justificativas legais de ausência.
+  - Registro e controle do fluxo de visitantes na portaria das escolas.
+
+
+--------------------------------------------------------------------------------
+[MÓDULO 2] GESTÃO PEDAGÓGICA, DIÁRIO DE CLASSE E AVALIAÇÕES
+--------------------------------------------------------------------------------
+Dá suporte direto ao trabalho dos professores, coordenadores pedagógicos e diretores:
+
+• Turmas, Enturmação e Matriz Curricular:
+  - Montagem ágil de turmas, grade horária e distribuição de disciplinas.
+  - Atribuição simplificada de professores titulares e especialistas.
+
+• Diário de Conteúdo 100% Alinhado à BNCC:
+  - Planejamento e registro de aulas estruturado conforme a Base Nacional Comum
+    Curricular (BNCC).
+  - Ensino Fundamental: Seleção de Unidades Temáticas, Objetos de Conhecimento e
+    Códigos de Habilidades oficiais em listas inteligentes e intuitivas.
+  - Educação Infantil: Direitos de Aprendizagem e Campos de Experiências.
+  - Bloqueio inteligente: impede o lançamento de conteúdo sem registro de chamada.
+
+• Chamada Digital e Controle de Frequência em Tempo Real:
+  - Lançamento rápido de presenças, faltas e justificativas na tela ou celular.
+  - Identificação imediata de alunos com excesso de faltas para intervenção rápida.
+  - Travas temporais contra lançamentos retroativos indevidos.
+
+• Sistema Dinâmico de Avaliações e Notas:
+  - Configuração personalizada de notas, pesos e fórmulas por escola e ano.
+  - Suporte completo a Recuperação Paralela (ao longo do bimestre) e
+    Recuperação Final (conforme LDB).
+  - Cálculo instantâneo e automatizado de médias bimestrais e anuais.
+
+• Conselho de Classe e Ata Final de Resultados:
+  - Lançamento de deliberações colegiadas e pareceres descritivos individuais.
+  - Emissão automática da Ata Oficial de Resultados Finais com bloqueio de segurança
+    após a homologação da direção.
+
+
+--------------------------------------------------------------------------------
+[MÓDULO 3] MÓDULO DIFERENCIADO DE SAÚDE & ATENDIMENTO EDUCACIONAL ESPECIALIZADO (AEE)
+--------------------------------------------------------------------------------
+Diferencial exclusivo do SIG: uma área especializada voltada ao cuidado
+integral, desenvolvimento infantil, saúde e inclusão de estudantes com necessidades
+específicas:
+
+• Prontuário Digital Multiprofissional:
+  - Prontuário confidencial e individualizado para estudantes com deficiências,
+    Transtorno do Espectro Autista (TEA), TDAH, altas habilidades/superdotação
+    ou dificuldades severas de aprendizagem e vulnerabilidade de saúde.
+  - Histórico clínico completo, laudos médicos, pareceres e registros de evolução.
+
+• Gestão da Equipe Multidisciplinar de Saúde e Educação:
+  - Integração e atuação conjunta de especialistas: Psicólogos, Psicopedagogos,
+    Fonoaudiólogos, Terapeutas Ocupacionais, Assistentes Sociais e Professores de AEE.
+
+• Fila de Espera Inteligente e Central de Triagem:
+  - Classificação e triagem com base em critérios de prioridade clínica e urgência.
+  - Transparência absoluta no tempo de espera e no histórico de encaminhamentos.
+
+• Canal Direto de Solicitações pelas Unidades Escolares:
+  - A equipe pedagógica da escola encaminha solicitações de avaliação diagnóstica
+    e suporte diretamente pelo sistema, anexando relatórios observacionais.
+  - Retorno ágil com orientações e pareceres dos profissionais para os professores.
+
+• Calendário Integrado de Atendimentos e Sessões:
+  - Agendamento de consultas, sessões terapêuticas individuais e em grupo.
+  - Controle rigoroso de frequência às sessões e acompanhamento do progresso.
+
+• Plano de Desenvolvimento Individual (PDI):
+  - Elaboração digital e colaborativa de metas pedagógicas adaptadas, recursos de
+    tecnologia assistiva e orientações para a sala de aula regular e sala de recursos.
+
+
+--------------------------------------------------------------------------------
+[MÓDULO 4] GESTÃO DE RECURSOS HUMANOS E QUADRO DE FUNCIONÁRIOS
+--------------------------------------------------------------------------------
+Gestão completa, moderna e padronizada de todos os servidores municipais:
+
+• Pasta Digital Individual do Funcionário:
+  - Dossiê completo e permanente do servidor em formato 100% digital.
+  - Dados pessoais, documentos digitalizados (RG, CPF, Título, PIS/PASEP, diplomas).
+  - Histórico de formação continuada, certificados e capacitações.
+  - Registro de licenças (maternidade, prêmio, capacitação), atestados médicos,
+    afastamentos, faltas justificadas, elogios e histórico disciplinar.
+
+• Gestão de Lotações e Movimentações:
+  - Alocação precisa do servidor por secretaria, unidade escolar, turno e função.
+  - Suporte completo a servidores com múltiplas lotações e contratos simultâneos.
+  - Histórico completo de transferências, remanejamentos e alterações de carga horária.
+
+• Emissão Ágil de Documentos Padronizados:
+  - Geração instantânea de Declarações de Vínculo Empregatício, Fichas Funcionais,
+    Termos de Posse e Exercício, Contratos Temporários, Notificações e Ofícios.
+  - Eliminação de formulários manuais e padronização visual da prefeitura.
+
+• Ponto Mobile com Cerca Eletrônica (Geofencing - Portaria 671/MTE):
+  - Registro de ponto pelo smartphone do servidor com validação por geolocalização:
+    o sistema só permite o registro se o servidor estiver fisicamente dentro do
+    perímetro da sua unidade de trabalho.
+  - Elimina a compra, manutenção e papel de relógios de ponto físicos tradicionais.
+
+• Painel de Chefia e Gestão de Equipes:
+  - Painel exclusivo para diretores e secretários acompanharem escalas em tempo real,
+    servidores presentes/ausentes, substituições docentes e horas trabalhadas.
+
+
+--------------------------------------------------------------------------------
+[MÓDULO 5] CONTROLE DE ESTOQUE, ALMOXARIFADO E PATRIMÔNIO
+--------------------------------------------------------------------------------
+Gestão eficiente e transparente de materiais, insumos e bens públicos:
+
+• Gestão de Entradas, Saídas e Movimentações:
+  - Controle de estoque central (almoxarifado municipal) e estoques setoriais nas
+    escolas e secretarias.
+  - Registro de notas fiscais de entrada, fornecedores, lotes e datas de validade.
+
+• Requisições Digitais de Materiais:
+  - As unidades solicitam materiais (didáticos, expediente, limpeza, gêneros de merenda)
+    diretamente pelo sistema com fluxo de aprovação pela chefia.
+  - Baixa automática no estoque após a entrega confirmada.
+
+• Controle de Merenda Escolar e Alimentos:
+  - Controle de suprimentos nutricionais, evitando desperdícios e faltas de insumos.
+  - Alertas automáticos de proximidade do vencimento e estoque mínimo de segurança.
+
+• Controle e Tombo de Bens Patrimoniais:
+  - Registro de bens permanentes (computadores, carteiras, aparelhos de ar, veículos)
+    com localização física, estado de conservação e termos de responsabilidade.
+
+
+--------------------------------------------------------------------------------
+[MÓDULO 6] RELATÓRIOS GERENCIAIS ESTRATÉGICOS E BUSINESS INTELLIGENCE
+--------------------------------------------------------------------------------
+Transforma dados brutos em decisões assertivas para os gestores municipais:
+
+• Principais Relatórios Nativos do Sistema:
+  1. Relatório de Frequência & Controle de Evasão Escolar:
+     - Lista nominal de alunos com frequência abaixo de 75%, alertas precoces e
+       relatório específico para subsidiar ações de Busca Ativa e Conselho Tutelar.
+  2. Censo em Tempo Real de Matrículas e Vagas:
+     - Mapeamento da taxa de ocupação de salas de aula, turmas com vagas abertas e
+       escolas com sobrecarga de demanda.
+  3. Monitoramento de Diários de Classe & Cumprimento da BNCC:
+     - Painel que mostra quais professores estão em dia com os registros de aulas,
+       habilidades trabalhadas e chamadas, auxiliando a coordenação pedagógica.
+  4. Relatório de Desempenho & Rendimento Acadêmico:
+     - Gráficos comparativos de médias por disciplina, turma, escola e bimestre,
+       evidenciando disciplinas com maior necessidade de reforço.
+  5. Quadro Geral e Produtividade de Servidores:
+     - Mapeamento de cargos, vínculos (efetivos/contratados), faltas e produtividade
+       administrativa de secretários e agentes públicos.
+  6. Relatório Estratégico de Atendimento Especializado e Saúde:
+     - Total de estudantes atendidos, tempo médio de espera, principais diagnósticos
+       e taxa de evolução por especialista.
+  7. Mapas Georreferenciados:
+     - Visualização no mapa municipal da localização de residência dos alunos e
+       servidores para planejamento de rotas e abertura de novas turmas.
+
+
+--------------------------------------------------------------------------------
+[MÓDULO 7] VANTAGENS E IMPACTOS DIRETOS PARA OS GESTORES
+--------------------------------------------------------------------------------
+
+★ PARA OS DIRETORES ESCOLARES:
+  • Visão e Controle Total da Escola na Ponta dos Dedos:
+    Acesso imediato a tudo o que acontece na escola em uma única tela: quais
+    professores faltaram, quantos alunos estão presentes e o andamento das turmas.
+  • Fim da Burocracia Manual e do Retrabalho com Papel:
+    Emissão instantânea de boletins, atas finais, declarações e relatórios sem
+    necessidade de cálculos manuais ou digitação repetitiva.
+  • Facilidade no Conselho de Classe:
+    Dados consolidados de notas e presenças de cada aluno já mastigados,
+    tornando as reuniões pedagógicas ágeis, focadas e assertivas.
+  • Gestão Transparente da Equipe e dos Recursos:
+    Acompanhamento do ponto dos funcionários da escola e controle exato dos
+    materiais e merenda disponíveis no estoque da unidade.
+
+★ PARA O(A) SECRETÁRIO(A) DE EDUCAÇÃO E GESTÃO MUNICIPAL:
+  • Visão 360° em Tempo Real de Toda a Rede de Ensino:
+    O secretário não precisa esperar relatórios impressos no final do ano; com
+    um clique, enxerga os índices de toda a rede municipal instantaneamente.
+  • Combate Efetivo à Evasão Escolar:
+    Identificação precoce de alunos em risco de abandono antes que percam o ano letivo,
+    garantindo cumprimento das metas municipais e preservação de repasses do FUNDEB.
+  • Decisões Orçamentárias e Pedagógicas Baseadas em Evidências:
+    Informações exatas para planejar compra de merenda, aquisição de material escolar,
+    contratação de professores e abertura de novas salas onde realmente há demanda.
+  • Padronização de 100% da Rede:
+    Todas as escolas do município operam sob os mesmos critérios pedagógicos,
+    mesmos formulários oficiais e mesmos prazos, elevando o padrão da rede pública.
+  • Segurança Jurídica e Transparência perante Órgãos Fiscalizadores:
+    Relatórios prontos e padronizados para prestar contas com facilidade ao
+    Tribunal de Contas (TCE), Ministério Público, Conselho Tutelar e MEC/INEP.
+
+
+--------------------------------------------------------------------------------
+[MÓDULO 8] INOVAÇÃO TECNOLÓGICA E MÓDULOS ESPECIAIS
+--------------------------------------------------------------------------------
+
+• Cursinho Pré-Universitário & Correção Óptica de Gabaritos (OMR) por Câmera:
+  - Criação de simulados, cadernos de provas e gabaritos oficiais.
+  - Impressão padronizada de folhas de resposta em lote com QR Code e marcadores.
+  - Correção instantânea via Câmera: o avaliador aponta a câmera do computador ou
+    celular para o gabarito e o sistema corrige a prova em segundos, gerando
+    notas, ranking e estatísticas de acertos por disciplina.
+
+• Modalidade EJA (Educação de Jovens e Adultos):
+  - Módulo adaptado para turmas semestrais e modulares, matrículas flexíveis e
+    controle de assiduidade ajustado para alunos trabalhadores.
+
+• Transporte Escolar & Rondas Logísticas:
+  - Gestão de frotas municipais, motoristas e veículos credenciados.
+  - Mapeamento georreferenciado de rotas, itinerários e pontos de parada.
+  - Vinculação de alunos às rotas de ônibus, com funcionamento offline nos veículos.
+
+• Mural de Avisos com Confirmação Obrigatória de Leitura:
+  - Publicação de comunicados oficiais por turma, escola ou função.
+  - Trava de confirmação de leitura: exige que o destinatário confirme a leitura
+    para prosseguir, gerando comprovante digital de ciência e telemetria temporal.
+
+• Portal do Aluno e da Família no Celular:
+  - Aplicativo leve e direto para pais e responsáveis acompanharem notas, faltas,
+    ocorrências e comunicados sem ocupar memória do aparelho.
+
+
+--------------------------------------------------------------------------------
+[MÓDULO 9] BANCO DE DADOS EM NUVEM, BACKUPS E SEGURANÇA GOVERNAMENTAL
+--------------------------------------------------------------------------------
+
+• Banco de Dados 100% em Nuvem com Backups Automatizados:
+  - Infraestrutura em nuvem de alta confiabilidade, sem necessidade de servidores
+    físicos na prefeitura ou custos com manutenção de hardware local.
+  - Rotinas automáticas de cópias de segurança (backups) contínuos e redundantes,
+    garantindo proteção total contra perda de dados ou falhas elétricas locais.
+
+• Segurança em Camadas e Homologação de Dispositivos:
+  - Acesso restrito e seguro: permissão para que computadores das secretarias e
+    escolas sejam homologados, garantindo que dados sigilosos não sejam acessados
+    fora do ambiente institucional.
+  - Notificações Seguras no Celular via Pareamento por QR Code: servidores recebem
+    avisos no smartphone pessoal sem expor senhas ou dados confidenciais do sistema.
+
+• Matriz de Permissões Rigorosa (6 Níveis de Acesso):
+  - Controle de quem pode ver ou editar cada informação (Secretário, Diretor,
+    Coordenador, Professor, Secretário Escolar e Operacional).
+  - Simulador de permissões: permite que a chefia teste exatamente o que cada
+    servidor pode visualizar antes de liberar o acesso.
+
+• Auditoria Completa e Proteção de Dados (LGPD):
+  - Registro de todas as operações com identificação de usuário, data e hora.
+  - Sistema de reprodução visual de sessão para auditoria de segurança e suporte.
+
+
+================================================================================
+3. ROTEIRO SINTÉTICO PARA SLIDES DE APRESENTAÇÃO
+================================================================================
+
+SLIDE 1: O QUE É O SIG?
+  Plataforma unificada municipal em nuvem que integra a gestão de todas as
+  secretarias, com foco em educação 360°, saúde/inclusão, RH e atendimento público.
+
+SLIDE 2: SECRETARIA E PEDAGÓGICO
+  Matrículas com trava atômica, transferências digitais, diário de classe integrado
+  à BNCC, chamada digital em tempo real e conselho de classe automatizado.
+
+SLIDE 3: CUIDADO, SAÚDE E ATENDIMENTO ESPECIALIZADO (AEE)
+  Prontuário único, equipe multidisciplinar (psicologia, fonoaudiologia, terapia, AEE),
+  triagem inteligente, fila de espera transparente e Plano de Desenvolvimento Individual.
+
+SLIDE 4: GESTÃO DE SERVIDORES, PONTO E ALMOXARIFADO
+  Pasta digital do funcionário, gestão de lotações, ponto mobile com cerca eletrônica,
+  emissão de documentos padronizados e controle total de materiais/merenda.
+
+SLIDE 5: INOVAÇÃO NA PRÁTICA
+  Correção de simulados por câmera (OMR) em segundos, rotas de transporte escolar,
+  Mural com confirmação de leitura obrigatória e Portal da Família no celular.
+
+SLIDE 6: RELATÓRIOS GERENCIAIS E DECISÃO BASEADA EM DADOS
+  Indicadores de evasão escolar, censo de vagas, rendimento acadêmico e mapas
+  georreferenciados para planejamento de políticas públicas.
+
+SLIDE 7: VANTAGENS DIRETAS PARA GESTORES
+  • Diretores: controle total da escola em 1 tela, menos papel, agilidade máxima.
+  • Secretários: visão 360° da rede em tempo real, decisões assertivas, segurança jurídica.
+
+SLIDE 8: NUVEM, BACKUPS E SEGURANÇA
+  Banco de dados 100% em nuvem com backups automáticos, proteção de dados LGPD,
+  homologação de dispositivos e zero custos com servidores físicos locais.
+
+================================================================================
+FIM DO DOCUMENTO
+================================================================================

@@ -84,12 +84,14 @@ export default function RelatorioFrequenciaEvasao({ selectedEscola }: RelatorioF
         }
 
         const { data: turmasData, error: turmasError } = await queryTurmas
-        if (turmasError) throw turmasError
+        if (turmasError) {
+          console.warn('Aviso ao carregar turmas:', turmasError)
+        }
 
         const turmasBrutas = turmasData || []
         const turmas = turmasBrutas.filter((t: any) => {
           const escola = t.escolas as any
-          if (!escola) return false
+          if (!escola) return true
           if (escola.is_teste === true) return false
           const nomeLower = (escola.nome || '').toLowerCase().trim()
           if (
@@ -105,6 +107,12 @@ export default function RelatorioFrequenciaEvasao({ selectedEscola }: RelatorioF
 
         if (isMounted) setTurmas(turmas)
 
+        // Mapear nomes de turmas por ID para resolução direta e segura
+        const turmaMap: Record<string, string> = {}
+        turmas.forEach((t: any) => {
+          turmaMap[t.id] = t.nome
+        })
+
         // 2. Buscar Alunos
         let queryAlunos = supabase
           .from('alunos')
@@ -116,7 +124,6 @@ export default function RelatorioFrequenciaEvasao({ selectedEscola }: RelatorioF
             serie,
             dados_matricula,
             deleted_at,
-            turmas (id, nome),
             escolas (id, nome, is_teste)
           `)
           .is('deleted_at', null)
@@ -144,14 +151,13 @@ export default function RelatorioFrequenciaEvasao({ selectedEscola }: RelatorioF
               return false
             }
           }
-          if (a.turma_id && !validTurmaIds.has(a.turma_id)) {
+          if (a.turma_id && validTurmaIds.size > 0 && !validTurmaIds.has(a.turma_id)) {
             return false
           }
           return true
         })
-        const alunoIds = alunos.map((a: any) => a.id)
 
-        if (alunoIds.length === 0) {
+        if (alunos.length === 0) {
           if (isMounted) {
             setAlunosLista([])
             setLoading(false)
@@ -159,20 +165,40 @@ export default function RelatorioFrequenciaEvasao({ selectedEscola }: RelatorioF
           return
         }
 
-        // 3. Buscar registros de Frequência do período
-        // Processar em chunks se houver muitos alunos
+        // 3. Buscar registros de Frequência do período via paginação por lote (evita URLs longas de 200 UUIDs)
         let frequenciasData: any[] = []
-        const chunkSize = 200
-        for (let i = 0; i < alunoIds.length; i += chunkSize) {
-          const chunk = alunoIds.slice(i, i + chunkSize)
-          const { data: fChunk, error: fError } = await supabase
-            .from('frequencias')
-            .select('aluno_id, presenca, data')
-            .in('aluno_id', chunk)
-            .gte('data', dataCorte)
+        let queryFreq = supabase
+          .from('frequencias')
+          .select('aluno_id, presenca, data, escola_id')
+          .gte('data', dataCorte)
 
-          if (!fError && fChunk) {
-            frequenciasData = frequenciasData.concat(fChunk)
+        if (selectedEscola) {
+          queryFreq = queryFreq.eq('escola_id', selectedEscola.id)
+        }
+
+        const pageSize = 1000
+        let page = 0
+        let hasMore = true
+
+        while (hasMore) {
+          const { data: chunk, error: fError } = await queryFreq
+            .range(page * pageSize, (page + 1) * pageSize - 1)
+
+          if (fError) {
+            console.warn('Aviso ao carregar lote de frequências:', fError)
+            break
+          }
+
+          if (chunk && chunk.length > 0) {
+            frequenciasData = frequenciasData.concat(chunk)
+            if (chunk.length < pageSize) {
+              hasMore = false
+            } else {
+              page++
+              if (page >= 30) hasMore = false // Trava de segurança: máx 30k registros
+            }
+          } else {
+            hasMore = false
           }
         }
 
@@ -180,6 +206,7 @@ export default function RelatorioFrequenciaEvasao({ selectedEscola }: RelatorioF
         const freqMap: Record<string, { total: number; presencas: number; faltas: number }> = {}
 
         frequenciasData.forEach((f: any) => {
+          if (!f.aluno_id) return
           if (!freqMap[f.aluno_id]) {
             freqMap[f.aluno_id] = { total: 0, presencas: 0, faltas: 0 }
           }
@@ -209,7 +236,7 @@ export default function RelatorioFrequenciaEvasao({ selectedEscola }: RelatorioF
           return {
             id: a.id,
             nome: a.nome,
-            turma_nome: (a.turmas as any)?.nome || 'Sem Turma',
+            turma_nome: (a.turma_id && turmaMap[a.turma_id]) ? turmaMap[a.turma_id] : 'Sem Turma',
             serie: a.serie || undefined,
             total_aulas: totalAulas,
             total_presencas: stats.presencas,
