@@ -61,6 +61,37 @@ export async function POST(req: NextRequest) {
 
   try {
     const body = await req.json()
+
+    // Suporte a operações em lote (ex: marcar o dia inteiro como Feriado ou Recesso)
+    if (body.batch && Array.isArray(body.registros)) {
+      const { escola_id, data_atendimento, status, observacoes } = body
+      const registrosParaSalvar = body.registros.map((vinculo_id: string) => ({
+        vinculo_id,
+        escola_id: escola_id || null,
+        data_atendimento,
+        status: status || 'feriado',
+        aluno_nao_compareceu: false,
+        motivo_recusa_falta: null,
+        observacoes: observacoes?.trim() || null,
+        registrado_por: user.id || null,
+        registrado_por_nome: user.email || 'Usuário',
+        registrado_em: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      }))
+
+      const { data: batchSalvo, error: batchErr } = await (supabaseAdmin as any)
+        .from('emaee_atendimentos_registros')
+        .upsert(registrosParaSalvar, { onConflict: 'vinculo_id,data_atendimento' })
+        .select()
+
+      if (batchErr) {
+        console.error('[api/emaee/atendimentos/registros] Erro batch:', batchErr)
+        return NextResponse.json({ error: batchErr.message }, { status: 500 })
+      }
+
+      return NextResponse.json({ success: true, registros: batchSalvo || [] })
+    }
+
     const {
       vinculo_id,
       escola_id,
@@ -69,6 +100,9 @@ export async function POST(req: NextRequest) {
       aluno_nao_compareceu,
       motivo_recusa_falta,
       observacoes,
+      data_remarcada,
+      horario_remarcado,
+      motivo_remarcacao,
       registrado_por,
       registrado_por_nome,
     } = body
@@ -96,7 +130,7 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    const payload = {
+    const payload: any = {
       vinculo_id,
       escola_id: escola_id || null,
       data_atendimento,
@@ -104,18 +138,46 @@ export async function POST(req: NextRequest) {
       aluno_nao_compareceu: Boolean(aluno_nao_compareceu),
       motivo_recusa_falta: motivo_recusa_falta?.trim() || null,
       observacoes: observacoes?.trim() || null,
-      registrado_por: registrado_por || null,
+      data_remarcada: data_remarcada || null,
+      horario_remarcado: horario_remarcado || null,
+      motivo_remarcacao: motivo_remarcacao?.trim() || null,
+      registrado_por: registrado_por || user.id || null,
       registrado_por_nome: registrado_por_nome || user.email || 'Usuário',
       registrado_em: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     }
 
     // Upsert baseado na constraint unique (vinculo_id, data_atendimento)
-    const { data: registroSalvo, error: upsertError } = await (supabaseAdmin as any)
+    let { data: registroSalvo, error: upsertError } = await (supabaseAdmin as any)
       .from('emaee_atendimentos_registros')
       .upsert(payload, { onConflict: 'vinculo_id,data_atendimento' })
       .select()
       .single()
+
+    // Fallback resiliente se colunas novas de remarcação ainda não existirem no schema do banco
+    if (upsertError && (upsertError.code === '42703' || upsertError.message?.includes('remarcad'))) {
+      console.warn('[api/emaee/atendimentos/registros] Fallback compatível sem colunas de remarcação:', upsertError)
+      const fallbackPayload = {
+        vinculo_id,
+        escola_id: escola_id || null,
+        data_atendimento,
+        status,
+        aluno_nao_compareceu: Boolean(aluno_nao_compareceu),
+        motivo_recusa_falta: motivo_recusa_falta?.trim() || null,
+        observacoes: observacoes?.trim() || (motivo_remarcacao ? `Remarcação: ${motivo_remarcacao}` : null),
+        registrado_por: registrado_por || user.id || null,
+        registrado_por_nome: registrado_por_nome || user.email || 'Usuário',
+        registrado_em: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      }
+      const retry = await (supabaseAdmin as any)
+        .from('emaee_atendimentos_registros')
+        .upsert(fallbackPayload, { onConflict: 'vinculo_id,data_atendimento' })
+        .select()
+        .single()
+      registroSalvo = retry.data
+      upsertError = retry.error
+    }
 
     if (upsertError) {
       console.error('[api/emaee/atendimentos/registros] Erro no upsert:', upsertError)

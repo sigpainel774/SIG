@@ -44,6 +44,7 @@ export interface RelatorioEmaeePrintPayload {
     total_atendimentos: number
     total_profissionais: number
     pacientes_atendidos: number
+    total_fila?: number
   }>
   origem_escolas: Array<{
     escola_nome: string
@@ -273,9 +274,10 @@ export function PrintRelatorioEmaeeEstrategico({ data, onClose }: PrintRelatorio
               <thead>
                 <tr className="bg-slate-100 text-slate-800 font-bold border-b border-slate-300 text-[10px]">
                   <th className="p-1.5 border-r border-slate-300">Especialidade</th>
-                  <th className="p-1.5 border-r border-slate-300 text-center w-24">Sessões Realizadas</th>
-                  <th className="p-1.5 border-r border-slate-300 text-center w-24">Profissionais</th>
-                  <th className="p-1.5 text-center w-28">Pacientes Únicos</th>
+                  <th className="p-1.5 border-r border-slate-300 text-center w-20">Sessões / Atend.</th>
+                  <th className="p-1.5 border-r border-slate-300 text-center w-20">Em Fila</th>
+                  <th className="p-1.5 border-r border-slate-300 text-center w-20">Profissionais</th>
+                  <th className="p-1.5 text-center w-24">Pacientes Únicos</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-200 text-[10px]">
@@ -283,14 +285,15 @@ export function PrintRelatorioEmaeeEstrategico({ data, onClose }: PrintRelatorio
                   data.especialidades.map((esp, idx) => (
                     <tr key={idx} className={idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/70'}>
                       <td className="p-1.5 border-r border-slate-300 font-medium text-slate-900">{esp.especialidade}</td>
-                      <td className="p-1.5 border-r border-slate-300 text-center font-bold text-slate-800">{esp.total_atendimentos}</td>
+                      <td className="p-1.5 border-r border-slate-300 text-center font-bold text-blue-700">{esp.total_atendimentos}</td>
+                      <td className="p-1.5 border-r border-slate-300 text-center font-bold text-amber-700">{esp.total_fila || 0}</td>
                       <td className="p-1.5 border-r border-slate-300 text-center text-slate-700">{esp.total_profissionais}</td>
                       <td className="p-1.5 text-center font-semibold text-slate-800">{esp.pacientes_atendidos}</td>
                     </tr>
                   ))
                 ) : (
                   <tr>
-                    <td colSpan={4} className="p-3 text-center text-slate-500 italic">
+                    <td colSpan={5} className="p-3 text-center text-slate-500 italic">
                       Nenhuma evolução registrada para o período selecionado.
                     </td>
                   </tr>

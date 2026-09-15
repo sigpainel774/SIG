@@ -88,7 +88,115 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    // 4. Retornar resposta com cabeçalhos de cache privado e tempo de revalidação
+    // 4. Apurar demanda granular por Especialidade (Atendimentos Ativos vs. Fila de Espera)
+    if (data) {
+      try {
+        let espQuery = supabaseAdmin
+          .from('emaee_especialidades_vinculadas')
+          .select(`
+            id,
+            especialidade,
+            especialidade_outros,
+            status,
+            ativo,
+            profissional_id,
+            emaee_matriculas!inner (
+              id,
+              escola_atendimento_id,
+              data_matricula,
+              status,
+              deleted_at
+            )
+          `)
+          .eq('ativo', true)
+          .is('emaee_matriculas.deleted_at', null)
+
+        if (escolaId) {
+          espQuery = espQuery.eq('emaee_matriculas.escola_atendimento_id', escolaId)
+        }
+
+        if (ano) {
+          espQuery = espQuery
+            .gte('emaee_matriculas.data_matricula', `${ano}-01-01`)
+            .lte('emaee_matriculas.data_matricula', `${ano}-12-31`)
+        }
+
+        const { data: espVinculos, error: espVinculosErr } = await espQuery
+
+        if (!espVinculosErr && espVinculos) {
+          const espMap: Record<
+            string,
+            {
+              total_atendimentos: number
+              total_profissionais: Set<string>
+              pacientes_atendidos: Set<string>
+              total_fila: number
+            }
+          > = {}
+
+          // Inicializar com o que já veio da RPC para manter histórico de sessões
+          if (Array.isArray(data.especialidades)) {
+            data.especialidades.forEach((item: any) => {
+              espMap[item.especialidade] = {
+                total_atendimentos: item.total_atendimentos || 0,
+                total_profissionais: new Set(),
+                pacientes_atendidos: new Set(),
+                total_fila: 0,
+              }
+            })
+          }
+
+          espVinculos.forEach((item: any) => {
+            const espNome =
+              (item.especialidade === 'Outros' && item.especialidade_outros
+                ? item.especialidade_outros
+                : item.especialidade) || 'Outros'
+
+            if (!espMap[espNome]) {
+              espMap[espNome] = {
+                total_atendimentos: 0,
+                total_profissionais: new Set(),
+                pacientes_atendidos: new Set(),
+                total_fila: 0,
+              }
+            }
+
+            if (item.status === 'FILA_ESPERA') {
+              espMap[espNome].total_fila++
+            } else {
+              if (item.profissional_id) {
+                espMap[espNome].total_profissionais.add(item.profissional_id)
+              }
+              if (item.emaee_matriculas?.id) {
+                espMap[espNome].pacientes_atendidos.add(item.emaee_matriculas.id)
+              }
+            }
+          })
+
+          const rpcEspecialidades = Array.isArray(data.especialidades) ? data.especialidades : []
+          data.especialidades = Object.entries(espMap)
+            .map(([especialidade, info]) => {
+              const rpcItem = rpcEspecialidades.find((x: any) => x.especialidade === especialidade)
+              return {
+                especialidade,
+                total_atendimentos:
+                  rpcItem?.total_atendimentos ?? (info.total_atendimentos || info.pacientes_atendidos.size),
+                total_profissionais: rpcItem?.total_profissionais ?? info.total_profissionais.size,
+                pacientes_atendidos: rpcItem?.pacientes_atendidos ?? info.pacientes_atendidos.size,
+                total_fila: info.total_fila,
+              }
+            })
+            .sort(
+              (a, b) =>
+                b.total_atendimentos + b.total_fila - (a.total_atendimentos + a.total_fila),
+            )
+        }
+      } catch (errEsp) {
+        console.warn('[api/relatorios/emaee-estrategico] Falha não impeditiva ao apurar especialidades:', errEsp)
+      }
+    }
+
+    // 5. Retornar resposta com cabeçalhos de cache privado e tempo de revalidação
     return NextResponse.json(data, {
       status: 200,
       headers: {

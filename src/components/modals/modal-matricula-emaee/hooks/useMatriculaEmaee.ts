@@ -263,6 +263,7 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
   const [vinculosAEE, setVinculosAEE] = useState<VinculoAEEConfig[]>([])
   const [vinculosRemovidos, setVinculosRemovidos] = useState<VinculoAEEConfig[]>([])
   const [modalVincularAEEOpen, setModalVincularAEEOpen] = useState(false)
+  const [modoModalVincular, setModoModalVincular] = useState<'ATENDIMENTO' | 'FILA_ESPERA'>('ATENDIMENTO')
   const [vinculoParaEditar, setVinculoParaEditar] = useState<VinculoAEEConfig | null>(null)
 
   const adicionarVinculoAEE = (novoVinculo: VinculoAEEConfig) => {
@@ -271,11 +272,19 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
 
   const editarVinculoAEE = (vinculo: VinculoAEEConfig) => {
     setVinculoParaEditar(vinculo)
+    setModoModalVincular(vinculo.status === 'FILA_ESPERA' || !vinculo.profissionalId ? 'FILA_ESPERA' : 'ATENDIMENTO')
     setModalVincularAEEOpen(true)
   }
 
   const abrirModalNovoVinculo = () => {
     setVinculoParaEditar(null)
+    setModoModalVincular('ATENDIMENTO')
+    setModalVincularAEEOpen(true)
+  }
+
+  const abrirModalNovaFila = () => {
+    setVinculoParaEditar(null)
+    setModoModalVincular('FILA_ESPERA')
     setModalVincularAEEOpen(true)
   }
 
@@ -687,7 +696,7 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
             const res = await supabase
               .from('emaee_especialidades_vinculadas')
               .select(`
-                id, profissional_id, especialidade, frequencia, dia_semana, data_inicio, horario_inicio, horario_fim, ativo, created_at,
+                id, profissional_id, especialidade, especialidade_outros, status, prioridade, motivo_fila, data_solicitacao, frequencia, dia_semana, data_inicio, horario_inicio, horario_fim, ativo, created_at,
                 funcionarios ( id, nome, cargo, foto_url, foto_avatar_path, foto_visualizacao_path, foto_updated_at )
               `)
               .eq('emaee_matricula_id', mat.id)
@@ -696,7 +705,7 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
             vincData = res.data
             error = res.error
 
-            if (error && (error.code === '42703' || error.message?.includes('data_inicio'))) {
+            if (error && (error.code === '42703' || error.message?.includes('status') || error.message?.includes('data_inicio'))) {
               const fallbackRes = await supabase
                 .from('emaee_especialidades_vinculadas')
                 .select(`
@@ -716,18 +725,27 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
                 const dataIni = v.data_inicio
                   ? (v.data_inicio.includes('T') ? v.data_inicio.split('T')[0] : v.data_inicio)
                   : (v.created_at ? v.created_at.split('T')[0] : getHojeBrasilia())
+                
+                const isFila = v.status === 'FILA_ESPERA' || (!v.status && !v.profissional_id)
+                
                 return {
                   id: v.id,
                   tempId: v.id,
-                  profissionalId: v.profissional_id,
-                  profissionalNome: func.nome ?? 'Profissional AEE',
+                  status: (v.status || (isFila ? 'FILA_ESPERA' : 'EM_ATENDIMENTO')) as any,
+                  prioridade: (v.prioridade || 'NORMAL') as any,
+                  motivoFila: v.motivo_fila || null,
+                  especialidade: v.especialidade || func.cargo || 'Especialista AEE',
+                  especialidadeOutros: v.especialidade_outros || null,
+                  dataSolicitacao: v.data_solicitacao || (v.created_at ? v.created_at.split('T')[0] : null),
+                  profissionalId: v.profissional_id || null,
+                  profissionalNome: func.nome ?? (isFila ? 'Aguardando Especialista' : 'Profissional AEE'),
                   profissionalCargo: func.cargo ?? v.especialidade ?? 'Especialista AEE',
-                  profissionalFoto: avatar,
-                  frequencia: v.frequencia ?? 'SEMANAL',
-                  diaSemana: v.dia_semana ?? 1,
-                  dataInicio: dataIni,
-                  horarioInicio: (v.horario_inicio || '08:00').substring(0, 5),
-                  horarioFim: (v.horario_fim || '09:00').substring(0, 5),
+                  profissionalFoto: avatar || null,
+                  frequencia: v.frequencia ?? (isFila ? null : 'SEMANAL'),
+                  diaSemana: v.dia_semana ?? null,
+                  dataInicio: isFila ? null : dataIni,
+                  horarioInicio: v.horario_inicio ? v.horario_inicio.substring(0, 5) : null,
+                  horarioFim: v.horario_fim ? v.horario_fim.substring(0, 5) : null,
                   isNovo: false
                 }
               })
@@ -1101,7 +1119,7 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
             const { data: vincData, error } = await supabase
               .from('emaee_especialidades_vinculadas')
               .select(`
-                id, profissional_id, especialidade, frequencia, dia_semana, horario_inicio, horario_fim, ativo,
+                id, profissional_id, especialidade, especialidade_outros, status, prioridade, data_solicitacao, motivo_fila, frequencia, dia_semana, data_inicio, horario_inicio, horario_fim, ativo,
                 funcionarios ( id, nome, cargo, foto_url, foto_avatar_path, foto_visualizacao_path, foto_updated_at )
               `)
               .eq('emaee_matricula_id', matExistente.id)
@@ -1115,14 +1133,21 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
                   id: v.id,
                   tempId: v.id,
                   profissionalId: v.profissional_id,
+                  especialidade: v.especialidade || func.cargo || 'Atendimento Pedagógico Especializado',
+                  especialidadeOutros: v.especialidade_outros || null,
+                  status: v.status || (v.profissional_id ? 'EM_ATENDIMENTO' : 'FILA_ESPERA'),
+                  prioridade: v.prioridade || 'NORMAL',
+                  dataSolicitacao: v.data_solicitacao || null,
+                  motivoFila: v.motivo_fila || null,
                   profissionalNome: func.nome ?? 'Profissional AEE',
                   profissionalCargo: func.cargo ?? v.especialidade ?? 'Especialista AEE',
                   profissionalFoto: avatar,
                   frequencia: v.frequencia ?? 'SEMANAL',
                   diaSemana: v.dia_semana ?? 1,
+                  dataInicio: v.data_inicio ?? null,
                   horarioInicio: (v.horario_inicio || '08:00').substring(0, 5),
                   horarioFim: (v.horario_fim || '09:00').substring(0, 5),
-                  isNovo: false
+                  isNovo: false,
                 }
               })
               setVinculosAEE(mapeados)
@@ -1475,7 +1500,7 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
           transtorno_tea: Boolean(condicoesSaude.transtorno_tea.selecionado),
           def_intelectual: Boolean(condicoesSaude.deficiencia_intelectual.selecionado),
           condicoes_saude: condicoesSaude,
-          status: statusMatricula || 'FILA_ESPERA'
+          status: statusMatricula || (vinculosAEE.filter(v => !v.isRemovido).some(v => v.status === 'EM_ATENDIMENTO' || (!v.status && v.profissionalId)) ? 'ATIVO' : 'FILA_ESPERA')
         }
 
         const { error: matriculaUpdateErr } = await (supabase
@@ -1502,14 +1527,19 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
         // 5. Atualizar vínculos existentes que foram editados
         const existentesParaAtualizar = vinculosAEE.filter((v): v is VinculoAEEConfig & { id: string } => Boolean(v.id && v.isEditado))
         for (const vinc of existentesParaAtualizar) {
+          const isFila = vinc.status === 'FILA_ESPERA' || (!vinc.status && !vinc.profissionalId)
           const updatePayload: any = {
-            profissional_id: vinc.profissionalId,
-            especialidade: vinc.profissionalCargo || 'Especialista AEE',
-            frequencia: vinc.frequencia,
-            dia_semana: vinc.diaSemana,
-            data_inicio: vinc.dataInicio || getHojeBrasilia(),
-            horario_inicio: vinc.horarioInicio.length === 5 ? `${vinc.horarioInicio}:00` : vinc.horarioInicio,
-            horario_fim: vinc.horarioFim.length === 5 ? `${vinc.horarioFim}:00` : vinc.horarioFim,
+            status: isFila ? 'FILA_ESPERA' : 'EM_ATENDIMENTO',
+            especialidade: vinc.especialidade || vinc.profissionalCargo || 'Especialista AEE',
+            especialidade_outros: vinc.especialidadeOutros || null,
+            prioridade: vinc.prioridade || 'NORMAL',
+            motivo_fila: vinc.motivoFila || null,
+            profissional_id: isFila ? null : vinc.profissionalId,
+            frequencia: isFila ? null : (vinc.frequencia || 'SEMANAL'),
+            dia_semana: isFila ? null : vinc.diaSemana,
+            data_inicio: isFila ? null : (vinc.dataInicio || getHojeBrasilia()),
+            horario_inicio: isFila ? null : (vinc.horarioInicio?.length === 5 ? `${vinc.horarioInicio}:00` : vinc.horarioInicio),
+            horario_fim: isFila ? null : (vinc.horarioFim?.length === 5 ? `${vinc.horarioFim}:00` : vinc.horarioFim),
             ativo: true
           }
 
@@ -1518,7 +1548,11 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
             .update(updatePayload)
             .eq('id', vinc.id)
 
-          if (errUpd && (errUpd.code === '42703' || errUpd.message?.includes('data_inicio'))) {
+          if (errUpd && (errUpd.code === '42703' || errUpd.message?.includes('status') || errUpd.message?.includes('data_inicio'))) {
+            delete updatePayload.status
+            delete updatePayload.prioridade
+            delete updatePayload.motivo_fila
+            delete updatePayload.especialidade_outros
             delete updatePayload.data_inicio
             await supabase
               .from('emaee_especialidades_vinculadas')
@@ -1530,28 +1564,36 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
         // 6. Inserir novos vínculos adicionados
         const novosParaInserir = vinculosAEE
           .filter(v => v.isNovo)
-          .map(v => ({
-            emaee_matricula_id: matriculaId,
-            profissional_id: v.profissionalId,
-            especialidade: v.profissionalCargo || 'Especialista AEE',
-            frequencia: v.frequencia,
-            dia_semana: v.diaSemana,
-            data_inicio: v.dataInicio || getHojeBrasilia(),
-            horario_inicio: v.horarioInicio.length === 5 ? `${v.horarioInicio}:00` : v.horarioInicio,
-            horario_fim: v.horarioFim.length === 5 ? `${v.horarioFim}:00` : v.horarioFim,
-            ativo: true
-          }))
+          .map(v => {
+            const isFila = v.status === 'FILA_ESPERA' || (!v.status && !v.profissionalId)
+            return {
+              emaee_matricula_id: matriculaId,
+              status: isFila ? 'FILA_ESPERA' : 'EM_ATENDIMENTO',
+              especialidade: v.especialidade || v.profissionalCargo || 'Especialista AEE',
+              especialidade_outros: v.especialidadeOutros || null,
+              prioridade: v.prioridade || 'NORMAL',
+              motivo_fila: v.motivoFila || null,
+              data_solicitacao: v.dataSolicitacao || getHojeBrasilia(),
+              profissional_id: isFila ? null : v.profissionalId,
+              frequencia: isFila ? null : (v.frequencia || 'SEMANAL'),
+              dia_semana: isFila ? null : v.diaSemana,
+              data_inicio: isFila ? null : (v.dataInicio || getHojeBrasilia()),
+              horario_inicio: isFila ? null : (v.horarioInicio?.length === 5 ? `${v.horarioInicio}:00` : v.horarioInicio),
+              horario_fim: isFila ? null : (v.horarioFim?.length === 5 ? `${v.horarioFim}:00` : v.horarioFim),
+              ativo: true
+            }
+          })
 
         if (novosParaInserir.length > 0) {
           let { error: errVinc } = await supabase
             .from('emaee_especialidades_vinculadas')
             .insert(novosParaInserir as any)
 
-          if (errVinc && (errVinc.code === '42703' || errVinc.message?.includes('data_inicio'))) {
-            const semDataInicio = novosParaInserir.map(({ data_inicio, ...rest }) => rest)
+          if (errVinc && (errVinc.code === '42703' || errVinc.message?.includes('status') || errVinc.message?.includes('data_inicio'))) {
+            const semNovosCampos = novosParaInserir.map(({ status, prioridade, motivo_fila, especialidade_outros, data_solicitacao, data_inicio, ...rest }) => rest)
             const fallbackRes = await supabase
               .from('emaee_especialidades_vinculadas')
-              .insert(semDataInicio as any)
+              .insert(semNovosCampos as any)
             errVinc = fallbackRes.error
           }
 
@@ -1866,7 +1908,7 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
         transtorno_tea: Boolean(condicoesSaude.transtorno_tea.selecionado),
         def_intelectual: Boolean(condicoesSaude.deficiencia_intelectual.selecionado),
         condicoes_saude: condicoesSaude,
-        status: statusMatricula || 'FILA_ESPERA'
+        status: statusMatricula || (vinculosAEE.some(v => v.status === 'EM_ATENDIMENTO' || (!v.status && v.profissionalId)) ? 'ATIVO' : 'FILA_ESPERA')
       }
 
       const { data: novaMatricula, error: matriculaError } = await (supabase
@@ -1888,7 +1930,7 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
             aluno_id: targetAlunoId,
             aluno_nome: nomeCompleto || alunoSelecionado?.nome,
             escola_atendimento_id: validEscolaAtendimento,
-            status: statusMatricula || 'FILA_ESPERA',
+            status: statusMatricula || (vinculosAEE.some(v => v.status === 'EM_ATENDIMENTO' || (!v.status && v.profissionalId)) ? 'ATIVO' : 'FILA_ESPERA'),
             ...insertPayload
           },
           performedBy: {
@@ -1903,27 +1945,35 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
 
       // 5. Inserir vínculos AEE se houver
       if (novaMatricula?.id && vinculosAEE.length > 0) {
-        const novosParaInserir = vinculosAEE.map(v => ({
-          emaee_matricula_id: novaMatricula.id,
-          profissional_id: v.profissionalId,
-          especialidade: v.profissionalCargo || 'Especialista AEE',
-          frequencia: v.frequencia,
-          dia_semana: v.diaSemana,
-          data_inicio: v.dataInicio || getHojeBrasilia(),
-          horario_inicio: v.horarioInicio.length === 5 ? `${v.horarioInicio}:00` : v.horarioInicio,
-          horario_fim: v.horarioFim.length === 5 ? `${v.horarioFim}:00` : v.horarioFim,
-          ativo: true
-        }))
+        const novosParaInserir = vinculosAEE.map(v => {
+          const isFila = v.status === 'FILA_ESPERA' || (!v.status && !v.profissionalId)
+          return {
+            emaee_matricula_id: novaMatricula.id,
+            status: isFila ? 'FILA_ESPERA' : 'EM_ATENDIMENTO',
+            especialidade: v.especialidade || v.profissionalCargo || 'Especialista AEE',
+            especialidade_outros: v.especialidadeOutros || null,
+            prioridade: v.prioridade || 'NORMAL',
+            motivo_fila: v.motivoFila || null,
+            data_solicitacao: v.dataSolicitacao || getHojeBrasilia(),
+            profissional_id: isFila ? null : v.profissionalId,
+            frequencia: isFila ? null : (v.frequencia || 'SEMANAL'),
+            dia_semana: isFila ? null : v.diaSemana,
+            data_inicio: isFila ? null : (v.dataInicio || getHojeBrasilia()),
+            horario_inicio: isFila ? null : (v.horarioInicio?.length === 5 ? `${v.horarioInicio}:00` : v.horarioInicio),
+            horario_fim: isFila ? null : (v.horarioFim?.length === 5 ? `${v.horarioFim}:00` : v.horarioFim),
+            ativo: true
+          }
+        })
 
         let { error: errVinc } = await supabase
           .from('emaee_especialidades_vinculadas')
           .insert(novosParaInserir as any)
 
-        if (errVinc && (errVinc.code === '42703' || errVinc.message?.includes('data_inicio'))) {
-          const semDataInicio = novosParaInserir.map(({ data_inicio, ...rest }) => rest)
+        if (errVinc && (errVinc.code === '42703' || errVinc.message?.includes('status') || errVinc.message?.includes('data_inicio'))) {
+          const semNovosCampos = novosParaInserir.map(({ status, prioridade, motivo_fila, especialidade_outros, data_solicitacao, data_inicio, ...rest }) => rest)
           const fallbackRes = await supabase
             .from('emaee_especialidades_vinculadas')
-            .insert(semDataInicio as any)
+            .insert(semNovosCampos as any)
           errVinc = fallbackRes.error
         }
 
@@ -1988,6 +2038,8 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
     adicionarVinculoAEE,
     editarVinculoAEE,
     abrirModalNovoVinculo,
+    abrirModalNovaFila,
+    modoModalVincular,
     atualizarVinculoAEE,
     removerVinculoAEE,
     modalVincularAEEOpen,

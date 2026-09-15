@@ -40,6 +40,7 @@ function ModalMatriculaEmaeeContent({ activeOpen, handleOpenChange }: { activeOp
     handleFotoCapturada,
     modalVincularAEEOpen,
     setModalVincularAEEOpen,
+    modoModalVincular,
     vinculosAEE,
     adicionarVinculoAEE,
     atualizarVinculoAEE,
@@ -253,6 +254,7 @@ function ModalMatriculaEmaeeContent({ activeOpen, handleOpenChange }: { activeOp
           vinculoParaEditar={vinculoParaEditar}
           onSalvarEdicao={atualizarVinculoAEE}
           escolaEmaeeId={escolaAtendimentoId}
+          modoInicial={modoModalVincular}
         />
       )}
     </StandardDialog>

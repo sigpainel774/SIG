@@ -152,6 +152,7 @@ export default function RelatorioEmaeeEstrategico({ selectedEscola }: RelatorioE
     return data.especialidades.map((esp) => ({
       name: esp.especialidade,
       atendimentos: esp.total_atendimentos,
+      fila: esp.total_fila || 0,
       profissionais: esp.total_profissionais,
       pacientes: esp.pacientes_atendidos,
     }))
@@ -462,7 +463,7 @@ export default function RelatorioEmaeeEstrategico({ selectedEscola }: RelatorioE
             {/* Gráfico de Sessões por Especialidade */}
             <div className="bg-card border border-border rounded-2xl p-6 shadow-sm">
               <h3 className="text-base font-bold text-foreground border-b border-border pb-3 mb-4">
-                Sessões Clínicas Realizadas ({anoLetivo})
+                Atendimentos & Fila por Especialidade ({anoLetivo})
               </h3>
               {especialidadesChartData.length > 0 ? (
                 <div className="h-[320px] w-full">
@@ -474,11 +475,9 @@ export default function RelatorioEmaeeEstrategico({ selectedEscola }: RelatorioE
                       <Tooltip
                         contentStyle={{ backgroundColor: '#18181b', borderColor: '#27272a', borderRadius: '12px', color: '#fff' }}
                       />
-                      <Bar dataKey="atendimentos" name="Sessões" fill="#6366f1" radius={[6, 6, 0, 0]}>
-                        {especialidadesChartData.map((_, index) => (
-                          <Cell key={`cell-${index}`} fill={PALETTE_ESPECIALIDADES[index % PALETTE_ESPECIALIDADES.length]} />
-                        ))}
-                      </Bar>
+                      <Legend wrapperStyle={{ paddingTop: '10px' }} />
+                      <Bar dataKey="atendimentos" name="Sessões / Ativos" fill="#6366f1" radius={[4, 4, 0, 0]} />
+                      <Bar dataKey="fila" name="Fila de Espera" fill="#f59e0b" radius={[4, 4, 0, 0]} />
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
@@ -499,7 +498,8 @@ export default function RelatorioEmaeeEstrategico({ selectedEscola }: RelatorioE
                   <thead>
                     <tr className="border-b border-border text-muted-foreground font-semibold">
                       <th className="pb-2">Especialidade</th>
-                      <th className="pb-2 text-center">Sessões</th>
+                      <th className="pb-2 text-center">Sessões / Atend.</th>
+                      <th className="pb-2 text-center">Em Fila</th>
                       <th className="pb-2 text-center">Profissionais</th>
                       <th className="pb-2 text-center">Pacientes</th>
                     </tr>
@@ -509,6 +509,15 @@ export default function RelatorioEmaeeEstrategico({ selectedEscola }: RelatorioE
                       <tr key={idx} className="hover:bg-hoverCustom/40">
                         <td className="py-2.5 font-medium text-foreground">{esp.especialidade}</td>
                         <td className="py-2.5 text-center font-bold text-primary">{esp.total_atendimentos}</td>
+                        <td className="py-2.5 text-center font-bold text-amber-500">
+                          {esp.total_fila && esp.total_fila > 0 ? (
+                            <span className="px-2 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-500">
+                              {esp.total_fila}
+                            </span>
+                          ) : (
+                            <span className="text-muted-foreground">0</span>
+                          )}
+                        </td>
                         <td className="py-2.5 text-center text-muted-foreground">{esp.total_profissionais}</td>
                         <td className="py-2.5 text-center text-foreground font-semibold">{esp.pacientes_atendidos}</td>
                       </tr>

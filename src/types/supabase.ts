@@ -1972,43 +1972,55 @@ export type Database = {
           ativo: boolean | null
           created_at: string | null
           data_inicio: string | null
-          dia_semana: number
+          data_solicitacao: string | null
+          dia_semana: number | null
           emaee_matricula_id: string
           especialidade: string
           especialidade_outros: string | null
           frequencia: string | null
           horario_fim: string | null
-          horario_inicio: string
+          horario_inicio: string | null
           id: string
-          profissional_id: string
+          motivo_fila: string | null
+          prioridade: string | null
+          profissional_id: string | null
+          status: string | null
         }
         Insert: {
           ativo?: boolean | null
           created_at?: string | null
           data_inicio?: string | null
-          dia_semana: number
+          data_solicitacao?: string | null
+          dia_semana?: number | null
           emaee_matricula_id: string
           especialidade: string
           especialidade_outros?: string | null
           frequencia?: string | null
           horario_fim?: string | null
-          horario_inicio: string
+          horario_inicio?: string | null
           id?: string
-          profissional_id: string
+          motivo_fila?: string | null
+          prioridade?: string | null
+          profissional_id?: string | null
+          status?: string | null
         }
         Update: {
           ativo?: boolean | null
           created_at?: string | null
           data_inicio?: string | null
-          dia_semana?: number
+          data_solicitacao?: string | null
+          dia_semana?: number | null
           emaee_matricula_id?: string
           especialidade?: string
           especialidade_outros?: string | null
           frequencia?: string | null
           horario_fim?: string | null
-          horario_inicio?: string
+          horario_inicio?: string | null
           id?: string
-          profissional_id?: string
+          motivo_fila?: string | null
+          prioridade?: string | null
+          profissional_id?: string | null
+          status?: string | null
         }
         Relationships: [
           {

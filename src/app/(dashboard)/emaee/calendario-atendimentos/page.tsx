@@ -184,13 +184,17 @@ export default function CalendarioAtendimentosPage() {
   const [dataAtendimentoSelecionada, setDataAtendimentoSelecionada] = useState<Date | null>(null)
 
   // Estados do Formulário de Registro dentro do Modal
-  const [statusForm, setStatusForm] = useState<'realizado' | 'nao_realizado' | 'pendente'>(
-    'pendente',
-  )
+  const [statusForm, setStatusForm] = useState<
+    'realizado' | 'nao_realizado' | 'pendente' | 'feriado' | 'recesso' | 'remarcado'
+  >('pendente')
   const [alunoNaoCompareceuForm, setAlunoNaoCompareceuForm] = useState<boolean>(false)
   const [motivoRecusaForm, setMotivoRecusaForm] = useState<string>('')
   const [observacoesForm, setObservacoesForm] = useState<string>('')
+  const [dataRemarcadaForm, setDataRemarcadaForm] = useState<string>('')
+  const [horarioRemarcadoForm, setHorarioRemarcadoForm] = useState<string>('')
+  const [motivoRemarcacaoForm, setMotivoRemarcacaoForm] = useState<string>('')
   const [salvandoRegistro, setSalvandoRegistro] = useState<boolean>(false)
+  const [processandoLoteDia, setProcessandoLoteDia] = useState<string | null>(null)
 
   // Modal de Exclusão
   const [modalExcluirOpen, setModalExcluirOpen] = useState(false)
@@ -387,7 +391,11 @@ export default function CalendarioAtendimentosPage() {
       if (espError) throw espError
 
       const filtradosUnidade = (espData || []).filter(
-        (item: any) => item.emaee_matriculas?.escola_atendimento_id === escolaEmaeeId,
+        (item: any) =>
+          item.emaee_matriculas?.escola_atendimento_id === escolaEmaeeId &&
+          item.status !== 'FILA_ESPERA' &&
+          Boolean(item.profissional_id) &&
+          Boolean(item.dia_semana),
       )
 
       // 2. Busca lista de profissionais AEE da unidade
@@ -745,11 +753,25 @@ export default function CalendarioAtendimentosPage() {
       setAlunoNaoCompareceuForm(Boolean(regExistente.aluno_nao_compareceu))
       setMotivoRecusaForm(regExistente.motivo_recusa_falta || '')
       setObservacoesForm(regExistente.observacoes || '')
+      setDataRemarcadaForm(regExistente.data_remarcada || '')
+      setHorarioRemarcadoForm(
+        regExistente.horario_remarcado
+          ? regExistente.horario_remarcado.substring(0, 5)
+          : item.horario_inicio
+            ? item.horario_inicio.substring(0, 5)
+            : '08:00',
+      )
+      setMotivoRemarcacaoForm(regExistente.motivo_remarcacao || '')
     } else {
       setStatusForm('pendente')
       setAlunoNaoCompareceuForm(false)
       setMotivoRecusaForm('')
       setObservacoesForm('')
+      setDataRemarcadaForm('')
+      setHorarioRemarcadoForm(
+        item.horario_inicio ? item.horario_inicio.substring(0, 5) : '08:00',
+      )
+      setMotivoRemarcacaoForm('')
     }
 
     setModalDetalhesOpen(true)
@@ -770,6 +792,13 @@ export default function CalendarioAtendimentosPage() {
       }
     }
 
+    if (statusForm === 'remarcado') {
+      if (!dataRemarcadaForm) {
+        toast.error('Informe a data para a qual o atendimento foi remarcado.')
+        return
+      }
+    }
+
     setSalvandoRegistro(true)
     const dataIso = formatarDataIso(dataAtendimentoSelecionada)
 
@@ -785,6 +814,9 @@ export default function CalendarioAtendimentosPage() {
           aluno_nao_compareceu: alunoNaoCompareceuForm,
           motivo_recusa_falta: motivoRecusaForm,
           observacoes: observacoesForm,
+          data_remarcada: statusForm === 'remarcado' ? dataRemarcadaForm : null,
+          horario_remarcado: statusForm === 'remarcado' ? horarioRemarcadoForm : null,
+          motivo_remarcacao: statusForm === 'remarcado' ? motivoRemarcacaoForm : null,
         }),
       })
 
@@ -804,7 +836,13 @@ export default function CalendarioAtendimentosPage() {
           ? 'Atendimento registrado como REALIZADO!'
           : statusForm === 'nao_realizado'
             ? 'Atendimento registrado como NÃO REALIZADO com sucesso!'
-            : 'Status de atendimento atualizado.',
+            : statusForm === 'remarcado'
+              ? 'Atendimento marcado como REMARCADO!'
+              : statusForm === 'feriado'
+                ? 'Atendimento marcado como FERIADO!'
+                : statusForm === 'recesso'
+                  ? 'Atendimento marcado como RECESSO ESCOLAR!'
+                  : 'Status de atendimento atualizado.',
       )
       setModalDetalhesOpen(false)
     } catch (err: any) {
@@ -812,6 +850,66 @@ export default function CalendarioAtendimentosPage() {
       toast.error(err?.message || 'Erro ao salvar registro de atendimento.')
     } finally {
       setSalvandoRegistro(false)
+    }
+  }
+
+  // Marcar dia inteiro como Feriado ou Recesso em lote
+  const handleMarcarDiaCompleto = async (
+    dataIso: string,
+    diaNum: number,
+    status: 'feriado' | 'recesso',
+  ) => {
+    const sessoes = gradePorDia[diaNum] || []
+    if (sessoes.length === 0) {
+      toast.info('Não há atendimentos agendados neste dia para marcar.')
+      return
+    }
+
+    const vinculoIds = sessoes.map((s) => s.id)
+    setProcessandoLoteDia(dataIso)
+
+    try {
+      const res = await fetch('/api/emaee/atendimentos/registros', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          batch: true,
+          registros: vinculoIds,
+          escola_id: escolaEmaeeId,
+          data_atendimento: dataIso,
+          status,
+          observacoes:
+            status === 'feriado'
+              ? 'Feriado cadastrado no calendário do EMAEE'
+              : 'Recesso escolar cadastrado no calendário do EMAEE',
+        }),
+      })
+
+      const data = await res.json()
+      if (!res.ok) {
+        throw new Error(data.error || 'Erro ao registrar em lote')
+      }
+
+      const novos: Record<string, any> = {}
+      ;(data.registros || []).forEach((r: any) => {
+        novos[`${r.vinculo_id}_${r.data_atendimento}`] = r
+      })
+
+      setRegistrosSemana((prev) => ({
+        ...prev,
+        ...novos,
+      }))
+
+      toast.success(
+        `Todos os ${vinculoIds.length} atendimentos do dia foram marcados como ${
+          status === 'feriado' ? 'FERIADO' : 'RECESSO ESCOLAR'
+        }!`,
+      )
+    } catch (err: any) {
+      console.error('Erro ao marcar dia em lote:', err)
+      toast.error(err.message || 'Erro ao marcar dia em lote.')
+    } finally {
+      setProcessandoLoteDia(null)
     }
   }
 
@@ -1057,7 +1155,7 @@ export default function CalendarioAtendimentosPage() {
               </div>
 
               {/* Botões Seletores de Status */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
                 {/* Opção 1: Realizado */}
                 <button
                   type="button"
@@ -1074,7 +1172,7 @@ export default function CalendarioAtendimentosPage() {
                   <CheckCircle2
                     className={`w-5 h-5 ${statusForm === 'realizado' ? 'text-emerald-500' : 'text-muted-foreground'}`}
                   />
-                  <span className="text-xs">Atendimento Realizado</span>
+                  <span className="text-xs">Realizado</span>
                   <span className="text-[9px] opacity-75 font-normal">Aluno presente</span>
                 </button>
 
@@ -1094,10 +1192,70 @@ export default function CalendarioAtendimentosPage() {
                     className={`w-5 h-5 ${statusForm === 'nao_realizado' ? 'text-rose-500' : 'text-muted-foreground'}`}
                   />
                   <span className="text-xs">Não Realizado</span>
-                  <span className="text-[9px] opacity-75 font-normal">Falta / Não ocorreu</span>
+                  <span className="text-[9px] opacity-75 font-normal">Falta / Ausência</span>
                 </button>
 
-                {/* Opção 3: Pendente */}
+                {/* Opção 3: Remarcado */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setStatusForm('remarcado')
+                    setAlunoNaoCompareceuForm(false)
+                  }}
+                  className={`p-3 rounded-xl border flex flex-col items-center justify-center gap-1.5 text-center transition-all cursor-pointer ${
+                    statusForm === 'remarcado'
+                      ? 'bg-amber-500/15 border-amber-500 text-amber-600 dark:text-amber-300 ring-2 ring-amber-500/30 font-bold shadow-xs'
+                      : 'bg-background border-border text-muted-foreground hover:border-amber-500/40 hover:text-foreground'
+                  }`}
+                >
+                  <CalendarRange
+                    className={`w-5 h-5 ${statusForm === 'remarcado' ? 'text-amber-500' : 'text-muted-foreground'}`}
+                  />
+                  <span className="text-xs">Remarcado</span>
+                  <span className="text-[9px] opacity-75 font-normal">Nova data/horário</span>
+                </button>
+
+                {/* Opção 4: Feriado */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setStatusForm('feriado')
+                    setAlunoNaoCompareceuForm(false)
+                  }}
+                  className={`p-3 rounded-xl border flex flex-col items-center justify-center gap-1.5 text-center transition-all cursor-pointer ${
+                    statusForm === 'feriado'
+                      ? 'bg-purple-500/15 border-purple-500 text-purple-600 dark:text-purple-300 ring-2 ring-purple-500/30 font-bold shadow-xs'
+                      : 'bg-background border-border text-muted-foreground hover:border-purple-500/40 hover:text-foreground'
+                  }`}
+                >
+                  <Sparkles
+                    className={`w-5 h-5 ${statusForm === 'feriado' ? 'text-purple-500' : 'text-muted-foreground'}`}
+                  />
+                  <span className="text-xs">Feriado</span>
+                  <span className="text-[9px] opacity-75 font-normal">Nacional / Local</span>
+                </button>
+
+                {/* Opção 5: Recesso Escolar */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setStatusForm('recesso')
+                    setAlunoNaoCompareceuForm(false)
+                  }}
+                  className={`p-3 rounded-xl border flex flex-col items-center justify-center gap-1.5 text-center transition-all cursor-pointer ${
+                    statusForm === 'recesso'
+                      ? 'bg-sky-500/15 border-sky-500 text-sky-600 dark:text-sky-300 ring-2 ring-sky-500/30 font-bold shadow-xs'
+                      : 'bg-background border-border text-muted-foreground hover:border-sky-500/40 hover:text-foreground'
+                  }`}
+                >
+                  <CalendarDays
+                    className={`w-5 h-5 ${statusForm === 'recesso' ? 'text-sky-500' : 'text-muted-foreground'}`}
+                  />
+                  <span className="text-xs">Recesso Escolar</span>
+                  <span className="text-[9px] opacity-75 font-normal">Calendário Letivo</span>
+                </button>
+
+                {/* Opção 6: Pendente */}
                 <button
                   type="button"
                   onClick={() => {
@@ -1115,7 +1273,7 @@ export default function CalendarioAtendimentosPage() {
                     className={`w-5 h-5 ${statusForm === 'pendente' ? 'text-primary' : 'text-muted-foreground'}`}
                   />
                   <span className="text-xs">Pendente</span>
-                  <span className="text-[9px] opacity-75 font-normal">Aguardando registro</span>
+                  <span className="text-[9px] opacity-75 font-normal">Em aberto</span>
                 </button>
               </div>
 
@@ -1160,8 +1318,103 @@ export default function CalendarioAtendimentosPage() {
                       rows={3}
                       value={motivoRecusaForm}
                       onChange={(e) => setMotivoRecusaForm(e.target.value)}
-                      placeholder="Descreva o motivo (ex: atestado médico apresentado, profissional em capacitação, feriado local, solicitação do responsável)..."
+                      placeholder="Descreva o motivo (ex: atestado médico apresentado, profissional em capacitação, solicitação da família)..."
                       className="w-full bg-background border border-border text-foreground rounded-xl p-2.5 text-xs outline-none focus:border-rose-500 transition-colors placeholder:text-muted-foreground/60 resize-none"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* CAMPOS CONDICIONAIS SE REMARCADO */}
+              {statusForm === 'remarcado' && (
+                <div className="p-3.5 bg-amber-500/5 border border-amber-500/25 rounded-xl space-y-3 animate-in fade-in-50">
+                  <div className="flex items-center gap-1.5 text-amber-600 dark:text-amber-400 font-bold text-xs">
+                    <CalendarRange className="w-4 h-4 shrink-0" />
+                    <span>Detalhes da Remarcação do Atendimento</span>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="space-y-1.5">
+                      <Label className="text-[11px] font-semibold text-foreground">
+                        Nova Data Prevista <span className="text-rose-500">*</span>
+                      </Label>
+                      <input
+                        type="date"
+                        value={dataRemarcadaForm}
+                        onChange={(e) => setDataRemarcadaForm(e.target.value)}
+                        className="w-full h-9 bg-background border border-border text-foreground rounded-xl px-2.5 text-xs outline-none focus:border-amber-500"
+                        required
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-[11px] font-semibold text-foreground">
+                        Novo Horário Previsto
+                      </Label>
+                      <input
+                        type="time"
+                        value={horarioRemarcadoForm}
+                        onChange={(e) => setHorarioRemarcadoForm(e.target.value)}
+                        className="w-full h-9 bg-background border border-border text-foreground rounded-xl px-2.5 text-xs outline-none focus:border-amber-500"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label className="text-[11px] font-semibold text-foreground">
+                      Motivo da Remarcação / Observações:
+                    </Label>
+                    <textarea
+                      rows={2}
+                      value={motivoRemarcacaoForm}
+                      onChange={(e) => setMotivoRemarcacaoForm(e.target.value)}
+                      placeholder="Ex: Ajuste solicitado pela família para reposição na sexta-feira..."
+                      className="w-full bg-background border border-border text-foreground rounded-xl p-2.5 text-xs outline-none focus:border-amber-500 transition-colors placeholder:text-muted-foreground/60 resize-none"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* CAMPOS SE FERIADO OU RECESSO */}
+              {(statusForm === 'feriado' || statusForm === 'recesso') && (
+                <div
+                  className={`p-3.5 rounded-xl space-y-2 animate-in fade-in-50 ${
+                    statusForm === 'feriado'
+                      ? 'bg-purple-500/5 border border-purple-500/25'
+                      : 'bg-sky-500/5 border border-sky-500/25'
+                  }`}
+                >
+                  <div
+                    className={`flex items-center gap-1.5 font-bold text-xs ${
+                      statusForm === 'feriado'
+                        ? 'text-purple-600 dark:text-purple-400'
+                        : 'text-sky-600 dark:text-sky-400'
+                    }`}
+                  >
+                    {statusForm === 'feriado' ? (
+                      <Sparkles className="w-4 h-4 shrink-0" />
+                    ) : (
+                      <CalendarDays className="w-4 h-4 shrink-0" />
+                    )}
+                    <span>
+                      {statusForm === 'feriado'
+                        ? 'Sessão Não Ocorrerá por Motivo de Feriado'
+                        : 'Sessão Não Ocorrerá por Motivo de Recesso Escolar'}
+                    </span>
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-[11px] text-muted-foreground">
+                      Descrição do Feriado / Recesso (opcional):
+                    </Label>
+                    <input
+                      type="text"
+                      value={observacoesForm}
+                      onChange={(e) => setObservacoesForm(e.target.value)}
+                      placeholder={
+                        statusForm === 'feriado'
+                          ? 'Ex: Feriado da Proclamação da República'
+                          : 'Ex: Recesso escolar de meio de ano'
+                      }
+                      className="w-full h-9 bg-background border border-border text-foreground rounded-xl px-2.5 text-xs outline-none focus:border-primary"
                     />
                   </div>
                 </div>
@@ -1434,7 +1687,7 @@ export default function CalendarioAtendimentosPage() {
                 variant="ghost"
                 size="icon"
                 onClick={() => handleNavegarSemana('anterior')}
-                className="h-8 w-8 rounded-lg hover:bg-secondary text-foreground"
+                className="h-8 w-8 rounded-lg hover:bg-secondary text-foreground cursor-pointer"
                 title="Semana Anterior"
               >
                 <ChevronLeft className="w-4 h-4" />
@@ -1444,7 +1697,7 @@ export default function CalendarioAtendimentosPage() {
                 variant="ghost"
                 size="icon"
                 onClick={() => handleNavegarSemana('proxima')}
-                className="h-8 w-8 rounded-lg hover:bg-secondary text-foreground"
+                className="h-8 w-8 rounded-lg hover:bg-secondary text-foreground cursor-pointer"
                 title="Próxima Semana"
               >
                 <ChevronRight className="w-4 h-4" />
@@ -1465,10 +1718,52 @@ export default function CalendarioAtendimentosPage() {
               variant="outline"
               size="sm"
               onClick={handleIrSemanaAtual}
-              className="text-xs h-8 rounded-xl border-border bg-background hover:bg-secondary text-foreground font-medium"
+              className="text-xs h-8 rounded-xl border-border bg-background hover:bg-secondary text-foreground font-medium cursor-pointer"
             >
               Semana Atual
             </Button>
+
+            {/* Seletor Rápido de Mês e Pular para Data de 2026 */}
+            <div className="flex items-center gap-1.5 pl-1 border-l border-border/60">
+              <Select
+                value={String(dataSemanaBase.getMonth())}
+                onValueChange={(val) => {
+                  if (val != null) {
+                    const m = parseInt(val, 10)
+                    const novaData = new Date(2026, m, 1)
+                    setDataSemanaBase(getSegundaFeira(novaData))
+                  }
+                }}
+              >
+                <SelectTrigger className="h-8 w-32 bg-background border-border text-foreground text-xs rounded-xl">
+                  <SelectValue placeholder="Mês em 2026" />
+                </SelectTrigger>
+                <SelectContent className="bg-popover border-border text-popover-foreground">
+                  {MESES_NOMES.map((nome, idx) => (
+                    <SelectItem key={idx} value={String(idx)}>
+                      {nome} 2026
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              <input
+                type="date"
+                min="2026-01-01"
+                max="2026-12-31"
+                value={formatarDataIso(dataSemanaBase)}
+                onChange={(e) => {
+                  if (e.target.value) {
+                    const [ano, mes, dia] = e.target.value.split('-').map(Number)
+                    if (ano && mes && dia) {
+                      setDataSemanaBase(getSegundaFeira(new Date(ano, mes - 1, dia)))
+                    }
+                  }
+                }}
+                className="h-8 text-xs bg-background border border-border text-foreground rounded-xl px-2.5 outline-none focus:border-primary"
+                title="Pular para qualquer semana de 2026"
+              />
+            </div>
           </div>
 
           {/* Alternador de Modo de Visualização */}
@@ -1514,7 +1809,7 @@ export default function CalendarioAtendimentosPage() {
           </div>
         </div>
 
-        {/* Barra de Busca e Filtros Rápidos */}
+        {/* Barra de Busca e Legenda Completa de Cores */}
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
           <div className="relative flex-1">
             <Search className="w-4 h-4 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2" />
@@ -1527,12 +1822,26 @@ export default function CalendarioAtendimentosPage() {
             />
           </div>
 
-          <div className="flex items-center gap-2">
-            <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground font-medium">
-              <span className="inline-block w-3 h-1 bg-emerald-500 rounded-full" /> Realizado
-              <span className="inline-block w-3 h-1 bg-rose-500 rounded-full ml-2" /> Não Realizado
-              <span className="inline-block w-3 h-1 bg-muted-foreground/40 rounded-full ml-2" />{' '}
-              Pendente
+          <div className="flex items-center gap-2 flex-wrap">
+            <div className="flex items-center gap-2 text-[11px] text-muted-foreground font-medium flex-wrap">
+              <span className="inline-flex items-center gap-1">
+                <span className="w-2.5 h-2.5 bg-emerald-500 rounded-full" /> Realizado
+              </span>
+              <span className="inline-flex items-center gap-1">
+                <span className="w-2.5 h-2.5 bg-rose-500 rounded-full" /> Falta / Não Realizado
+              </span>
+              <span className="inline-flex items-center gap-1">
+                <span className="w-2.5 h-2.5 bg-amber-500 rounded-full" /> Remarcado
+              </span>
+              <span className="inline-flex items-center gap-1">
+                <span className="w-2.5 h-2.5 bg-purple-500 rounded-full" /> Feriado
+              </span>
+              <span className="inline-flex items-center gap-1">
+                <span className="w-2.5 h-2.5 bg-sky-500 rounded-full" /> Recesso
+              </span>
+              <span className="inline-flex items-center gap-1">
+                <span className="w-2.5 h-2.5 bg-muted-foreground/40 rounded-full" /> Pendente
+              </span>
             </div>
           </div>
         </div>
@@ -1671,26 +1980,59 @@ export default function CalendarioAtendimentosPage() {
                           : 'border-border'
                       }`}
                     >
-                      {/* Cabeçalho do Dia com Data Real */}
-                      <div className="flex items-center justify-between pb-2.5 border-b border-border">
-                        <div>
-                          <div className="flex items-center gap-1.5">
-                            <span className="font-bold text-foreground text-xs">
-                              {DIAS_SEMANA_NOMES[diaNum]}
-                            </span>
-                            {isHojeDia && (
-                              <span className="text-[9px] bg-sky-500 text-white font-bold px-1.5 py-0.2 rounded-full">
-                                Hoje
+                      {/* Cabeçalho do Dia com Data Real e Ações em Lote */}
+                      <div className="flex flex-col gap-2 pb-2.5 border-b border-border">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <div className="flex items-center gap-1.5">
+                              <span className="font-bold text-foreground text-xs">
+                                {DIAS_SEMANA_NOMES[diaNum]}
                               </span>
-                            )}
+                              {isHojeDia && (
+                                <span className="text-[9px] bg-sky-500 text-white font-bold px-1.5 py-0.2 rounded-full">
+                                  Hoje
+                                </span>
+                              )}
+                            </div>
+                            <span className="text-[11px] font-semibold text-primary block mt-0.5">
+                              {diaObj.dataCurta}
+                            </span>
                           </div>
-                          <span className="text-[11px] font-semibold text-primary block mt-0.5">
-                            {diaObj.dataCurta}
+                          <span className="text-[10px] font-semibold text-muted-foreground px-2 py-0.5 rounded-full bg-secondary/50 border border-border/60">
+                            {sessoes.length} {sessoes.length === 1 ? 'sessão' : 'sessões'}
                           </span>
                         </div>
-                        <span className="text-[10px] font-semibold text-muted-foreground px-2 py-0.5 rounded-full bg-secondary/50 border border-border/60">
-                          {sessoes.length} {sessoes.length === 1 ? 'sessão' : 'sessões'}
-                        </span>
+
+                        {/* Botões de Ação Rápida no Dia (Feriado / Recesso em Lote) */}
+                        {sessoes.length > 0 && (
+                          <div className="flex items-center justify-end gap-1.5 pt-1 border-t border-border/40">
+                            <span className="text-[9px] text-muted-foreground mr-auto">
+                              Marcar dia:
+                            </span>
+                            <button
+                              type="button"
+                              disabled={processandoLoteDia === diaObj.dataIso}
+                              onClick={() =>
+                                handleMarcarDiaCompleto(diaObj.dataIso, diaNum, 'feriado')
+                              }
+                              className="text-[9.5px] px-2 py-0.5 rounded-md bg-purple-500/10 text-purple-600 dark:text-purple-300 border border-purple-500/20 hover:bg-purple-500/20 cursor-pointer font-bold transition-all disabled:opacity-50"
+                              title="Marcar todos os atendimentos deste dia como Feriado"
+                            >
+                              Feriado
+                            </button>
+                            <button
+                              type="button"
+                              disabled={processandoLoteDia === diaObj.dataIso}
+                              onClick={() =>
+                                handleMarcarDiaCompleto(diaObj.dataIso, diaNum, 'recesso')
+                              }
+                              className="text-[9.5px] px-2 py-0.5 rounded-md bg-sky-500/10 text-sky-600 dark:text-sky-300 border border-sky-500/20 hover:bg-sky-500/20 cursor-pointer font-bold transition-all disabled:opacity-50"
+                              title="Marcar todos os atendimentos deste dia como Recesso Escolar"
+                            >
+                              Recesso
+                            </button>
+                          </div>
+                        )}
                       </div>
 
                       {/* Cards de Atendimento do Dia */}
@@ -1717,6 +2059,9 @@ export default function CalendarioAtendimentosPage() {
                             // Classes de Borda Superior conforme especificação:
                             // Verde: Houve atendimento
                             // Vermelho: Não houve atendimento
+                            // Âmbar: Remarcado
+                            // Roxo: Feriado
+                            // Azul: Recesso
                             // Neutro: Pendente
                             let borderTopClass = 'border-t border-t-border'
                             if (status === 'realizado') {
@@ -1724,6 +2069,14 @@ export default function CalendarioAtendimentosPage() {
                                 'border-t-4 border-t-emerald-500 shadow-emerald-500/5'
                             } else if (status === 'nao_realizado') {
                               borderTopClass = 'border-t-4 border-t-rose-500 shadow-rose-500/5'
+                            } else if (status === 'remarcado') {
+                              borderTopClass =
+                                'border-t-4 border-t-amber-500 shadow-amber-500/5'
+                            } else if (status === 'feriado') {
+                              borderTopClass =
+                                'border-t-4 border-t-purple-500 shadow-purple-500/5'
+                            } else if (status === 'recesso') {
+                              borderTopClass = 'border-t-4 border-t-sky-500 shadow-sky-500/5'
                             }
 
                             return (
@@ -1766,6 +2119,36 @@ export default function CalendarioAtendimentosPage() {
                                             : 'Não Realizado'}
                                         </span>
                                       </span>
+                                    ) : status === 'remarcado' ? (
+                                      <span
+                                        className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-amber-500/15 text-amber-600 dark:text-amber-300 border border-amber-500/30 flex items-center gap-1"
+                                        title={
+                                          reg?.data_remarcada
+                                            ? `Remarcado para ${formatarDataCurta(
+                                                new Date(reg.data_remarcada),
+                                              )}`
+                                            : 'Atendimento Remarcado'
+                                        }
+                                      >
+                                        <CalendarRange className="w-2.5 h-2.5" />
+                                        <span>
+                                          {reg?.data_remarcada
+                                            ? `Remarcado (${formatarDataCurta(
+                                                new Date(reg.data_remarcada),
+                                              )})`
+                                            : 'Remarcado'}
+                                        </span>
+                                      </span>
+                                    ) : status === 'feriado' ? (
+                                      <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-purple-500/15 text-purple-600 dark:text-purple-300 border border-purple-500/30 flex items-center gap-1">
+                                        <Sparkles className="w-2.5 h-2.5" />
+                                        <span>Feriado</span>
+                                      </span>
+                                    ) : status === 'recesso' ? (
+                                      <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-sky-500/15 text-sky-600 dark:text-sky-300 border border-sky-500/30 flex items-center gap-1">
+                                        <CalendarDays className="w-2.5 h-2.5" />
+                                        <span>Recesso</span>
+                                      </span>
                                     ) : (
                                       <span
                                         className={`text-[9px] font-semibold px-2 py-0.5 rounded border uppercase tracking-normal break-words max-w-[130px] leading-tight text-center ${colors.badge}`}
@@ -1794,6 +2177,28 @@ export default function CalendarioAtendimentosPage() {
                                     {status === 'nao_realizado' && reg?.motivo_recusa_falta && (
                                       <div className="text-[9.5px] text-rose-500 font-medium italic truncate mt-1">
                                         Obs: {reg.motivo_recusa_falta}
+                                      </div>
+                                    )}
+                                    {status === 'remarcado' && reg?.data_remarcada && (
+                                      <div className="text-[9.5px] text-amber-500 font-medium truncate mt-1 flex items-center gap-1">
+                                        <CalendarRange className="w-3 h-3 shrink-0" />
+                                        <span>
+                                          Nova data:{' '}
+                                          {formatarDataCurta(new Date(reg.data_remarcada))}
+                                          {reg?.horario_remarcado
+                                            ? ` às ${reg.horario_remarcado.substring(0, 5)}`
+                                            : ''}
+                                        </span>
+                                      </div>
+                                    )}
+                                    {status === 'feriado' && reg?.observacoes && (
+                                      <div className="text-[9.5px] text-purple-500 font-medium truncate mt-1">
+                                        {reg.observacoes}
+                                      </div>
+                                    )}
+                                    {status === 'recesso' && reg?.observacoes && (
+                                      <div className="text-[9.5px] text-sky-500 font-medium truncate mt-1">
+                                        {reg.observacoes}
                                       </div>
                                     )}
                                   </div>
@@ -2035,9 +2440,15 @@ export default function CalendarioAtendimentosPage() {
 
                           let borderTopClass = 'border-t border-t-border'
                           if (status === 'realizado')
-                            borderTopClass = 'border-t-4 border-t-emerald-500'
-                          if (status === 'nao_realizado')
-                            borderTopClass = 'border-t-4 border-t-rose-500'
+                            borderTopClass = 'border-t-4 border-t-emerald-500 shadow-emerald-500/5'
+                          else if (status === 'nao_realizado')
+                            borderTopClass = 'border-t-4 border-t-rose-500 shadow-rose-500/5'
+                          else if (status === 'remarcado')
+                            borderTopClass = 'border-t-4 border-t-amber-500 shadow-amber-500/5'
+                          else if (status === 'feriado')
+                            borderTopClass = 'border-t-4 border-t-purple-500 shadow-purple-500/5'
+                          else if (status === 'recesso')
+                            borderTopClass = 'border-t-4 border-t-sky-500 shadow-sky-500/5'
 
                           return (
                             <div
@@ -2061,6 +2472,18 @@ export default function CalendarioAtendimentosPage() {
                                   ) : status === 'nao_realizado' ? (
                                     <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-rose-500/15 text-rose-600 dark:text-rose-300 border border-rose-500/30">
                                       Não Realizado
+                                    </span>
+                                  ) : status === 'remarcado' ? (
+                                    <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-amber-500/15 text-amber-600 dark:text-amber-300 border border-amber-500/30">
+                                      Remarcado
+                                    </span>
+                                  ) : status === 'feriado' ? (
+                                    <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-purple-500/15 text-purple-600 dark:text-purple-300 border border-purple-500/30">
+                                      Feriado
+                                    </span>
+                                  ) : status === 'recesso' ? (
+                                    <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-sky-500/15 text-sky-600 dark:text-sky-300 border border-sky-500/30">
+                                      Recesso
                                     </span>
                                   ) : (
                                     <span
@@ -2220,6 +2643,34 @@ export default function CalendarioAtendimentosPage() {
                           <span className="inline-flex items-center gap-1 text-[11px] font-bold text-rose-500 bg-rose-500/10 px-2 py-0.5 rounded-full border border-rose-500/20">
                             <XCircle className="w-3 h-3" />
                             <span>Não Realizado</span>
+                          </span>
+                        )
+                      }
+                      if (status === 'remarcado') {
+                        return (
+                          <span className="inline-flex items-center gap-1 text-[11px] font-bold text-amber-500 bg-amber-500/10 px-2 py-0.5 rounded-full border border-amber-500/20">
+                            <CalendarRange className="w-3 h-3" />
+                            <span>
+                              {reg?.data_remarcada
+                                ? `Remarcado (${formatarDataCurta(new Date(reg.data_remarcada))})`
+                                : 'Remarcado'}
+                            </span>
+                          </span>
+                        )
+                      }
+                      if (status === 'feriado') {
+                        return (
+                          <span className="inline-flex items-center gap-1 text-[11px] font-bold text-purple-500 bg-purple-500/10 px-2 py-0.5 rounded-full border border-purple-500/20">
+                            <Sparkles className="w-3 h-3" />
+                            <span>Feriado</span>
+                          </span>
+                        )
+                      }
+                      if (status === 'recesso') {
+                        return (
+                          <span className="inline-flex items-center gap-1 text-[11px] font-bold text-sky-500 bg-sky-500/10 px-2 py-0.5 rounded-full border border-sky-500/20">
+                            <CalendarDays className="w-3 h-3" />
+                            <span>Recesso</span>
                           </span>
                         )
                       }

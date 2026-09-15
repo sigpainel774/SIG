@@ -13,7 +13,11 @@ import {
   Heart,
   AlertCircle,
   CheckCircle2,
-  FileText
+  FileText,
+  Filter,
+  Sparkles,
+  User,
+  CalendarDays
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
@@ -21,6 +25,7 @@ import Link from 'next/link'
 import { toast } from 'sonner'
 import { StandardDialog } from '@/components/ui/standard-dialog'
 import { getAvatarUrl } from '@/lib/photoHelper'
+import { ESPECIALIDADES_CANONICAS } from '@/components/modals/modal-matricula-emaee/components/ModalVincularProfissionalAlunoAEE'
 
 export default function FilaEsperaPage() {
   const { escolaAtivaId, funcionario } = useAuthStore()
@@ -28,6 +33,8 @@ export default function FilaEsperaPage() {
   const [fila, setFila] = useState<any[]>([])
   const [carregando, setCarregando] = useState(true)
   const [busca, setBusca] = useState('')
+  const [filtroEspecialidade, setFiltroEspecialidade] = useState('TODAS')
+  const [filtroTipoFila, setFiltroTipoFila] = useState<'TODAS' | 'GERAL' | 'PARCIAL'>('TODAS')
   const [admitindo, setAdmitindo] = useState(false)
 
   const isMounted = useRef(true)
@@ -70,9 +77,29 @@ export default function FilaEsperaPage() {
           escola_origem_uf,
           escolas:escola_regular_id (
             nome
+          ),
+          especialidades:emaee_especialidades_vinculadas (
+            id,
+            status,
+            especialidade,
+            especialidade_outros,
+            prioridade,
+            motivo_fila,
+            data_solicitacao,
+            profissional_id,
+            ativo,
+            frequencia,
+            dia_semana,
+            horario_inicio,
+            horario_fim,
+            funcionarios:profissional_id (
+              id,
+              nome,
+              cargo,
+              foto_url
+            )
           )
         `)
-        .eq('status', 'FILA_ESPERA')
         .is('deleted_at', null)
         .order('data_matricula', { ascending: true })
 
@@ -84,7 +111,15 @@ export default function FilaEsperaPage() {
 
       if (error) throw error
       if (isMounted.current) {
-        setFila(data ?? [])
+        // Aluno está na fila se status geral for FILA_ESPERA OU possuir qualquer especialidade em FILA_ESPERA ativa
+        const apenasFila = (data ?? []).filter((m: any) => {
+          const isFilaGlobal = m.status === 'FILA_ESPERA'
+          const temDemandaFila = (m.especialidades || []).some(
+            (e: any) => e.ativo && (e.status === 'FILA_ESPERA' || !e.profissional_id)
+          )
+          return isFilaGlobal || temDemandaFila
+        })
+        setFila(apenasFila)
       }
     } catch (err: any) {
       console.error('Erro ao carregar fila de espera:', err)
@@ -109,9 +144,35 @@ export default function FilaEsperaPage() {
       const cpfAluno = (item.alunos?.cpf ?? '').toLowerCase()
       const escolaNome = (item.escola_origem_nome ?? item.escolas?.nome ?? '').toLowerCase()
       const txtBusca = busca.toLowerCase().trim()
-      return nomeAluno.includes(txtBusca) || cpfAluno.includes(txtBusca) || escolaNome.includes(txtBusca)
+
+      const matchBusca = nomeAluno.includes(txtBusca) || cpfAluno.includes(txtBusca) || escolaNome.includes(txtBusca)
+      if (!matchBusca) return false
+
+      const espAtivas = (item.especialidades || []).filter(
+        (e: any) => e.ativo && (e.status === 'EM_ATENDIMENTO' || (!e.status && e.profissional_id))
+      )
+      const espFila = (item.especialidades || []).filter(
+        (e: any) => e.ativo && (e.status === 'FILA_ESPERA' || (!e.status && !e.profissional_id))
+      )
+
+      // Filtro de Tipo de Fila (Geral vs Parcial)
+      if (filtroTipoFila === 'GERAL') {
+        if (espAtivas.length > 0) return false
+      } else if (filtroTipoFila === 'PARCIAL') {
+        if (espAtivas.length === 0 || espFila.length === 0) return false
+      }
+
+      // Filtro de Especialidade Específica
+      if (filtroEspecialidade !== 'TODAS') {
+        const matchEsp = espFila.some(
+          (e: any) => (e.especialidade || '').toLowerCase() === filtroEspecialidade.toLowerCase()
+        )
+        if (!matchEsp) return false
+      }
+
+      return true
     })
-  }, [fila, busca])
+  }, [fila, busca, filtroEspecialidade, filtroTipoFila])
 
   const handleAdmitir = async () => {
     if (!selectedPaciente) return
@@ -170,25 +231,33 @@ export default function FilaEsperaPage() {
   return (
     <div className="space-y-6">
       {/* Top Header */}
-      <div className="flex items-center gap-3">
-        <Link href="/emaee/pacientes">
-          <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground">
-            <ArrowLeft className="w-5 h-5" />
-          </Button>
-        </Link>
-        <div>
-          <h1 className="text-2xl font-bold text-foreground tracking-tight flex items-center gap-2">
-            <Clock className="w-7 h-7 text-[#0090ff]" />
-            Fila de Espera (Acolhimento)
-          </h1>
-          <p className="text-xs text-muted-foreground">
-            Pacientes aguardando triagem pedagógica ou atendimento clínico no EMAEE.
-          </p>
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <div className="flex items-center gap-3">
+          <Link href="/emaee/pacientes">
+            <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground">
+              <ArrowLeft className="w-5 h-5" />
+            </Button>
+          </Link>
+          <div>
+            <h1 className="text-2xl font-bold text-foreground tracking-tight flex items-center gap-2">
+              <Clock className="w-7 h-7 text-[#0090ff]" />
+              Fila de Espera por Especialidade
+            </h1>
+            <p className="text-xs text-muted-foreground">
+              Acompanhe a demanda reprimida por área e admita pacientes conforme a disponibilidade de vagas.
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <span className="text-xs font-bold text-muted-foreground bg-card border border-border px-3 py-1.5 rounded-xl shadow-sm">
+            Total em Fila: <strong className="text-foreground">{filaFiltrada.length}</strong>
+          </span>
         </div>
       </div>
 
-      {/* Barra de Filtros */}
-      <div className="bg-card text-card-foreground border border-border rounded-2xl p-4 flex flex-col md:flex-row md:items-center gap-4 shadow-sm">
+      {/* Barra de Filtros e Segmentação */}
+      <div className="bg-card text-card-foreground border border-border rounded-2xl p-4 flex flex-col md:flex-row md:items-center gap-3.5 shadow-sm">
         <div className="flex-1 relative">
           <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/60" />
           <input
@@ -196,8 +265,62 @@ export default function FilaEsperaPage() {
             placeholder="Pesquisar paciente por nome ou CPF..."
             value={busca}
             onChange={(e) => setBusca(e.target.value)}
-            className="w-full bg-background border border-border text-foreground rounded-xl pl-10 pr-4 py-2.5 text-sm outline-none focus:border-primary/50 transition-colors placeholder-muted-foreground/50"
+            className="w-full bg-background border border-border text-foreground rounded-xl pl-10 pr-4 py-2 text-xs outline-none focus:border-primary/50 transition-colors placeholder-muted-foreground/50"
           />
+        </div>
+
+        {/* Filtro por Especialidade */}
+        <div className="flex items-center gap-2">
+          <Filter className="w-4 h-4 text-muted-foreground shrink-0" />
+          <select
+            value={filtroEspecialidade}
+            onChange={(e) => setFiltroEspecialidade(e.target.value)}
+            className="bg-background border border-border text-foreground rounded-xl px-3 py-2 text-xs font-medium outline-none cursor-pointer focus:border-primary/50"
+          >
+            <option value="TODAS">Todas as Especialidades</option>
+            {ESPECIALIDADES_CANONICAS.map((esp) => (
+              <option key={esp} value={esp}>
+                {esp}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* Segmentação de Tipo de Fila */}
+        <div className="flex items-center bg-muted/60 dark:bg-[#181818] p-1 rounded-xl border border-border gap-1 text-xs">
+          <button
+            type="button"
+            onClick={() => setFiltroTipoFila('TODAS')}
+            className={`px-3 py-1.5 rounded-lg font-bold transition-all cursor-pointer ${
+              filtroTipoFila === 'TODAS'
+                ? 'bg-card dark:bg-[#222226] text-primary shadow-sm'
+                : 'text-muted-foreground hover:text-foreground'
+            }`}
+          >
+            Todas
+          </button>
+          <button
+            type="button"
+            onClick={() => setFiltroTipoFila('GERAL')}
+            className={`px-3 py-1.5 rounded-lg font-bold transition-all cursor-pointer ${
+              filtroTipoFila === 'GERAL'
+                ? 'bg-card dark:bg-[#222226] text-primary shadow-sm'
+                : 'text-muted-foreground hover:text-foreground'
+            }`}
+          >
+            Fila Geral
+          </button>
+          <button
+            type="button"
+            onClick={() => setFiltroTipoFila('PARCIAL')}
+            className={`px-3 py-1.5 rounded-lg font-bold transition-all cursor-pointer ${
+              filtroTipoFila === 'PARCIAL'
+                ? 'bg-card dark:bg-[#222226] text-amber-500 shadow-sm'
+                : 'text-muted-foreground hover:text-foreground'
+            }`}
+          >
+            Fila Parcial
+          </button>
         </div>
       </div>
 
@@ -210,7 +333,7 @@ export default function FilaEsperaPage() {
       ) : filaFiltrada.length === 0 ? (
         <div className="text-center py-20 bg-card/50 rounded-2xl border border-border text-muted-foreground flex flex-col items-center gap-3 shadow-sm">
           <Heart className="w-12 h-12 text-muted-foreground/30" />
-          <span className="text-sm">Nenhum paciente aguardando na fila de espera no momento.</span>
+          <span className="text-sm">Nenhum paciente aguardando na fila de espera com os filtros selecionados.</span>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -220,28 +343,34 @@ export default function FilaEsperaPage() {
               : 'Não informada'
 
             const avatarUrl = getAvatarUrl(paciente.alunos)
+            const espAtivas = (paciente.especialidades || []).filter(
+              (e: any) => e.ativo && (e.status === 'EM_ATENDIMENTO' || (!e.status && e.profissional_id))
+            )
+            const espFila = (paciente.especialidades || []).filter(
+              (e: any) => e.ativo && (e.status === 'FILA_ESPERA' || (!e.status && !e.profissional_id))
+            )
 
             return (
               <Card
                 key={paciente.id}
                 className="bg-card border border-border hover:border-primary/30 rounded-2xl p-5 flex flex-col justify-between gap-4 transition-all duration-200 shadow-sm relative group"
               >
-                <div>
+                <div className="space-y-3">
                   <div className="flex items-start justify-between gap-2 border-b border-border pb-3">
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-3 min-w-0">
                       {avatarUrl ? (
                         <img
                           src={avatarUrl}
                           alt={paciente.alunos?.nome ?? 'Aluno'}
-                          className="w-10 h-10 rounded-xl object-cover border border-border"
+                          className="w-10 h-10 rounded-xl object-cover border border-border shrink-0"
                         />
                       ) : (
-                        <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary font-bold">
+                        <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary font-bold shrink-0">
                           {paciente.alunos?.nome?.substring(0, 2).toUpperCase() ?? 'AL'}
                         </div>
                       )}
-                      <div>
-                        <h3 className="text-sm font-semibold text-foreground truncate max-w-[160px]" title={paciente.alunos?.nome}>
+                      <div className="min-w-0">
+                        <h3 className="text-sm font-semibold text-foreground truncate" title={paciente.alunos?.nome}>
                           {paciente.alunos?.nome ?? 'Sem nome'}
                         </h3>
                         <span className="text-[10px] text-muted-foreground block">
@@ -251,7 +380,7 @@ export default function FilaEsperaPage() {
                     </div>
                   </div>
 
-                  <div className="space-y-2 text-xs font-normal text-muted-foreground pt-3.5">
+                  <div className="space-y-2 text-xs font-normal text-muted-foreground">
                     {paciente.cid_codigo && (
                       <div className="flex items-center gap-1.5 text-rose-500 dark:text-rose-400 font-semibold">
                         <AlertCircle className="w-3.5 h-3.5 shrink-0" />
@@ -266,31 +395,83 @@ export default function FilaEsperaPage() {
                           : (paciente.escolas?.nome ?? 'Sem escola vinculada')}
                       </span>
                     </div>
+
+                    {/* Bloco de Especialidades em Fila */}
+                    <div className="pt-2 border-t border-border space-y-1.5">
+                      <p className="text-[11px] font-bold text-foreground flex items-center gap-1.5">
+                        <Clock className="w-3.5 h-3.5 text-amber-500" />
+                        Aguardando Vaga em:
+                      </p>
+                      {espFila.length === 0 ? (
+                        <span className="text-[11px] text-amber-600 dark:text-amber-400 font-medium">
+                          Fila Geral (Aguardando Triagem/Acolhimento)
+                        </span>
+                      ) : (
+                        <div className="flex flex-wrap gap-1.5">
+                          {espFila.map((ef: any) => (
+                            <span
+                              key={ef.id}
+                              className="px-2 py-0.5 rounded-lg bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/20 text-[10px] font-bold flex items-center gap-1"
+                            >
+                              <span>{ef.especialidade}</span>
+                              {ef.prioridade && ef.prioridade !== 'NORMAL' && (
+                                <span className={`text-[8px] px-1 rounded uppercase ${
+                                  ef.prioridade === 'JUDICIAL' ? 'bg-rose-500 text-white' : 'bg-amber-500 text-white'
+                                }`}>
+                                  {ef.prioridade}
+                                </span>
+                              )}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Bloco de Especialidades Já em Atendimento (Fila Parcial) */}
+                    {espAtivas.length > 0 && (
+                      <div className="pt-2 border-t border-dashed border-border space-y-1">
+                        <p className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+                          <CheckCircle2 className="w-3 h-3" />
+                          Já em Atendimento:
+                        </p>
+                        <div className="flex flex-wrap gap-1">
+                          {espAtivas.map((ea: any) => (
+                            <span
+                              key={ea.id}
+                              className="px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 text-[10px]"
+                            >
+                              {ea.especialidade} ({ea.funcionarios?.nome?.split(' ')[0] ?? 'Profissional'})
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
                     {paciente.principal_queixa && (
-                      <div className="mt-2.5 p-2 bg-muted/50 rounded-lg border border-border text-[11px] leading-relaxed text-muted-foreground max-h-[64px] overflow-y-auto">
-                        <strong>Queixa Principal:</strong> {paciente.principal_queixa}
+                      <div className="mt-2 p-2 bg-muted/50 rounded-lg border border-border text-[11px] leading-relaxed text-muted-foreground max-h-[64px] overflow-y-auto">
+                        <strong>Queixa:</strong> {paciente.principal_queixa}
                       </div>
                     )}
                   </div>
                 </div>
+
                 <div className="border-t border-border pt-3.5">
-                  <Button
-                    onClick={() => {
-                      setSelectedPaciente(paciente)
-                      setStatusAdmissao('ATIVO')
-                    }}
-                    className="w-full bg-primary hover:bg-primary/90 text-primary-foreground text-xs rounded-xl font-bold py-2 shadow-md gap-1.5 cursor-pointer"
-                  >
-                    <UserPlus className="w-4 h-4" /> Admitir Paciente
-                  </Button>
+                  <Link href={`/emaee/pacientes/${paciente.id}`}>
+                    <Button
+                      variant="outline"
+                      className="w-full border-border text-foreground hover:bg-muted text-xs rounded-xl font-bold py-2 shadow-sm gap-1.5 cursor-pointer"
+                    >
+                      <UserPlus className="w-4 h-4 text-primary" /> Abrir Prontuário / Alocar
+                    </Button>
+                  </Link>
                 </div>
               </Card>
             )
           })}
         </div>
       )}
- 
-      {/* Modal de confirmação de admissão */}
+
+      {/* Modal de confirmação de admissão geral */}
       <StandardDialog
         open={!!selectedPaciente}
         onOpenChange={(open) => {
@@ -346,7 +527,7 @@ export default function FilaEsperaPage() {
                 Iniciar consultas e evolução clínica regular.
               </p>
             </button>
- 
+
             <button
               type="button"
               onClick={() => setStatusAdmissao('EM_INVESTIGACAO')}

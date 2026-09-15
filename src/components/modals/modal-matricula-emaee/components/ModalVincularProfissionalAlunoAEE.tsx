@@ -6,10 +6,24 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Search, User, Clock, CalendarDays, ArrowLeft, Check, Sparkles } from 'lucide-react'
+import { Search, User, Clock, CalendarDays, ArrowLeft, Check, Sparkles, Clock3, AlertCircle } from 'lucide-react'
 import { createBrowserClient } from '@/lib/supabaseClient'
 import { toast } from 'sonner'
 import { getAvatarUrl } from '@/lib/photoHelper'
+
+export const ESPECIALIDADES_CANONICAS = [
+  'Psicologia',
+  'Fonoaudiologia',
+  'Psicopedagogia',
+  'Terapia Ocupacional',
+  'Fisioterapia',
+  'Psicomotricidade',
+  'Neuropsicopedagogia',
+  'Atendimento Pedagógico Especializado',
+  'Outros'
+] as const
+
+export type EspecialidadeCanonicasTipo = (typeof ESPECIALIDADES_CANONICAS)[number]
 
 export interface ProfissionalAEEItem {
   id: string
@@ -25,15 +39,21 @@ export interface ProfissionalAEEItem {
 export interface VinculoAEEConfig {
   id?: string // Se já persistido no banco
   tempId: string // Identificador único local para react key
-  profissionalId: string
-  profissionalNome: string
-  profissionalCargo: string
+  status?: 'EM_ATENDIMENTO' | 'FILA_ESPERA' | 'EM_INVESTIGACAO' | 'CONCLUIDO_ALTA' | 'DESISTENCIA'
+  prioridade?: 'NORMAL' | 'PRIORITARIO' | 'JUDICIAL'
+  motivoFila?: string | null
+  especialidade: string
+  especialidadeOutros?: string | null
+  profissionalId?: string | null
+  profissionalNome?: string | null
+  profissionalCargo?: string | null
   profissionalFoto?: string | null
-  frequencia: 'SEMANAL' | 'QUINZENAL'
-  diaSemana: number
-  dataInicio?: string // 'YYYY-MM-DD'
-  horarioInicio: string
-  horarioFim: string
+  frequencia?: 'SEMANAL' | 'QUINZENAL' | null
+  diaSemana?: number | null
+  dataInicio?: string | null // 'YYYY-MM-DD'
+  dataSolicitacao?: string | null
+  horarioInicio?: string | null
+  horarioFim?: string | null
   isNovo?: boolean // Flag local para indicar inserção pendente
   isRemovido?: boolean // Flag local para indicar inativação pendente
   isEditado?: boolean // Flag local para indicar alteração pendente
@@ -47,6 +67,7 @@ interface ModalVincularProfissionalAlunoAEEProps {
   vinculoParaEditar?: VinculoAEEConfig | null
   onSalvarEdicao?: (vinculoEditado: VinculoAEEConfig) => void
   escolaEmaeeId?: string
+  modoInicial?: 'ATENDIMENTO' | 'FILA_ESPERA'
 }
 
 const DIAS_SEMANA = [
@@ -58,6 +79,19 @@ const DIAS_SEMANA = [
   { valor: 6, label: 'Sábado' }
 ]
 
+export function deduzirEspecialidadeDeCargo(cargo: string | null | undefined): string {
+  if (!cargo) return 'Atendimento Pedagógico Especializado'
+  const c = cargo.toLowerCase()
+  if (c.includes('psicólog') || c.includes('psicolog')) return 'Psicologia'
+  if (c.includes('fono')) return 'Fonoaudiologia'
+  if (c.includes('psicopedagog')) return 'Psicopedagogia'
+  if (c.includes('terapia ocupacional') || c.includes('terapeuta')) return 'Terapia Ocupacional'
+  if (c.includes('fisio')) return 'Fisioterapia'
+  if (c.includes('psicomotric')) return 'Psicomotricidade'
+  if (c.includes('neuropsicopedagog')) return 'Neuropsicopedagogia'
+  return cargo
+}
+
 export function ModalVincularProfissionalAlunoAEE({
   open,
   onOpenChange,
@@ -65,9 +99,11 @@ export function ModalVincularProfissionalAlunoAEE({
   onAdicionarVinculo,
   vinculoParaEditar,
   onSalvarEdicao,
-  escolaEmaeeId
+  escolaEmaeeId,
+  modoInicial = 'ATENDIMENTO'
 }: ModalVincularProfissionalAlunoAEEProps) {
   const isEditing = Boolean(vinculoParaEditar)
+  const [tipoModal, setTipoModal] = useState<'ATENDIMENTO' | 'FILA_ESPERA'>(modoInicial)
   const [etapa, setEtapa] = useState<'selecionar' | 'configurar'>('selecionar')
   const [profissionais, setProfissionais] = useState<ProfissionalAEEItem[]>([])
   const [loading, setLoading] = useState(false)
@@ -82,6 +118,12 @@ export function ModalVincularProfissionalAlunoAEE({
   const [diaSemana, setDiaSemana] = useState<number>(1)
   const [horarioInicio, setHorarioInicio] = useState('08:00')
   const [horarioFim, setHorarioFim] = useState('09:00')
+
+  // Estados da Fila de Espera
+  const [especialidadeFila, setEspecialidadeFila] = useState<string>('Psicologia')
+  const [especialidadeOutrosFila, setEspecialidadeOutrosFila] = useState<string>('')
+  const [prioridadeFila, setPrioridadeFila] = useState<'NORMAL' | 'PRIORITARIO' | 'JUDICIAL'>('NORMAL')
+  const [motivoFila, setMotivoFila] = useState<string>('')
 
   const isMounted = useRef(true)
 
@@ -111,25 +153,35 @@ export function ModalVincularProfissionalAlunoAEE({
   useEffect(() => {
     if (open) {
       if (vinculoParaEditar) {
-        setEtapa('configurar')
-        setProfSelecionado({
-          id: vinculoParaEditar.profissionalId,
-          nome: vinculoParaEditar.profissionalNome,
-          cargo: vinculoParaEditar.profissionalCargo,
-          registro_profissional: null,
-          foto_url: vinculoParaEditar.profissionalFoto || null,
-          foto_avatar_path: null,
-          foto_visualizacao_path: null,
-          foto_updated_at: null,
-        })
-        setFrequencia(vinculoParaEditar.frequencia || 'SEMANAL')
-        setDataInicio(vinculoParaEditar.dataInicio || new Date().toISOString().split('T')[0])
-        setDiaSemana(vinculoParaEditar.diaSemana || 1)
-        setHorarioInicio(vinculoParaEditar.horarioInicio?.slice(0, 5) || '08:00')
-        setHorarioFim(vinculoParaEditar.horarioFim?.slice(0, 5) || '09:00')
-        setTermoBusca('')
+        const isFila = vinculoParaEditar.status === 'FILA_ESPERA' || !vinculoParaEditar.profissionalId
+        if (isFila) {
+          setTipoModal('FILA_ESPERA')
+          setEspecialidadeFila(vinculoParaEditar.especialidade || 'Psicologia')
+          setEspecialidadeOutrosFila(vinculoParaEditar.especialidadeOutros || '')
+          setPrioridadeFila(vinculoParaEditar.prioridade || 'NORMAL')
+          setMotivoFila(vinculoParaEditar.motivoFila || '')
+        } else {
+          setTipoModal('ATENDIMENTO')
+          setEtapa('configurar')
+          setProfSelecionado({
+            id: vinculoParaEditar.profissionalId!,
+            nome: vinculoParaEditar.profissionalNome || 'Profissional AEE',
+            cargo: vinculoParaEditar.profissionalCargo || 'Especialista AEE',
+            registro_profissional: null,
+            foto_url: vinculoParaEditar.profissionalFoto || null,
+            foto_avatar_path: null,
+            foto_visualizacao_path: null,
+            foto_updated_at: null,
+          })
+          setFrequencia(vinculoParaEditar.frequencia || 'SEMANAL')
+          setDataInicio(vinculoParaEditar.dataInicio || new Date().toISOString().split('T')[0])
+          setDiaSemana(vinculoParaEditar.diaSemana || 1)
+          setHorarioInicio(vinculoParaEditar.horarioInicio?.slice(0, 5) || '08:00')
+          setHorarioFim(vinculoParaEditar.horarioFim?.slice(0, 5) || '09:00')
+        }
         carregarProfissionaisAEE()
       } else {
+        setTipoModal(modoInicial)
         setEtapa('selecionar')
         setProfSelecionado(null)
         setTermoBusca('')
@@ -138,10 +190,14 @@ export function ModalVincularProfissionalAlunoAEE({
         setDiaSemana(1)
         setHorarioInicio('08:00')
         setHorarioFim('09:00')
+        setEspecialidadeFila('Psicologia')
+        setEspecialidadeOutrosFila('')
+        setPrioridadeFila('NORMAL')
+        setMotivoFila('')
         carregarProfissionaisAEE()
       }
     }
-  }, [open, vinculoParaEditar, escolaEmaeeId])
+  }, [open, vinculoParaEditar, escolaEmaeeId, modoInicial])
 
   const carregarProfissionaisAEE = async () => {
     setLoading(true)
@@ -203,7 +259,7 @@ export function ModalVincularProfissionalAlunoAEE({
     setEtapa('configurar')
   }
 
-  const handleConfirmarVinculo = (e: React.FormEvent) => {
+  const handleConfirmarAtendimento = (e: React.FormEvent) => {
     e.preventDefault()
     e.stopPropagation()
     if (!profSelecionado) return
@@ -218,6 +274,8 @@ export function ModalVincularProfissionalAlunoAEE({
       return
     }
 
+    const espNome = deduzirEspecialidadeDeCargo(profSelecionado.cargo)
+
     // Verificar se já existe vínculo igual (mesmo profissional, mesmo dia e mesmo horário)
     const conflitoExistente = vinculosExistentes.some((v) => {
       if (v.isRemovido) return false
@@ -228,6 +286,7 @@ export function ModalVincularProfissionalAlunoAEE({
         if (mesmoId || mesmoTempId) return false
       }
       return (
+        v.status !== 'FILA_ESPERA' &&
         v.profissionalId === profSelecionado.id &&
         v.diaSemana === diaSemana &&
         v.horarioInicio === horarioInicio
@@ -244,6 +303,8 @@ export function ModalVincularProfissionalAlunoAEE({
     if (vinculoParaEditar && onSalvarEdicao) {
       const vinculoAtualizado: VinculoAEEConfig = {
         ...vinculoParaEditar,
+        status: 'EM_ATENDIMENTO',
+        especialidade: espNome,
         profissionalId: profSelecionado.id,
         profissionalNome: profSelecionado.nome,
         profissionalCargo: profSelecionado.cargo ?? 'Especialista AEE',
@@ -263,6 +324,8 @@ export function ModalVincularProfissionalAlunoAEE({
 
     const novoVinculo: VinculoAEEConfig = {
       tempId: crypto.randomUUID(),
+      status: 'EM_ATENDIMENTO',
+      especialidade: espNome,
       profissionalId: profSelecionado.id,
       profissionalNome: profSelecionado.nome,
       profissionalCargo: profSelecionado.cargo ?? 'Especialista AEE',
@@ -280,31 +343,256 @@ export function ModalVincularProfissionalAlunoAEE({
     onOpenChange(false)
   }
 
+  const handleConfirmarFila = (e: React.FormEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+
+    const espFinal = especialidadeFila === 'Outros' && especialidadeOutrosFila.trim()
+      ? especialidadeOutrosFila.trim()
+      : especialidadeFila
+
+    // Verificar se a especialidade já está cadastrada
+    const jaCadastrada = vinculosExistentes.some((v) => {
+      if (v.isRemovido) return false
+      if (vinculoParaEditar) {
+        const mesmoId = vinculoParaEditar.id && v.id === vinculoParaEditar.id
+        const mesmoTempId = vinculoParaEditar.tempId && v.tempId === vinculoParaEditar.tempId
+        if (mesmoId || mesmoTempId) return false
+      }
+      return v.especialidade.toLowerCase() === espFinal.toLowerCase()
+    })
+
+    if (jaCadastrada) {
+      toast.error(`A especialidade "${espFinal}" já consta na ficha do aluno (em atendimento ou na fila).`)
+      return
+    }
+
+    if (vinculoParaEditar && onSalvarEdicao) {
+      const vinculoAtualizado: VinculoAEEConfig = {
+        ...vinculoParaEditar,
+        status: 'FILA_ESPERA',
+        especialidade: espFinal,
+        especialidadeOutros: especialidadeFila === 'Outros' ? especialidadeOutrosFila : null,
+        prioridade: prioridadeFila,
+        motivoFila: motivoFila.trim() || null,
+        profissionalId: null,
+        profissionalNome: null,
+        profissionalCargo: null,
+        profissionalFoto: null,
+        diaSemana: null,
+        horarioInicio: null,
+        horarioFim: null,
+        isEditado: true
+      }
+      onSalvarEdicao(vinculoAtualizado)
+      toast.success(`Demanda de ${espFinal} atualizada na fila de espera!`)
+      onOpenChange(false)
+      return
+    }
+
+    const novoVinculo: VinculoAEEConfig = {
+      tempId: crypto.randomUUID(),
+      status: 'FILA_ESPERA',
+      especialidade: espFinal,
+      especialidadeOutros: especialidadeFila === 'Outros' ? especialidadeOutrosFila : null,
+      prioridade: prioridadeFila,
+      motivoFila: motivoFila.trim() || null,
+      dataSolicitacao: new Date().toISOString().split('T')[0],
+      profissionalId: null,
+      profissionalNome: null,
+      profissionalCargo: null,
+      profissionalFoto: null,
+      diaSemana: null,
+      horarioInicio: null,
+      horarioFim: null,
+      isNovo: true
+    }
+
+    onAdicionarVinculo(novoVinculo)
+    toast.success(`Especialidade ${espFinal} incluída na fila de espera!`)
+    onOpenChange(false)
+  }
+
   return (
     <StandardDialog
       open={open}
       onOpenChange={onOpenChange}
       title={
-        etapa === 'selecionar'
-          ? 'Selecionar Especialista AEE — EMAEE'
-          : isEditing
-            ? `Editar Atendimento: ${profSelecionado?.nome ?? ''}`
-            : `Definir Atendimento: ${profSelecionado?.nome ?? ''}`
+        isEditing
+          ? tipoModal === 'FILA_ESPERA'
+            ? 'Editar Demanda em Fila de Espera'
+            : `Editar Atendimento: ${profSelecionado?.nome ?? ''}`
+          : tipoModal === 'FILA_ESPERA'
+            ? 'Adicionar Demanda na Fila de Espera'
+            : etapa === 'selecionar'
+              ? 'Selecionar Especialista AEE — EMAEE'
+              : `Definir Atendimento: ${profSelecionado?.nome ?? ''}`
       }
       description={
-        etapa === 'selecionar'
-          ? 'Escolha o profissional do corpo técnico do EMAEE para realizar o atendimento especializado do estudante.'
-          : isEditing
-            ? 'Altere o dia da semana, faixa de horário ou frequência deste atendimento.'
+        tipoModal === 'FILA_ESPERA'
+          ? 'Cadastre uma especialidade que o aluno necessita para inclusão na fila de espera do EMAEE.'
+          : etapa === 'selecionar'
+            ? 'Escolha o profissional do corpo técnico do EMAEE para realizar o atendimento especializado do estudante.'
             : 'Configure a frequência, o dia da semana e a faixa de horários do atendimento.'
       }
       maxWidth="sm:max-w-xl"
     >
       <div className="space-y-4 py-1">
+        {/* Seletor de Modo (Apenas ao criar novo registro) */}
+        {!isEditing && (
+          <div className="grid grid-cols-2 gap-2 p-1 bg-muted/60 dark:bg-[#141416] rounded-xl border border-border">
+            <button
+              type="button"
+              onClick={() => {
+                setTipoModal('ATENDIMENTO')
+                setEtapa('selecionar')
+              }}
+              className={`py-2 px-3 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${
+                tipoModal === 'ATENDIMENTO'
+                  ? 'bg-card dark:bg-[#1f1f23] text-primary border border-border shadow-sm'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              <User className="w-4 h-4" />
+              Vincular Especialista (Com Vaga)
+            </button>
+            <button
+              type="button"
+              onClick={() => setTipoModal('FILA_ESPERA')}
+              className={`py-2 px-3 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${
+                tipoModal === 'FILA_ESPERA'
+                  ? 'bg-card dark:bg-[#1f1f23] text-amber-500 border border-border shadow-sm'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              <Clock3 className="w-4 h-4" />
+              Adicionar à Fila de Espera
+            </button>
+          </div>
+        )}
+
         {/* ========================================================================= */}
-        {/* ETAPA 1: LISTA E BUSCA DE PROFISSIONAIS AEE                                */}
+        {/* MODO 1: FILA DE ESPERA POR ESPECIALIDADE                                  */}
         {/* ========================================================================= */}
-        {etapa === 'selecionar' && (
+        {tipoModal === 'FILA_ESPERA' && (
+          <form onSubmit={handleConfirmarFila} className="space-y-4">
+            <div className="p-4 rounded-xl border border-border bg-card dark:bg-[#141416] space-y-4">
+              <div className="space-y-1.5">
+                <Label className="text-xs font-bold text-foreground">
+                  Especialidade Demandada <span className="text-rose-500">*</span>
+                </Label>
+                <Select
+                  value={especialidadeFila}
+                  onValueChange={(val) => setEspecialidadeFila(val || 'Psicologia')}
+                >
+                  <SelectTrigger className="h-10 bg-background dark:bg-[#181818] border-border text-foreground text-xs rounded-xl">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="bg-card dark:bg-[#181818] border-border text-foreground text-xs">
+                    {ESPECIALIDADES_CANONICAS.map((esp) => (
+                      <SelectItem key={esp} value={esp}>
+                        {esp}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {especialidadeFila === 'Outros' && (
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-bold text-foreground">
+                    Especifique a Especialidade <span className="text-rose-500">*</span>
+                  </Label>
+                  <Input
+                    type="text"
+                    placeholder="Ex: Terapia de Integração Sensorial"
+                    value={especialidadeOutrosFila}
+                    onChange={(e) => setEspecialidadeOutrosFila(e.target.value)}
+                    required
+                    className="h-9 bg-background dark:bg-[#181818] border-border text-foreground text-xs rounded-xl"
+                  />
+                </div>
+              )}
+
+              <div className="space-y-1.5">
+                <Label className="text-xs font-bold text-foreground">
+                  Prioridade do Acolhimento
+                </Label>
+                <div className="grid grid-cols-3 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setPrioridadeFila('NORMAL')}
+                    className={`py-2 px-2.5 rounded-xl border text-xs font-bold transition-all cursor-pointer ${
+                      prioridadeFila === 'NORMAL'
+                        ? 'border-primary bg-primary/10 text-primary shadow-sm'
+                        : 'border-border bg-background dark:bg-[#181818] text-muted-foreground hover:border-primary/40'
+                    }`}
+                  >
+                    Normal (Ordem Cronológica)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setPrioridadeFila('PRIORITARIO')}
+                    className={`py-2 px-2.5 rounded-xl border text-xs font-bold transition-all cursor-pointer ${
+                      prioridadeFila === 'PRIORITARIO'
+                        ? 'border-amber-500 bg-amber-500/10 text-amber-500 shadow-sm'
+                        : 'border-border bg-background dark:bg-[#181818] text-muted-foreground hover:border-amber-500/40'
+                    }`}
+                  >
+                    Prioritário (Laudo Urgente)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setPrioridadeFila('JUDICIAL')}
+                    className={`py-2 px-2.5 rounded-xl border text-xs font-bold transition-all cursor-pointer ${
+                      prioridadeFila === 'JUDICIAL'
+                        ? 'border-rose-500 bg-rose-500/10 text-rose-500 shadow-sm'
+                        : 'border-border bg-background dark:bg-[#181818] text-muted-foreground hover:border-rose-500/40'
+                    }`}
+                  >
+                    Mandado Judicial
+                  </button>
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <Label className="text-xs font-bold text-foreground">
+                  Motivo / Observações da Fila (Opcional)
+                </Label>
+                <Input
+                  type="text"
+                  placeholder="Ex: Aguardando abertura de vaga no turno matutino"
+                  value={motivoFila}
+                  onChange={(e) => setMotivoFila(e.target.value)}
+                  className="h-9 bg-background dark:bg-[#181818] border-border text-foreground text-xs rounded-xl"
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-2 pt-2">
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => onOpenChange(false)}
+                className="text-xs text-muted-foreground hover:text-foreground h-9 rounded-xl cursor-pointer"
+              >
+                Cancelar
+              </Button>
+              <Button
+                type="submit"
+                className="bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs h-9 px-4 rounded-xl gap-1.5 shadow-sm cursor-pointer"
+              >
+                <Check className="w-4 h-4" />
+                {isEditing ? 'Salvar Demanda' : 'Adicionar à Fila'}
+              </Button>
+            </div>
+          </form>
+        )}
+
+        {/* ========================================================================= */}
+        {/* MODO 2: ATENDIMENTO COM PROFISSIONAL                                      */}
+        {/* ========================================================================= */}
+        {tipoModal === 'ATENDIMENTO' && etapa === 'selecionar' && (
           <div className="space-y-3">
             {/* Campo de Busca */}
             <div className="relative">
@@ -411,10 +699,10 @@ export function ModalVincularProfissionalAlunoAEE({
         )}
 
         {/* ========================================================================= */}
-        {/* ETAPA 2: CONFIGURAÇÃO DE DIAS, HORÁRIOS E PERIODICIDADE                    */}
+        {/* MODO 2: CONFIGURAÇÃO DE ATENDIMENTO COM PROFISSIONAL                      */}
         {/* ========================================================================= */}
-        {etapa === 'configurar' && profSelecionado && (
-          <form onSubmit={handleConfirmarVinculo} className="space-y-4">
+        {tipoModal === 'ATENDIMENTO' && etapa === 'configurar' && profSelecionado && (
+          <form onSubmit={handleConfirmarAtendimento} className="space-y-4">
             {/* Header com Profissional Selecionado */}
             <div className="p-3 rounded-xl border border-border bg-muted/40 dark:bg-[#141416] flex items-center justify-between gap-3">
               <div className="flex items-center gap-3 min-w-0">
@@ -435,16 +723,18 @@ export function ModalVincularProfissionalAlunoAEE({
                 </div>
               </div>
 
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={() => setEtapa('selecionar')}
-                className="text-xs text-muted-foreground hover:text-foreground h-7 gap-1 rounded-lg cursor-pointer"
-              >
-                <ArrowLeft className="w-3.5 h-3.5" />
-                Trocar
-              </Button>
+              {!isEditing && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setEtapa('selecionar')}
+                  className="text-xs text-muted-foreground hover:text-foreground h-7 gap-1 rounded-lg cursor-pointer"
+                >
+                  <ArrowLeft className="w-3.5 h-3.5" />
+                  Trocar
+                </Button>
+              )}
             </div>
 
             {/* Configurações de Atendimento */}
@@ -531,7 +821,7 @@ export function ModalVincularProfissionalAlunoAEE({
                 <div className="space-y-1.5">
                   <Label className="text-xs font-bold text-foreground flex items-center gap-1.5">
                     <Clock className="w-3.5 h-3.5 text-primary" />
-                    Horário de Início
+                    Horário de Início <span className="text-rose-500">*</span>
                   </Label>
                   <Input
                     type="time"
@@ -545,7 +835,7 @@ export function ModalVincularProfissionalAlunoAEE({
                 <div className="space-y-1.5">
                   <Label className="text-xs font-bold text-foreground flex items-center gap-1.5">
                     <Clock className="w-3.5 h-3.5 text-primary" />
-                    Horário de Término
+                    Horário de Término <span className="text-rose-500">*</span>
                   </Label>
                   <Input
                     type="time"
@@ -563,10 +853,10 @@ export function ModalVincularProfissionalAlunoAEE({
               <Button
                 type="button"
                 variant="ghost"
-                onClick={() => setEtapa('selecionar')}
+                onClick={() => (isEditing ? onOpenChange(false) : setEtapa('selecionar'))}
                 className="text-xs text-muted-foreground hover:text-foreground h-9 rounded-xl cursor-pointer"
               >
-                Voltar
+                {isEditing ? 'Cancelar' : 'Voltar'}
               </Button>
 
               <Button

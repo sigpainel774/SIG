@@ -29,7 +29,8 @@ import {
   ChevronRight,
   History,
   Sparkles,
-  Edit
+  Edit,
+  Clock,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
@@ -859,20 +860,21 @@ export default function PacienteDetalhesPage() {
             <div className="bg-card border border-border rounded-2xl p-6 space-y-5">
               <div className="border-b border-border/50 pb-3 flex items-center justify-between">
                 <div>
-                  <h3 className="text-base font-bold text-foreground">Profissionais Responsáveis pelo Acompanhamento</h3>
-                  <p className="text-xs text-muted-foreground">Clique em um especialista para consultar o histórico de atualizações feito por ele para o aluno</p>
+                  <h3 className="text-base font-bold text-foreground">Profissionais & Especialidades Demandadas</h3>
+                  <p className="text-xs text-muted-foreground">Consulte as especialidades em atendimento ativo e as que estão aguardando vaga na fila</p>
                 </div>
               </div>
 
               {loadingEspecialidades ? (
-                <div className="text-center py-8 text-muted-foreground text-xs animate-pulse">Carregando especialistas...</div>
+                <div className="text-center py-8 text-muted-foreground text-xs animate-pulse">Carregando especialidades...</div>
               ) : especialidades.length === 0 ? (
                 <div className="text-center py-10 border border-dashed border-border/80 rounded-2xl bg-secondary/15 text-muted-foreground text-xs">
-                  Nenhum especialista vinculado a este paciente.
+                  Nenhuma especialidade vinculada a este paciente.
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {especialidades.map((esp) => {
+                    const isFila = esp.status === 'FILA_ESPERA' || (!esp.status && !esp.profissional_id)
                     const countEvolucoes = evolucoes.filter(
                       (evo) =>
                         (evo.profissional_id && evo.profissional_id === esp.profissional_id) ||
@@ -883,18 +885,30 @@ export default function PacienteDetalhesPage() {
                       <div
                         key={esp.id}
                         onClick={() => {
-                          setEspecialistaSelecionado(esp)
-                          setModalHistoricoEspecialistaOpen(true)
+                          if (!isFila) {
+                            setEspecialistaSelecionado(esp)
+                            setModalHistoricoEspecialistaOpen(true)
+                          }
                         }}
-                        className="group border border-border hover:border-primary p-4 rounded-xl space-y-3 bg-secondary/35 hover:bg-secondary/70 transition-all cursor-pointer shadow-sm relative overflow-hidden"
+                        className={`border rounded-xl p-4 space-y-3 transition-all shadow-sm relative overflow-hidden ${
+                          isFila
+                            ? 'border-amber-500/30 bg-amber-500/[0.03] dark:bg-amber-950/10'
+                            : 'border-border hover:border-primary bg-secondary/35 hover:bg-secondary/70 cursor-pointer group'
+                        }`}
                       >
                         <div className="flex items-start justify-between">
                           <div className="flex items-center gap-2.5">
                             {(() => {
                               const profAvatarUrl = getAvatarUrl(esp.funcionarios)
                               return (
-                                <div className="w-9 h-9 rounded-full bg-primary/10 border border-primary/30 flex items-center justify-center text-primary font-bold text-xs overflow-hidden shrink-0">
-                                  {profAvatarUrl ? (
+                                <div className={`w-9 h-9 rounded-full flex items-center justify-center font-bold text-xs overflow-hidden shrink-0 border ${
+                                  isFila
+                                    ? 'bg-amber-500/10 text-amber-500 border-amber-500/30'
+                                    : 'bg-primary/10 text-primary border-primary/30'
+                                }`}>
+                                  {isFila ? (
+                                    <Clock className="w-4 h-4" />
+                                  ) : profAvatarUrl ? (
                                     <img src={profAvatarUrl} alt={esp.funcionarios?.nome || 'Foto'} className="w-full h-full object-cover" />
                                   ) : (
                                     esp.especialidade ? esp.especialidade.charAt(0).toUpperCase() : 'E'
@@ -903,32 +917,63 @@ export default function PacienteDetalhesPage() {
                               )
                             })()}
                             <div>
-                              <div className="text-xs text-primary font-bold">{esp.especialidade}</div>
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs text-primary font-bold">{esp.especialidade}</span>
+                                <span className={`text-[9px] font-extrabold uppercase px-1.5 py-0.2 rounded border ${
+                                  isFila
+                                    ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20'
+                                    : 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20'
+                                }`}>
+                                  {isFila ? 'Fila de Espera' : 'Em Atendimento'}
+                                </span>
+                              </div>
                               <div className="text-xs font-semibold text-foreground group-hover:text-primary transition-colors">
-                                {esp.funcionarios?.nome ?? 'Especialista não identificado'}
+                                {isFila
+                                  ? (esp.motivo_fila ? `"${esp.motivo_fila}"` : 'Aguardando abertura de vaga')
+                                  : (esp.funcionarios?.nome ?? 'Especialista AEE')}
                               </div>
                             </div>
                           </div>
 
-                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-primary/15 text-primary border border-primary/20 flex items-center gap-1">
-                            <History className="w-3 h-3" />
-                            {countEvolucoes} {countEvolucoes === 1 ? 'Atualização' : 'Atualizações'}
-                          </span>
+                          {!isFila ? (
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-primary/15 text-primary border border-primary/20 flex items-center gap-1">
+                              <History className="w-3 h-3" />
+                              {countEvolucoes} {countEvolucoes === 1 ? 'Atualização' : 'Atualizações'}
+                            </span>
+                          ) : (
+                            esp.prioridade && esp.prioridade !== 'NORMAL' && (
+                              <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${
+                                esp.prioridade === 'JUDICIAL'
+                                  ? 'bg-rose-500/10 text-rose-500 border-rose-500/30'
+                                  : 'bg-amber-500/20 text-amber-600 dark:text-amber-300 border-amber-500/40'
+                              }`}>
+                                {esp.prioridade}
+                              </span>
+                            )
+                          )}
                         </div>
 
                         <div className="text-[10px] text-muted-foreground flex items-center justify-between pt-2 border-t border-border/40">
-                          <span>Frequência: <strong>{esp.frequencia ?? 'Conforme demanda'}</strong></span>
-                          <span>
-                            {esp.horario_inicio
-                              ? `Horário: ${esp.horario_inicio.slice(0, 5)}${esp.horario_fim ? ` às ${esp.horario_fim.slice(0, 5)}` : ''}`
-                              : ''}
-                          </span>
+                          {isFila ? (
+                            <span>Solicitado em: <strong>{esp.data_solicitacao ? (esp.data_solicitacao.includes('-') ? esp.data_solicitacao.split('-').reverse().join('/') : esp.data_solicitacao) : 'N/D'}</strong></span>
+                          ) : (
+                            <>
+                              <span>Frequência: <strong>{esp.frequencia ?? 'Semanal'}</strong></span>
+                              <span>
+                                {esp.horario_inicio
+                                  ? `Horário: ${esp.horario_inicio.slice(0, 5)}${esp.horario_fim ? ` às ${esp.horario_fim.slice(0, 5)}` : ''}`
+                                  : ''}
+                              </span>
+                            </>
+                          )}
                         </div>
 
-                        <div className="flex items-center justify-end text-[11px] text-primary font-semibold pt-1 group-hover:translate-x-0.5 transition-transform">
-                          <span>Ver histórico de atualizações</span>
-                          <ChevronRight className="w-3.5 h-3.5 ml-1" />
-                        </div>
+                        {!isFila && (
+                          <div className="flex items-center justify-end text-[11px] text-primary font-semibold pt-1 group-hover:translate-x-0.5 transition-transform">
+                            <span>Ver histórico de atualizações</span>
+                            <ChevronRight className="w-3.5 h-3.5 ml-1" />
+                          </div>
+                        )}
                       </div>
                     )
                   })}
