@@ -2459,7 +2459,7 @@ export default function CalendarioAtendimentosPage() {
                     const diaJs = diaSelecionadoData.getDay()
                     const diaAee = diaJs === 0 ? 7 : diaJs
                     const sessoesDoDia = atendimentosFiltrados.filter(
-                      (v) => v.dia_semana === diaAee,
+                      (v) => v.dia_semana === diaAee && isAtendimentoNaSemana(v, diaSelecionadoData),
                     )
 
                     if (sessoesDoDia.length === 0) {
@@ -2611,6 +2611,21 @@ export default function CalendarioAtendimentosPage() {
                         {item.horario_fim ? ` às ${formatarHorario(item.horario_fim)}` : ''}
                       </span>
                     ),
+                  },
+                  {
+                    header: 'Início',
+                    accessor: (item) => {
+                      const dataIni = item.data_inicio || item.created_at
+                      if (!dataIni) return <span className="text-xs text-muted-foreground">-</span>
+                      const dataLimpa = dataIni.includes('T') ? dataIni.split('T')[0] : dataIni
+                      const partes = dataLimpa.split('-')
+                      const formatada = partes.length === 3 ? `${partes[2]}/${partes[1]}/${partes[0]}` : dataLimpa
+                      return (
+                        <span className="text-xs font-mono text-muted-foreground" title="Data inicial do atendimento">
+                          {formatada}
+                        </span>
+                      )
+                    },
                   },
                   {
                     header: 'Aluno',

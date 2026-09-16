@@ -22,6 +22,9 @@ import {
   AlertCircle,
   GraduationCap
 } from 'lucide-react'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { getAvatarUrl } from '@/lib/photoHelper'
 import { ModalAssociarAlunoAEE } from '@/components/modals/modal-associar-aluno-aee'
 import {
@@ -57,10 +60,6 @@ const DIAS_SEMANA_NOMES: Record<number, string> = {
   6: 'Sábado',
   7: 'Domingo'
 }
-
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 
 function formatarHora(hora?: string | null): string {
   if (!hora) return '--:--'
