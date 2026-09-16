@@ -1,5 +1,7 @@
 'use client'
 
+import { getVisualizacaoUrl } from './photoHelper'
+
 function formatarDataLocal(iso: string | null | undefined): string {
   if (!iso) return '—'
   const [y, m, d] = iso.split('-')
@@ -45,8 +47,9 @@ export function gerarFichaFuncionarioHtml(
 ): string {
   const initials = getInitials(f.nome)
   const palette = getPalette(f.nome)
-  const fotoCleanUrl = f.foto_url ? (f.foto_url.startsWith('data:') ? f.foto_url : `${f.foto_url.split('?')[0]}?t=${sessionTimestamp}`) : ''
-  const fotoCell = f.foto_url
+  const rawFotoUrl = getVisualizacaoUrl(f) || f.foto_url || ''
+  const fotoCleanUrl = rawFotoUrl ? (rawFotoUrl.startsWith('data:') ? rawFotoUrl : `${rawFotoUrl.split('?')[0]}?t=${sessionTimestamp}`) : ''
+  const fotoCell = rawFotoUrl
     ? `<img src="${fotoCleanUrl}" class="foto-img" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
        <div class="foto-initials" style="display:none; background:${palette.bg}; color:${palette.text};">${initials}</div>`
     : `<div class="foto-initials" style="background:${palette.bg}; color:${palette.text};">${initials}</div>`

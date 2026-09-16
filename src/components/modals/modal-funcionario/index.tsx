@@ -136,6 +136,9 @@ function ModalFuncionarioContent() {
                 accept="image/*,image/jpeg,image/png,image/webp,image/heic,image/heif"
                 className="hidden"
                 disabled={isCompressingPhoto}
+                onClick={(e) => {
+                  (e.target as HTMLInputElement).value = ''
+                }}
                 onChange={handleFotoChange}
               />
             </div>

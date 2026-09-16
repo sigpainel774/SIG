@@ -561,20 +561,67 @@ export function useFuncionarioFormStates({
     }
   }, [activeOpen, funcionario?.id])
 
-  // Foto handler com normalização client-side resiliente
+  // Foto handler com normalização client-side resiliente e suporte transparente a HEIC
   const handleFotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
 
-    if (!file.type || !file.type.startsWith('image/')) {
-      toast.error('Por favor, selecione um arquivo de imagem válido (PNG, JPG, WebP).')
+    const isImageExt = /\.(jpe?g|png|webp|heic|heif|avif|bmp|tiff)$/i.test(file.name)
+    if (!file.type?.startsWith('image/') && !isImageExt) {
+      toast.error('Por favor, selecione um arquivo de imagem válido (PNG, JPG, WebP, HEIC).')
+      e.target.value = ''
       return
     }
 
     setIsCompressingPhoto(true)
-    const toastId = file.size > 3 * 1024 * 1024 ? toast.loading(`Otimizando foto (${formatBytes(file.size)})...`) : null
+    const isHeic = /\.(heic|heif)$/i.test(file.name) || file.type === 'image/heic' || file.type === 'image/heif'
+    const toastId = isHeic
+      ? toast.loading('Otimizando foto do celular (HEIC ➔ WebP)...')
+      : file.size > 2 * 1024 * 1024
+      ? toast.loading(`Otimizando foto (${formatBytes(file.size)})...`)
+      : null
 
     try {
+      if (isHeic) {
+        // Conversão transparente de HEIC (iPhones / celulares modernos) para WebP via Sharp
+        const base64Str = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader()
+          reader.onload = () => resolve(reader.result as string)
+          reader.onerror = reject
+          reader.readAsDataURL(file)
+        })
+
+        const convertRes = await fetch('/api/alpha/convert', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            imageBase64: base64Str,
+            filename: file.name,
+            targetFormat: 'webp',
+            quality: 85
+          })
+        })
+
+        if (convertRes.ok) {
+          const convertData = await convertRes.json()
+          if (convertData.processedBase64) {
+            const blobRes = await fetch(convertData.processedBase64)
+            const blob = await blobRes.blob()
+            const baseName = file.name.replace(/\.[^/.]+$/, '')
+            const convertedFile = new File([blob], `${baseName}.webp`, { type: 'image/webp' })
+
+            setFotoFile(convertedFile)
+            setFotoPreview(convertData.processedBase64)
+            setFotoRemovidaManualmente(false)
+
+            if (toastId) {
+              toast.success(`Foto convertida com sucesso! (${formatBytes(file.size)} ➔ ${formatBytes(convertData.convertedSize || blob.size)})`, { id: toastId })
+            }
+            return
+          }
+        }
+      }
+
       const result = await compressImageBeforeUpload(file, {
         maxWidth: 2560,
         maxHeight: 2560,
@@ -600,6 +647,8 @@ export function useFuncionarioFormStates({
       toast.error(err.message || 'Erro ao processar imagem selecionada.')
     } finally {
       setIsCompressingPhoto(false)
+      // Resetar valor do input para permitir selecionar a mesma imagem novamente se desejado
+      e.target.value = ''
     }
   }
 
@@ -607,6 +656,8 @@ export function useFuncionarioFormStates({
     setFotoFile(null)
     setFotoPreview(null)
     setFotoRemovidaManualmente(true)
+    const fileInput = document.getElementById('foto-input') as HTMLInputElement | null
+    if (fileInput) fileInput.value = ''
   }
 
   const handleFotoCapturada = (file: File, dataUrl: string) => {
@@ -929,6 +980,7 @@ export function useFuncionarioFormStates({
 
         let fotoUploadSuccess = true
         let fotoUploadErrorMsg = ''
+        let finalSavedFotoUrl: string | null = null
 
         // --- UPLOAD OTIMIZADO COM FALLBACK RESILIENTE DE FOTO (EDIÇÃO) ---
         if (fotoFile) {
@@ -939,10 +991,11 @@ export function useFuncionarioFormStates({
               const toastId = toast.loading('Fazendo upload...')
               const fileExt = fotoFile.name.split('.').pop()?.toLowerCase() || 'jpg'
               const fileName = `${funcionario.id}_${Date.now()}.${fileExt}`
+              const sanitizedMime = fotoFile.type === 'image/jpg' ? 'image/jpeg' : (fotoFile.type || (fileExt === 'jpg' || fileExt === 'jpeg' ? 'image/jpeg' : 'image/webp'))
 
               const { error: uploadError } = await supabase.storage
                 .from('fotos-funcionarios')
-                .upload(fileName, fotoFile, { upsert: true })
+                .upload(fileName, fotoFile, { upsert: true, contentType: sanitizedMime })
 
               if (uploadError) throw uploadError
 
@@ -964,6 +1017,7 @@ export function useFuncionarioFormStates({
                 .eq('id', funcionario.id)
 
               await invalidarCacheFoto(publicUrl)
+              finalSavedFotoUrl = publicUrl
               toast.dismiss(toastId)
             } catch (fotoErr: any) {
               console.error('[useFuncionarioFormStates] Erro no upload direto legado:', fotoErr)
@@ -1004,6 +1058,7 @@ export function useFuncionarioFormStates({
                         const processData = await processRes.json()
                         if (processData.success && processData.data?.foto_url) {
                           await invalidarCacheFoto(processData.data.foto_url)
+                          finalSavedFotoUrl = processData.data.foto_url
                         }
                         photoSaved = true
                       } else {
@@ -1021,10 +1076,11 @@ export function useFuncionarioFormStates({
                 toast.loading('Salvando foto diretamente...', { id: toastId })
                 const fileExt = fotoFile.name.split('.').pop()?.toLowerCase() || 'jpg'
                 const fileName = `${funcionario.id}_${Date.now()}.${fileExt}`
+                const sanitizedMime = fotoFile.type === 'image/jpg' ? 'image/jpeg' : (fotoFile.type || (fileExt === 'jpg' || fileExt === 'jpeg' ? 'image/jpeg' : 'image/webp'))
 
                 const { error: uploadError } = await supabase.storage
                   .from('fotos-funcionarios')
-                  .upload(fileName, fotoFile, { upsert: true })
+                  .upload(fileName, fotoFile, { upsert: true, contentType: sanitizedMime })
 
                 if (uploadError) throw uploadError
 
@@ -1046,6 +1102,7 @@ export function useFuncionarioFormStates({
                   .eq('id', funcionario.id)
 
                 await invalidarCacheFoto(publicUrl)
+                finalSavedFotoUrl = publicUrl
                 photoSaved = true
               }
 
@@ -1072,7 +1129,9 @@ export function useFuncionarioFormStates({
         // --- FIM UPLOAD DIRETO ---
 
         if (fotoFile && !fotoUploadSuccess) {
-          toast.warning(`Funcionário atualizado, mas houve erro ao salvar a foto: ${fotoUploadErrorMsg}`)
+          toast.error(`Funcionário atualizado, porém houve falha ao salvar a foto: ${fotoUploadErrorMsg}. O formulário permanece aberto para que você possa tentar enviar a foto novamente.`, { duration: 8000 })
+          setLoading(false)
+          return
         } else {
           toast.success('Funcionário atualizado com sucesso!')
         }
@@ -1085,7 +1144,7 @@ export function useFuncionarioFormStates({
         // Sincronizar store global em tempo real se o usuário alterou o próprio perfil
         if (loggedUser && loggedUser.id === funcionario.id) {
           useAuthStore.getState().setAuth(
-            { ...loggedUser, nome, email: cleanEmail, cargo, foto_url: basePayload.foto_url ?? loggedUser.foto_url },
+            { ...loggedUser, nome, email: cleanEmail, cargo, foto_url: finalSavedFotoUrl ?? (basePayload.foto_url !== undefined ? basePayload.foto_url : loggedUser.foto_url) },
             useAuthStore.getState().acessos,
             useAuthStore.getState().vinculos
           )
@@ -1155,10 +1214,11 @@ export function useFuncionarioFormStates({
               const toastId = toast.loading('Fazendo upload...')
               const fileExt = fotoFile.name.split('.').pop()?.toLowerCase() || 'jpg'
               const fileName = `${idParaFoto}_${Date.now()}.${fileExt}`
+              const sanitizedMime = fotoFile.type === 'image/jpg' ? 'image/jpeg' : (fotoFile.type || (fileExt === 'jpg' || fileExt === 'jpeg' ? 'image/jpeg' : 'image/webp'))
 
               const { error: uploadError } = await supabase.storage
                 .from('fotos-funcionarios')
-                .upload(fileName, fotoFile, { upsert: true })
+                .upload(fileName, fotoFile, { upsert: true, contentType: sanitizedMime })
 
               if (uploadError) throw uploadError
 
@@ -1238,10 +1298,11 @@ export function useFuncionarioFormStates({
                 toast.loading('Salvando foto diretamente...', { id: toastId })
                 const fileExt = fotoFile.name.split('.').pop()?.toLowerCase() || 'jpg'
                 const fileName = `${idParaFoto}_${Date.now()}.${fileExt}`
+                const sanitizedMime = fotoFile.type === 'image/jpg' ? 'image/jpeg' : (fotoFile.type || (fileExt === 'jpg' || fileExt === 'jpeg' ? 'image/jpeg' : 'image/webp'))
 
                 const { error: uploadError } = await supabase.storage
                   .from('fotos-funcionarios')
-                  .upload(fileName, fotoFile, { upsert: true })
+                  .upload(fileName, fotoFile, { upsert: true, contentType: sanitizedMime })
 
                 if (uploadError) throw uploadError
 
@@ -1361,7 +1422,9 @@ export function useFuncionarioFormStates({
 
         const temAfastamento = status === 'afastado' && Boolean(cid.trim())
         if (fotoFile && !fotoUploadSuccess) {
-          toast.warning(`Funcionário cadastrado, porém houve falha ao salvar a foto: ${fotoUploadErrorMsg}`)
+          toast.error(`Funcionário cadastrado, porém houve falha ao salvar a foto: ${fotoUploadErrorMsg}. O formulário permanece aberto para que você possa tentar enviar a foto novamente.`, { duration: 8000 })
+          setLoading(false)
+          return
         } else if (existingFunc || isEditing) {
           toast.success(temAfastamento ? 'Ficha cadastral e dados de afastamento atualizados com sucesso!' : 'Ficha cadastral atualizada com sucesso!')
         } else {

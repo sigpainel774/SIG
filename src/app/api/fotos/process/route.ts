@@ -39,8 +39,23 @@ export async function POST(req: NextRequest) {
       .maybeSingle()
 
     if (rlsError || !recordAuthCheck) {
-      console.warn(`[API fotos/process] Acesso negado via RLS para entity ${entity} id ${id} por uid ${user.id}`)
-      return NextResponse.json({ error: 'Você não tem permissão para editar a foto deste registro.' }, { status: 403 })
+      // Fallback ABAC: caso o RLS do cliente filtre o registro (ex: funcionário recém-criado
+      // sem vínculo pré-existente ou em criação assíncrona), verifica se o usuário autenticado
+      // é um servidor municipal ativo ou superadmin com permissão no sistema, ou o próprio titular
+      const { data: callerFunc } = await supabaseAdmin
+        .from('funcionarios')
+        .select('id, is_superadmin, status')
+        .eq('auth_user_id', user.id)
+        .maybeSingle()
+
+      const isStaffOrSelf = Boolean(
+        callerFunc && (callerFunc.is_superadmin || callerFunc.status === 'ativo' || callerFunc.id === id)
+      )
+
+      if (!isStaffOrSelf) {
+        console.warn(`[API fotos/process] Acesso negado via RLS/ABAC para entity ${entity} id ${id} por uid ${user.id}`)
+        return NextResponse.json({ error: 'Você não tem permissão para editar a foto deste registro.' }, { status: 403 })
+      }
     }
 
     // Validar se o caminho bate EXATAMENTE com o contrato (Prevenção de cruzamento de fotos e diretórios falsos)
@@ -80,7 +95,8 @@ export async function POST(req: NextRequest) {
       }
       
       const format = metadata.format
-      if (!['jpeg', 'png', 'webp', 'jpg'].includes(format || '')) {
+      // Suporte ampliado: JPEG, PNG, WebP, HEIF/HEIC (iPhones), AVIF, TIFF, GIF
+      if (!['jpeg', 'png', 'webp', 'jpg', 'heif', 'avif', 'tiff', 'gif'].includes(format || '')) {
         throw new Error(`Formato de imagem real não suportado: ${format}`)
       }
     } catch (metaErr: any) {

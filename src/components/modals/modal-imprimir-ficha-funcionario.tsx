@@ -8,6 +8,7 @@ import { createClient } from '@/lib/supabaseClient'
 import { useAuthStore } from '@/store/useAuthStore'
 import { useSchoolStore } from '@/store/useSchoolStore'
 import { toast } from 'sonner'
+import { getVisualizacaoUrl } from '@/lib/photoHelper'
 
 const sessionTimestamp = Date.now()
 
@@ -193,7 +194,8 @@ export function ModalImprimirFichaFuncionario({
 
   const initials = f?.nome ? getInitials(f.nome) : '—'
   const palette = f?.nome ? getPalette(f.nome) : { bg: '#1a3a5c', text: '#60a5fa' }
-  const fotoCleanUrl = f?.foto_url ? (f.foto_url.startsWith('data:') ? f.foto_url : `${f.foto_url.split('?')[0]}?t=${sessionTimestamp}`) : ''
+  const rawFotoUrl = getVisualizacaoUrl(f) || f?.foto_url || ''
+  const fotoCleanUrl = rawFotoUrl ? (rawFotoUrl.startsWith('data:') ? rawFotoUrl : `${rawFotoUrl.split('?')[0]}?t=${sessionTimestamp}`) : ''
 
   const modalContent = (
     <div className="print-portal-container fixed inset-0 z-[9999] bg-black/80 flex justify-center p-4 sm:p-6 overflow-y-auto print:static print:block print:p-0 print:bg-white print:overflow-visible">
