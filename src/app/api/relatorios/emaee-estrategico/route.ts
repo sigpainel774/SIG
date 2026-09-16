@@ -35,7 +35,324 @@ export async function GET(req: NextRequest) {
       )
     }
 
-    // 3. Garantir a acurácia demográfica de "Zona de Residência dos Pacientes"
+    // 3. Recalcular e Desagregar a Epidemiologia com Normalização Inteligente de CIDs & Detalhes de Investigação
+    if (data) {
+      try {
+        let matQuery = supabaseAdmin
+          .from('emaee_matriculas')
+          .select(`
+            id,
+            aluno_id,
+            status,
+            data_matricula,
+            cid_codigo,
+            outros_transtornos,
+            principal_queixa,
+            transtorno_tea,
+            transtorno_outros,
+            def_intelectual,
+            def_baixa_visao,
+            def_cegueira,
+            def_auditiva,
+            def_surdez,
+            def_surdocegueira,
+            def_fisica,
+            def_multipla,
+            condicoes_saude,
+            escola_origem_nome,
+            escola_regular_id,
+            escolas:escola_regular_id(id, nome),
+            alunos:aluno_id(id, nome, data_nascimento, zona_residencial, dados_matricula),
+            emaee_especialidades_vinculadas(id, especialidade, especialidade_outros, ativo, profissional_id)
+          `)
+          .is('deleted_at', null)
+          .in('status', ['ATIVO', 'FILA_ESPERA', 'EM_INVESTIGACAO'])
+
+        if (escolaId) {
+          matQuery = matQuery.eq('escola_atendimento_id', escolaId)
+        }
+
+        if (ano) {
+          matQuery = matQuery
+            .gte('data_matricula', `${ano}-01-01`)
+            .lte('data_matricula', `${ano}-12-31`)
+        }
+
+        const { data: matriculas, error: matError } = await matQuery
+
+        if (!matError && matriculas) {
+          const counts = {
+            total_base: matriculas.length,
+            tea: 0,
+            tdah: 0,
+            def_intelectual: 0,
+            epilepsia: 0,
+            transtorno_linguagem: 0,
+            sindrome_down: 0,
+            paralisia_cerebral: 0,
+            dislexia: 0,
+            disgrafia: 0,
+            discalculia: 0,
+            tod: 0,
+            transtorno_conduta: 0,
+            tpac: 0,
+            ansiedade: 0,
+            superdotacao: 0,
+            def_visual: 0,
+            def_auditiva: 0,
+            def_fisica: 0,
+            def_multipla: 0,
+            em_investigacao: 0,
+            outros: 0,
+          }
+
+          const casosInvestigacao: Array<{
+            id: string
+            aluno_id: string
+            aluno_nome: string
+            escola_nome: string
+            status: string
+            data_matricula: string
+            suspeita_clinica: string
+            especialidades: string[]
+          }> = []
+
+          matriculas.forEach((m: any) => {
+            const cs = m.condicoes_saude || {}
+            const rawCid = (m.cid_codigo || '').toUpperCase()
+            const cleanCid = rawCid.replace(/\s+/g, '').replace(/[\.:]/g, '')
+            const outros = (m.outros_transtornos || '').toUpperCase()
+            const status = m.status || 'ATIVO'
+
+            let hasExplicitCondition = false
+
+            // TEA: boolean, json, cid F84 / 6A02, ou texto
+            if (
+              m.transtorno_tea ||
+              cs.transtorno_tea?.selecionado ||
+              cleanCid.includes('F84') ||
+              cleanCid.includes('6A02') ||
+              outros.includes('TEA') ||
+              outros.includes('AUTIS')
+            ) {
+              counts.tea++
+              hasExplicitCondition = true
+            }
+
+            // TDAH: json, cid F90 / 6A05, ou texto
+            if (
+              cs.tdah?.selecionado ||
+              cleanCid.includes('F90') ||
+              cleanCid.includes('6A05') ||
+              outros.includes('TDAH') ||
+              outros.includes('HIPERATIV')
+            ) {
+              counts.tdah++
+              hasExplicitCondition = true
+            }
+
+            // Deficiência Intelectual: boolean, json, cid F70-F79 / 6A00 / 72, ou texto
+            if (
+              m.def_intelectual ||
+              cs.deficiencia_intelectual?.selecionado ||
+              cleanCid.includes('F70') ||
+              cleanCid.includes('F71') ||
+              cleanCid.includes('F72') ||
+              cleanCid.includes('F73') ||
+              cleanCid.includes('F79') ||
+              cleanCid.includes('CID72') ||
+              cleanCid.includes('6A00') ||
+              outros.includes('RETARDO') ||
+              outros.includes('INTELECTUAL')
+            ) {
+              counts.def_intelectual++
+              hasExplicitCondition = true
+            }
+
+            // Epilepsia / Distúrbios Convulsivos: json, cid G40, ou texto
+            if (
+              cs.epilepsia?.selecionado ||
+              cleanCid.includes('G40') ||
+              outros.includes('EPILEP') ||
+              outros.includes('CONVULS')
+            ) {
+              counts.epilepsia++
+              hasExplicitCondition = true
+            }
+
+            // Transtorno da Fala e Linguagem: json, cid F80, ou texto
+            if (
+              cs.transtorno_linguagem?.selecionado ||
+              cleanCid.includes('F80') ||
+              outros.includes('LINGUAGEM') ||
+              outros.includes('FALA') ||
+              outros.includes('TDL')
+            ) {
+              counts.transtorno_linguagem++
+              hasExplicitCondition = true
+            }
+
+            // Síndrome de Down: json, cid Q90, ou texto
+            if (
+              cs.sindrome_down?.selecionado ||
+              cleanCid.includes('Q90') ||
+              outros.includes('DOWN') ||
+              outros.includes('T21')
+            ) {
+              counts.sindrome_down++
+              hasExplicitCondition = true
+            }
+
+            // Paralisia Cerebral: json, cid G80 / 80.1, ou texto
+            if (
+              cs.paralisia_cerebral?.selecionado ||
+              cleanCid.includes('G80') ||
+              cleanCid.includes('CID80') ||
+              outros.includes('PARALISIA')
+            ) {
+              counts.paralisia_cerebral++
+              hasExplicitCondition = true
+            }
+
+            // Dislexia: json ou cid F81.0
+            if (cs.dislexia?.selecionado || cleanCid.includes('F810') || outros.includes('DISLEXIA')) {
+              counts.dislexia++
+              hasExplicitCondition = true
+            }
+
+            // Disgrafia / Disortografia: json ou cid F81.1
+            if (
+              cs.disgrafia_disortografia?.selecionado ||
+              cleanCid.includes('F811') ||
+              outros.includes('DISGRAFIA') ||
+              outros.includes('DISORTOGRAFIA')
+            ) {
+              counts.disgrafia++
+              hasExplicitCondition = true
+            }
+
+            // Discalculia: json ou cid F81.2
+            if (cs.discalculia?.selecionado || cleanCid.includes('F812') || outros.includes('DISCALCULIA')) {
+              counts.discalculia++
+              hasExplicitCondition = true
+            }
+
+            // TOD: json ou cid F91.3
+            if (cs.tod?.selecionado || cleanCid.includes('F913') || outros.includes('TOD') || outros.includes('OPOSITOR')) {
+              counts.tod++
+              hasExplicitCondition = true
+            }
+
+            // Transtorno de Conduta: json ou cid F91 (exceto se for apenas TOD já contabilizado)
+            if (
+              cs.transtorno_conduta?.selecionado ||
+              (cleanCid.includes('F91') && !cleanCid.includes('F913')) ||
+              outros.includes('CONDUTA')
+            ) {
+              counts.transtorno_conduta++
+              hasExplicitCondition = true
+            }
+
+            // TPAC: json ou cid H93.25
+            if (
+              cs.tpac?.selecionado ||
+              cleanCid.includes('H9325') ||
+              cleanCid.includes('H932') ||
+              outros.includes('TPAC') ||
+              outros.includes('AUDITIVO CENTRAL')
+            ) {
+              counts.tpac++
+              hasExplicitCondition = true
+            }
+
+            // Ansiedade: json ou cid F41
+            if (cs.ansiedade?.selecionado || cleanCid.includes('F41') || outros.includes('ANSIEDADE')) {
+              counts.ansiedade++
+              hasExplicitCondition = true
+            }
+
+            // Altas Habilidades / Superdotação: json ou cid Z55
+            if (
+              cs.superdotacao?.selecionado ||
+              cleanCid.includes('Z55') ||
+              outros.includes('SUPERDOTA') ||
+              outros.includes('ALTAS HABILIDADES')
+            ) {
+              counts.superdotacao++
+              hasExplicitCondition = true
+            }
+
+            // Deficiência Visual
+            if (m.def_baixa_visao || m.def_cegueira) {
+              counts.def_visual++
+              hasExplicitCondition = true
+            }
+
+            // Deficiência Auditiva
+            if (m.def_auditiva || m.def_surdez || m.def_surdocegueira) {
+              counts.def_auditiva++
+              hasExplicitCondition = true
+            }
+
+            // Deficiência Física
+            if (m.def_fisica) {
+              counts.def_fisica++
+              hasExplicitCondition = true
+            }
+
+            // Deficiência Múltipla
+            if (m.def_multipla) {
+              counts.def_multipla++
+              hasExplicitCondition = true
+            }
+
+            // Em Investigação:
+            const isInvestigacao =
+              Boolean(cs.em_investigacao?.selecionado) ||
+              status === 'EM_INVESTIGACAO' ||
+              (!hasExplicitCondition && !rawCid.trim())
+
+            if (isInvestigacao) {
+              counts.em_investigacao++
+
+              const vinculosAtivos = (m.emaee_especialidades_vinculadas || [])
+                .filter((v: any) => v.ativo !== false)
+                .map((v: any) =>
+                  v.especialidade === 'Outros' && v.especialidade_outros
+                    ? v.especialidade_outros
+                    : v.especialidade
+                )
+
+              const suspeita =
+                (cs.em_investigacao?.cid && cs.em_investigacao.cid.trim()) ||
+                (m.outros_transtornos && m.outros_transtornos.trim()) ||
+                (m.principal_queixa && m.principal_queixa.trim()) ||
+                'Aguardando avaliação médica especializada'
+
+              casosInvestigacao.push({
+                id: m.id,
+                aluno_id: m.aluno_id,
+                aluno_nome: m.alunos?.nome || 'Aluno não identificado',
+                escola_nome: m.escolas?.nome || m.escola_origem_nome || 'Rede Municipal',
+                status: m.status || 'EM_INVESTIGACAO',
+                data_matricula: m.data_matricula,
+                suspeita_clinica: suspeita,
+                especialidades: Array.from(new Set(vinculosAtivos)),
+              })
+            } else if (!hasExplicitCondition) {
+              counts.outros++
+            }
+          })
+
+          data.epidemiologia = counts
+          data.casos_investigacao = casosInvestigacao
+        }
+      } catch (errEpi) {
+        console.warn('[api/relatorios/emaee-estrategico] Falha não impeditiva ao normalizar epidemiologia:', errEpi)
+      }
+    }
+
+    // 4. Garantir a acurácia demográfica de "Zona de Residência dos Pacientes"
     // Como a unidade do EMAEE situa-se na zona urbana, a RPC original contava localizacao_atendimento.
     // Aqui garantimos que a aba de Demografia reflita a zona residencial real dos alunos atendidos.
     if (data && data.logistica) {

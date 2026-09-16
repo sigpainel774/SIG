@@ -1531,9 +1531,9 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
           responsavel_assinatura_nome: responsavelAssinaturaNomeFinal,
           responsavel_assinatura_cpf: responsavelOutroCpf.trim() || null,
           ...deficiencias,
-          transtorno_outros: Boolean(outrosTranstornos.trim()) || deficiencias.transtorno_outros,
-          transtorno_tea: Boolean(condicoesSaude.transtorno_tea.selecionado),
-          def_intelectual: Boolean(condicoesSaude.deficiencia_intelectual.selecionado),
+          transtorno_outros: Boolean(outrosTranstornos?.trim()) || Boolean(deficiencias.transtorno_outros),
+          transtorno_tea: Boolean(condicoesSaude.transtorno_tea?.selecionado) || Boolean(deficiencias.transtorno_tea) || /F84|6A02/i.test(cidCodigo || '') || /TEA|AUTIS/i.test(outrosTranstornos || ''),
+          def_intelectual: Boolean(condicoesSaude.deficiencia_intelectual?.selecionado) || Boolean(deficiencias.def_intelectual) || /F7[0-9]|6A00/i.test(cidCodigo || '') || /RETARDO|INTELECTUAL/i.test(outrosTranstornos || ''),
           condicoes_saude: condicoesSaude,
           status: statusMatricula || (vinculosAEE.filter(v => !v.isRemovido).some(v => v.status === 'EM_ATENDIMENTO' || (!v.status && v.profissionalId)) ? 'ATIVO' : 'FILA_ESPERA')
         }
@@ -1939,9 +1939,9 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
         responsavel_assinatura_nome: responsavelAssinaturaNomeFinal,
         responsavel_assinatura_cpf: responsavelOutroCpf.trim() || null,
         ...deficiencias,
-        transtorno_outros: Boolean(outrosTranstornos?.trim()) || deficiencias.transtorno_outros,
-        transtorno_tea: Boolean(condicoesSaude.transtorno_tea.selecionado),
-        def_intelectual: Boolean(condicoesSaude.deficiencia_intelectual.selecionado),
+        transtorno_outros: Boolean(outrosTranstornos?.trim()) || Boolean(deficiencias.transtorno_outros),
+        transtorno_tea: Boolean(condicoesSaude.transtorno_tea?.selecionado) || Boolean(deficiencias.transtorno_tea) || /F84|6A02/i.test(cidCodigo || '') || /TEA|AUTIS/i.test(outrosTranstornos || ''),
+        def_intelectual: Boolean(condicoesSaude.deficiencia_intelectual?.selecionado) || Boolean(deficiencias.def_intelectual) || /F7[0-9]|6A00/i.test(cidCodigo || '') || /RETARDO|INTELECTUAL/i.test(outrosTranstornos || ''),
         condicoes_saude: condicoesSaude,
         status: statusMatricula || (vinculosAEE.some(v => v.status === 'EM_ATENDIMENTO' || (!v.status && v.profissionalId)) ? 'ATIVO' : 'FILA_ESPERA')
       }

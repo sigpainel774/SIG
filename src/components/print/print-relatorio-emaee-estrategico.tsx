@@ -28,17 +28,35 @@ export interface RelatorioEmaeePrintPayload {
     tea: number
     tdah: number
     def_intelectual: number
+    epilepsia?: number
+    transtorno_linguagem?: number
+    sindrome_down?: number
+    paralisia_cerebral?: number
     dislexia: number
     disgrafia: number
+    discalculia?: number
     tod: number
+    transtorno_conduta?: number
+    tpac?: number
     ansiedade: number
     superdotacao: number
     def_visual: number
     def_auditiva: number
     def_fisica: number
     def_multipla: number
+    em_investigacao?: number
     outros: number
   }
+  casos_investigacao?: Array<{
+    id: string
+    aluno_id: string
+    aluno_nome: string
+    escola_nome: string
+    status: string
+    data_matricula: string
+    suspeita_clinica: string
+    especialidades: string[]
+  }>
   especialidades: Array<{
     especialidade: string
     total_atendimentos: number
@@ -104,16 +122,24 @@ export function PrintRelatorioEmaeeEstrategico({ data, onClose }: PrintRelatorio
     { label: 'TEA (Transtorno do Espectro Autista)', count: data.epidemiologia.tea },
     { label: 'TDAH (Déficit de Atenção e Hiperatividade)', count: data.epidemiologia.tdah },
     { label: 'Deficiência Intelectual (DI)', count: data.epidemiologia.def_intelectual },
+    { label: 'Epilepsia / Distúrbios Convulsivos (G40)', count: data.epidemiologia.epilepsia || 0 },
+    { label: 'Transtornos da Fala e Linguagem (TDL / F80)', count: data.epidemiologia.transtorno_linguagem || 0 },
+    { label: 'Síndrome de Down (T21 / Q90)', count: data.epidemiologia.sindrome_down || 0 },
+    { label: 'Paralisia Cerebral (G80)', count: data.epidemiologia.paralisia_cerebral || 0 },
     { label: 'Dislexia', count: data.epidemiologia.dislexia },
     { label: 'Disgrafia / Disortografia', count: data.epidemiologia.disgrafia },
+    { label: 'Discalculia', count: data.epidemiologia.discalculia || 0 },
     { label: 'TOD (Transtorno Opositivo Desafiador)', count: data.epidemiologia.tod },
+    { label: 'Transtorno de Conduta (F91)', count: data.epidemiologia.transtorno_conduta || 0 },
+    { label: 'TPAC (Processamento Auditivo Central)', count: data.epidemiologia.tpac || 0 },
     { label: 'Transtorno de Ansiedade', count: data.epidemiologia.ansiedade },
     { label: 'Altas Habilidades / Superdotação', count: data.epidemiologia.superdotacao },
     { label: 'Deficiência Visual (Baixa Visão / Cegueira)', count: data.epidemiologia.def_visual },
     { label: 'Deficiência Auditiva / Surdez', count: data.epidemiologia.def_auditiva },
     { label: 'Deficiência Física / Motora', count: data.epidemiologia.def_fisica },
     { label: 'Deficiência Múltipla', count: data.epidemiologia.def_multipla },
-    { label: 'Outros Transtornos / Em Investigação', count: data.epidemiologia.outros },
+    { label: 'Em Investigação Diagnóstica (Aguardando Laudo)', count: data.epidemiologia.em_investigacao || 0 },
+    { label: 'Outras Condições Clínicas', count: data.epidemiologia.outros || 0 },
   ].filter((item) => item.count > 0)
 
   const totalBase = data.epidemiologia.total_base || 1

@@ -22,7 +22,9 @@ import {
   HelpCircle,
   CalendarCheck,
   Timer,
-  AlertTriangle
+  AlertTriangle,
+  Eye,
+  FileQuestion
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -42,6 +44,7 @@ import {
   CartesianGrid
 } from 'recharts'
 import { RelatorioEmaeePrintPayload } from '@/components/print/print-relatorio-emaee-estrategico'
+import { ModalDetalhesInvestigacaoEmaee } from '@/components/modals/ModalDetalhesInvestigacaoEmaee'
 
 interface RelatorioEmaeeProps {
   selectedEscola?: {
@@ -55,13 +58,21 @@ const PALETTE_EPIDEMIOLOGIA = [
   '#3b82f6', // Azul (TEA)
   '#f59e0b', // Âmbar (TDAH)
   '#8b5cf6', // Roxo (DI)
-  '#10b981', // Verde esmeralda (Dislexia)
-  '#06b6d4', // Ciano (Disgrafia)
-  '#ec4899', // Rosa (TOD)
-  '#f97316', // Laranja (Ansiedade)
+  '#ec4899', // Rosa (Epilepsia)
+  '#06b6d4', // Ciano (Fala / Linguagem)
+  '#10b981', // Verde esmeralda (Síndrome de Down)
+  '#f97316', // Laranja (Paralisia Cerebral)
+  '#14b8a6', // Teal (Dislexia)
+  '#6366f1', // Indigo (Disgrafia)
+  '#84cc16', // Lima (Discalculia)
+  '#d946ef', // Magenta (TOD)
+  '#ef4444', // Vermelho (Transtorno de Conduta)
+  '#0ea5e9', // Sky (TPAC)
+  '#eab308', // Amarelo (Ansiedade)
   '#a855f7', // Violeta (Superdotação)
   '#64748b', // Cinza azulado (Deficiências)
-  '#14b8a6', // Teal
+  '#f59e0b', // Âmbar (Em Investigação)
+  '#94a3b8', // Cinza (Outros)
 ]
 
 const PALETTE_ESPECIALIDADES = [
@@ -77,6 +88,7 @@ export default function RelatorioEmaeeEstrategico({ selectedEscola }: RelatorioE
   const [activeTab, setActiveTab] = useState<'epidemiologia' | 'especialidades' | 'origem' | 'logistica' | 'atendimentos'>('epidemiologia')
   const [data, setData] = useState<RelatorioEmaeePrintPayload | null>(null)
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null)
+  const [isModalInvestigacaoOpen, setIsModalInvestigacaoOpen] = useState<boolean>(false)
 
   // Estados para a nova aba "Atendimentos" (Carregamento sob demanda / lazy)
   const [atendimentosData, setAtendimentosData] = useState<{
@@ -209,19 +221,33 @@ export default function RelatorioEmaeeEstrategico({ selectedEscola }: RelatorioE
     const base = ep.total_base || 1
 
     return [
-      { name: 'TEA', label: 'Transtorno do Espectro Autista', count: ep.tea, pct: Number(((ep.tea / base) * 100).toFixed(1)) },
-      { name: 'TDAH', label: 'Déficit de Atenção / Hiperatividade', count: ep.tdah, pct: Number(((ep.tdah / base) * 100).toFixed(1)) },
-      { name: 'Def. Intelectual', label: 'Deficiência Intelectual', count: ep.def_intelectual, pct: Number(((ep.def_intelectual / base) * 100).toFixed(1)) },
-      { name: 'Dislexia', label: 'Dislexia', count: ep.dislexia, pct: Number(((ep.dislexia / base) * 100).toFixed(1)) },
-      { name: 'Disgrafia', label: 'Disgrafia / Disortografia', count: ep.disgrafia, pct: Number(((ep.disgrafia / base) * 100).toFixed(1)) },
-      { name: 'TOD', label: 'Transtorno Opositivo Desafiador', count: ep.tod, pct: Number(((ep.tod / base) * 100).toFixed(1)) },
-      { name: 'Ansiedade', label: 'Transtornos de Ansiedade', count: ep.ansiedade, pct: Number(((ep.ansiedade / base) * 100).toFixed(1)) },
-      { name: 'Altas Habilidades', label: 'Superdotação / Altas Habilidades', count: ep.superdotacao, pct: Number(((ep.superdotacao / base) * 100).toFixed(1)) },
-      { name: 'Def. Visual', label: 'Baixa Visão / Cegueira', count: ep.def_visual, pct: Number(((ep.def_visual / base) * 100).toFixed(1)) },
-      { name: 'Def. Auditiva', label: 'Surdez / Auditiva', count: ep.def_auditiva, pct: Number(((ep.def_auditiva / base) * 100).toFixed(1)) },
-      { name: 'Def. Física', label: 'Deficiência Física / Motora', count: ep.def_fisica, pct: Number(((ep.def_fisica / base) * 100).toFixed(1)) },
-      { name: 'Def. Múltipla', label: 'Deficiência Múltipla', count: ep.def_multipla, pct: Number(((ep.def_multipla / base) * 100).toFixed(1)) },
-      { name: 'Outros', label: 'Outros Transtornos / Investigação', count: ep.outros, pct: Number(((ep.outros / base) * 100).toFixed(1)) },
+      { name: 'TEA', label: 'Transtorno do Espectro Autista', count: ep.tea || 0, pct: Number((((ep.tea || 0) / base) * 100).toFixed(1)) },
+      { name: 'TDAH', label: 'Déficit de Atenção / Hiperatividade', count: ep.tdah || 0, pct: Number((((ep.tdah || 0) / base) * 100).toFixed(1)) },
+      { name: 'Def. Intelectual', label: 'Deficiência Intelectual', count: ep.def_intelectual || 0, pct: Number((((ep.def_intelectual || 0) / base) * 100).toFixed(1)) },
+      { name: 'Epilepsia', label: 'Epilepsia / Distúrbios Convulsivos (G40)', count: ep.epilepsia || 0, pct: Number((((ep.epilepsia || 0) / base) * 100).toFixed(1)) },
+      { name: 'Linguagem/Fala', label: 'Transtornos da Fala e Linguagem (TDL / F80)', count: ep.transtorno_linguagem || 0, pct: Number((((ep.transtorno_linguagem || 0) / base) * 100).toFixed(1)) },
+      { name: 'Down (T21)', label: 'Síndrome de Down (T21 / Q90)', count: ep.sindrome_down || 0, pct: Number((((ep.sindrome_down || 0) / base) * 100).toFixed(1)) },
+      { name: 'Paralisia Cerebral', label: 'Paralisia Cerebral (G80)', count: ep.paralisia_cerebral || 0, pct: Number((((ep.paralisia_cerebral || 0) / base) * 100).toFixed(1)) },
+      { name: 'Dislexia', label: 'Dislexia (F81.0)', count: ep.dislexia || 0, pct: Number((((ep.dislexia || 0) / base) * 100).toFixed(1)) },
+      { name: 'Disgrafia', label: 'Disgrafia / Disortografia (F81.1)', count: ep.disgrafia || 0, pct: Number((((ep.disgrafia || 0) / base) * 100).toFixed(1)) },
+      { name: 'Discalculia', label: 'Discalculia (F81.2)', count: ep.discalculia || 0, pct: Number((((ep.discalculia || 0) / base) * 100).toFixed(1)) },
+      { name: 'TOD', label: 'Transtorno Opositivo Desafiador (F91.3)', count: ep.tod || 0, pct: Number((((ep.tod || 0) / base) * 100).toFixed(1)) },
+      { name: 'Tr. Conduta', label: 'Transtorno de Conduta (F91)', count: ep.transtorno_conduta || 0, pct: Number((((ep.transtorno_conduta || 0) / base) * 100).toFixed(1)) },
+      { name: 'TPAC', label: 'Transtorno Proc. Auditivo Central (H93.25)', count: ep.tpac || 0, pct: Number((((ep.tpac || 0) / base) * 100).toFixed(1)) },
+      { name: 'Ansiedade', label: 'Transtornos de Ansiedade', count: ep.ansiedade || 0, pct: Number((((ep.ansiedade || 0) / base) * 100).toFixed(1)) },
+      { name: 'Altas Habilidades', label: 'Superdotação / Altas Habilidades', count: ep.superdotacao || 0, pct: Number((((ep.superdotacao || 0) / base) * 100).toFixed(1)) },
+      { name: 'Def. Visual', label: 'Baixa Visão / Cegueira', count: ep.def_visual || 0, pct: Number((((ep.def_visual || 0) / base) * 100).toFixed(1)) },
+      { name: 'Def. Auditiva', label: 'Surdez / Deficiência Auditiva', count: ep.def_auditiva || 0, pct: Number((((ep.def_auditiva || 0) / base) * 100).toFixed(1)) },
+      { name: 'Def. Física', label: 'Deficiência Física / Motora', count: ep.def_fisica || 0, pct: Number((((ep.def_fisica || 0) / base) * 100).toFixed(1)) },
+      { name: 'Def. Múltipla', label: 'Deficiência Múltipla', count: ep.def_multipla || 0, pct: Number((((ep.def_multipla || 0) / base) * 100).toFixed(1)) },
+      {
+        name: 'Investigação',
+        label: 'Em Investigação Diagnóstica (Aguardando Laudo)',
+        count: ep.em_investigacao || 0,
+        pct: Number((((ep.em_investigacao || 0) / base) * 100).toFixed(1)),
+        isInvestigacao: true,
+      },
+      { name: 'Outras Condições', label: 'Outras Condições Clínicas', count: ep.outros || 0, pct: Number((((ep.outros || 0) / base) * 100).toFixed(1)) },
     ].filter((item) => item.count > 0)
   }, [data])
 
@@ -492,23 +518,35 @@ export default function RelatorioEmaeeEstrategico({ selectedEscola }: RelatorioE
                 </div>
               </div>
 
-              <div className="h-[360px] w-full">
+              <div className="h-[380px] w-full">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart
                     data={epidemiologiaChartData}
                     layout="vertical"
-                    margin={{ top: 10, right: 30, left: 70, bottom: 5 }}
+                    margin={{ top: 10, right: 30, left: 80, bottom: 5 }}
+                    onClick={(state: any) => {
+                      if (state?.activePayload?.[0]?.payload?.isInvestigacao) {
+                        setIsModalInvestigacaoOpen(true)
+                      }
+                    }}
                   >
                     <CartesianGrid strokeDasharray="3 3" stroke="#27272a" horizontal={false} />
                     <XAxis type="number" stroke="#71717a" fontSize={11} />
-                    <YAxis dataKey="name" type="category" stroke="#a1a1aa" fontSize={11} width={80} />
+                    <YAxis dataKey="name" type="category" stroke="#a1a1aa" fontSize={11} width={100} />
                     <Tooltip
-                      formatter={(value: any, name: any, item: any) => [`${value} casos (${item.payload.pct}%)`, 'Total']}
+                      formatter={(value: any, name: any, item: any) => [
+                        `${value} casos (${item.payload.pct}%)${item.payload.isInvestigacao ? ' • Clique para ver detalhes' : ''}`,
+                        'Total',
+                      ]}
                       contentStyle={{ backgroundColor: '#18181b', borderColor: '#27272a', borderRadius: '12px', color: '#fff' }}
                     />
-                    <Bar dataKey="count" fill="#3b82f6" radius={[0, 6, 6, 0]}>
-                      {epidemiologiaChartData.map((_, index) => (
-                        <Cell key={`cell-${index}`} fill={PALETTE_EPIDEMIOLOGIA[index % PALETTE_EPIDEMIOLOGIA.length]} />
+                    <Bar dataKey="count" fill="#3b82f6" radius={[0, 6, 6, 0]} className="cursor-pointer">
+                      {epidemiologiaChartData.map((entry, index) => (
+                        <Cell
+                          key={`cell-${index}`}
+                          fill={PALETTE_EPIDEMIOLOGIA[index % PALETTE_EPIDEMIOLOGIA.length]}
+                          className={entry.isInvestigacao ? 'hover:opacity-80 transition-opacity' : ''}
+                        />
                       ))}
                     </Bar>
                   </BarChart>
@@ -523,22 +561,58 @@ export default function RelatorioEmaeeEstrategico({ selectedEscola }: RelatorioE
             {/* Quadro Numérico Sintético */}
             <div className="bg-card border border-border rounded-2xl p-6 shadow-sm flex flex-col justify-between">
               <div>
-                <h3 className="text-base font-bold text-foreground border-b border-border pb-3 mb-3">
-                  Quadro Sintético Censo AEE
-                </h3>
-                <div className="space-y-2.5 max-h-[360px] overflow-y-auto pr-1">
+                <div className="flex items-center justify-between border-b border-border pb-3 mb-3">
+                  <h3 className="text-base font-bold text-foreground">
+                    Quadro Sintético Censo AEE
+                  </h3>
+                  {data.epidemiologia.em_investigacao && data.epidemiologia.em_investigacao > 0 ? (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setIsModalInvestigacaoOpen(true)}
+                      className="h-7 px-2 text-[11px] gap-1 rounded-lg border-amber-500/30 text-amber-500 bg-amber-500/10 hover:bg-amber-500/20"
+                    >
+                      <Eye className="w-3 h-3" />
+                      <span>Ver Investigação</span>
+                    </Button>
+                  ) : null}
+                </div>
+
+                <div className="space-y-2 max-h-[380px] overflow-y-auto pr-1">
                   {epidemiologiaChartData.map((item, idx) => (
-                    <div key={idx} className="flex items-center justify-between p-2 rounded-xl bg-secondary/40 border border-border/50 text-xs">
-                      <div className="flex items-center gap-2">
+                    <div
+                      key={idx}
+                      className={cn(
+                        'flex items-center justify-between p-2 rounded-xl border text-xs transition-all',
+                        item.isInvestigacao
+                          ? 'bg-amber-500/10 border-amber-500/30 hover:border-amber-500/50 cursor-pointer shadow-xs'
+                          : 'bg-secondary/40 border-border/50'
+                      )}
+                      onClick={() => {
+                        if (item.isInvestigacao) setIsModalInvestigacaoOpen(true)
+                      }}
+                    >
+                      <div className="flex items-center gap-2 min-w-0">
                         <span
                           className="w-2.5 h-2.5 rounded-full shrink-0"
                           style={{ backgroundColor: PALETTE_EPIDEMIOLOGIA[idx % PALETTE_EPIDEMIOLOGIA.length] }}
                         />
-                        <span className="text-foreground font-medium truncate max-w-[150px]">{item.label}</span>
+                        <span className="text-foreground font-medium truncate max-w-[140px] sm:max-w-[170px]" title={item.label}>
+                          {item.label}
+                        </span>
                       </div>
-                      <div className="text-right shrink-0">
-                        <span className="font-bold text-foreground">{item.count}</span>
-                        <span className="text-muted-foreground text-[10px] ml-1.5">({item.pct}%)</span>
+
+                      <div className="flex items-center gap-2 shrink-0 ml-2">
+                        {item.isInvestigacao && (
+                          <span className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-500 bg-amber-500/15 px-1.5 py-0.5 rounded-md border border-amber-500/30">
+                            <Eye className="w-2.5 h-2.5" /> Detalhes
+                          </span>
+                        )}
+                        <div className="text-right">
+                          <span className="font-bold text-foreground">{item.count}</span>
+                          <span className="text-muted-foreground text-[10px] ml-1">({item.pct}%)</span>
+                        </div>
                       </div>
                     </div>
                   ))}
@@ -1121,6 +1195,14 @@ export default function RelatorioEmaeeEstrategico({ selectedEscola }: RelatorioE
           )}
         </div>
       )}
+
+      {/* Modal de Detalhes da Investigação Diagnóstica */}
+      <ModalDetalhesInvestigacaoEmaee
+        open={isModalInvestigacaoOpen}
+        onOpenChange={setIsModalInvestigacaoOpen}
+        casos={data?.casos_investigacao || []}
+        anoLetivo={anoLetivo}
+      />
     </div>
   )
 }
