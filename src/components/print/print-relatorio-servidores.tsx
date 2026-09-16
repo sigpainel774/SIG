@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useMemo } from 'react'
 import { createPortal } from 'react-dom'
 import { X, Printer, Users, FileSpreadsheet } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -41,6 +41,7 @@ export interface ServidorNominalPrint {
   orgao?: string | null
   modalidade_ensino?: string | null
   vinculo_tipo?: string | null
+  vinculo_tipo_normalizado?: string | null
 }
 
 interface PrintRelatorioServidoresProps {
@@ -80,6 +81,81 @@ export function PrintRelatorioServidores({
     }, 200)
   }
 
+  // Fallback inteligente para garantir que cargos e resumo nunca fiquem vazios
+  const cargosEfetivos = useMemo<CargoBreakdownPrint[]>(() => {
+    if (cargos && cargos.length > 0) return cargos
+    if (!servidoresNominais || servidoresNominais.length === 0) return []
+
+    const map = new Map<string, CargoBreakdownPrint>()
+    for (const s of servidoresNominais) {
+      const cName = (s.cargo || 'Cargo não informado').trim()
+      const isEja = (s.modalidade_ensino || '').toUpperCase().includes('EJA')
+      const vUpper = (s.vinculo_tipo_normalizado || s.vinculo_tipo || '').toUpperCase()
+
+      let vKey: 'concursados' | 'contratados' | 'nomeados' | 'outros' = 'outros'
+      if (vUpper.includes('CONCURSADO') || vUpper.includes('EFETIVO')) vKey = 'concursados'
+      else if (vUpper.includes('CONTRATADO') || vUpper.includes('SUBSTITUTO') || vUpper.includes('PRESTADOR') || vUpper.includes('RESERVISTA')) vKey = 'contratados'
+      else if (vUpper.includes('NOMEADO')) vKey = 'nomeados'
+
+      const item = map.get(cName) || {
+        cargo: cName,
+        ocupacoes: 0,
+        regular: 0,
+        eja: 0,
+        concursados: 0,
+        contratados: 0,
+        nomeados: 0,
+        outros: 0,
+      }
+      item.ocupacoes++
+      if (isEja) item.eja++
+      else item.regular++
+      item[vKey]++
+      map.set(cName, item)
+    }
+
+    return Array.from(map.values()).sort(
+      (a, b) => b.ocupacoes - a.ocupacoes || a.cargo.localeCompare(b.cargo, 'pt-BR')
+    )
+  }, [cargos, servidoresNominais])
+
+  const resumoEfetivo = useMemo<ResumoServidoresPrint>(() => {
+    if (resumo && resumo.total_cargos_ocupados > 0) return resumo
+    if (!servidoresNominais || servidoresNominais.length === 0) return resumo
+
+    const uniqueIds = new Set<string>()
+    let reg = 0
+    let eja = 0
+    let conc = 0
+    let cont = 0
+    let nom = 0
+    let out = 0
+
+    for (const s of servidoresNominais) {
+      uniqueIds.add(s.id)
+      const isEja = (s.modalidade_ensino || '').toUpperCase().includes('EJA')
+      if (isEja) eja++
+      else reg++
+
+      const vUpper = (s.vinculo_tipo_normalizado || s.vinculo_tipo || '').toUpperCase()
+      if (vUpper.includes('CONCURSADO') || vUpper.includes('EFETIVO')) conc++
+      else if (vUpper.includes('CONTRATADO') || vUpper.includes('SUBSTITUTO') || vUpper.includes('PRESTADOR') || vUpper.includes('RESERVISTA')) cont++
+      else if (vUpper.includes('NOMEADO')) nom++
+      else out++
+    }
+
+    return {
+      total_servidores_unicos: uniqueIds.size,
+      total_cargos_ocupados: servidoresNominais.length,
+      total_contratados: cont,
+      total_concursados: conc,
+      total_nomeados: nom,
+      total_outros: out,
+      total_regular: reg,
+      total_eja: eja,
+    }
+  }, [resumo, servidoresNominais])
+
   if (!mounted) return null
 
   const isSintetico = modoView === 'sintetico'
@@ -92,7 +168,7 @@ export function PrintRelatorioServidores({
   const legendaModalidade = filtroModalidade ?? 'Todas'
   const legendaVinculo = filtroVinculo ?? 'Todos'
 
-  const totalCargosCalculado = resumo.total_cargos_ocupados ?? 0
+  const totalCargosCalculado = resumoEfetivo.total_cargos_ocupados ?? 0
 
   return createPortal(
     <div className="print-portal-container">
@@ -104,22 +180,24 @@ export function PrintRelatorioServidores({
             z-index: 9999;
             background-color: rgba(9,9,11,0.95);
             display: flex;
-            align-items: center;
+            align-items: flex-start;
             justify-content: center;
-            padding: 1rem;
+            padding: 1.5rem 1rem;
             overflow-y: auto;
           }
         }
         @media print {
           @page {
-            size: ${isSintetico ? 'portrait' : 'landscape'};
+            size: ${isSintetico ? 'A4 portrait' : 'A4 landscape'};
             margin: 8mm 10mm;
           }
           html, body {
             margin: 0 !important;
             padding: 0 !important;
-            background: white !important;
-            color: black !important;
+            background: #ffffff !important;
+            color: #000000 !important;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
           }
           body > *:not(.print-portal-container) {
             display: none !important;
@@ -131,8 +209,8 @@ export function PrintRelatorioServidores({
             position: static !important;
             width: 100% !important;
             min-height: 0 !important;
-            background: white !important;
-            color: black !important;
+            background: #ffffff !important;
+            color: #000000 !important;
             padding: 0 !important;
             margin: 0 !important;
             inset: auto !important;
@@ -144,7 +222,22 @@ export function PrintRelatorioServidores({
           .no-print {
             display: none !important;
           }
-          tr, .print-card, .print-section {
+          .print-sheet {
+            width: 100% !important;
+            max-width: 100% !important;
+            min-height: 0 !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            box-shadow: none !important;
+            border-radius: 0 !important;
+            background: #ffffff !important;
+            color: #000000 !important;
+          }
+          tr {
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
+          }
+          .print-cargo-block {
             page-break-inside: avoid !important;
             break-inside: avoid !important;
           }
@@ -171,11 +264,12 @@ export function PrintRelatorioServidores({
       </div>
 
       {/* Folha A4 de Visualização */}
-      <div className={`bg-white text-black p-8 font-sans shadow-2xl rounded-lg print:shadow-none print:rounded-none print:p-0 print:w-full print:min-h-0 ${isSintetico ? 'w-[210mm] min-h-[297mm]' : 'w-[297mm] min-h-[210mm]'}`}>
+      <div className={`bg-white text-black p-8 font-sans shadow-2xl rounded-lg print-sheet ${isSintetico ? 'w-[210mm]' : 'w-[297mm]'}`}>
         {/* Cabeçalho Oficial */}
         <PrintHeader
           docTitulo="RELATÓRIO OFICIAL DE SERVIDORES"
           docSubtitulo={docSubtitulo}
+          escolaNome={escolaNome || undefined}
           timestamp={sessionTimestamp}
         />
 
@@ -200,65 +294,65 @@ export function PrintRelatorioServidores({
         </div>
 
         {/* Resumo Executivo (KPIs Estatísticos) */}
-        <div className="grid grid-cols-4 gap-3 mb-5 print-section">
-          <div className="border border-gray-300 rounded-lg p-2.5 bg-blue-50/50 text-center print-card">
+        <div className="grid grid-cols-4 gap-3 mb-5">
+          <div className="border border-gray-300 rounded-lg p-2.5 bg-blue-50/50 text-center">
             <span className="text-[9px] font-bold text-blue-800 uppercase block">Servidores Únicos</span>
             <span className="text-xl font-black text-blue-900 block mt-0.5">
-              {resumo.total_servidores_unicos ?? 0}
+              {resumoEfetivo.total_servidores_unicos ?? 0}
             </span>
             <span className="text-[8px] text-blue-700 font-semibold block">Deduplicados</span>
           </div>
 
-          <div className="border border-gray-300 rounded-lg p-2.5 bg-emerald-50/50 text-center print-card">
+          <div className="border border-gray-300 rounded-lg p-2.5 bg-emerald-50/50 text-center">
             <span className="text-[9px] font-bold text-emerald-800 uppercase block">Total de Cargos Ocupados</span>
             <span className="text-xl font-black text-emerald-900 block mt-0.5">
-              {resumo.total_cargos_ocupados ?? 0}
+              {resumoEfetivo.total_cargos_ocupados ?? 0}
             </span>
             <span className="text-[8px] text-emerald-700 font-semibold block">Postos ativos</span>
           </div>
 
-          <div className="border border-gray-300 rounded-lg p-2.5 bg-purple-50/50 text-center print-card">
+          <div className="border border-gray-300 rounded-lg p-2.5 bg-purple-50/50 text-center">
             <span className="text-[9px] font-bold text-purple-800 uppercase block">Ensino Regular</span>
             <span className="text-xl font-black text-purple-900 block mt-0.5">
-              {resumo.total_regular ?? 0}
+              {resumoEfetivo.total_regular ?? 0}
             </span>
             <span className="text-[8px] text-purple-700 font-semibold block">
-              {totalCargosCalculado > 0 ? `${Math.round(((resumo.total_regular ?? 0) / totalCargosCalculado) * 100)}% das ocupações` : '0%'}
+              {totalCargosCalculado > 0 ? `${Math.round(((resumoEfetivo.total_regular ?? 0) / totalCargosCalculado) * 100)}% das ocupações` : '0%'}
             </span>
           </div>
 
-          <div className="border border-gray-300 rounded-lg p-2.5 bg-amber-50/50 text-center print-card">
+          <div className="border border-gray-300 rounded-lg p-2.5 bg-amber-50/50 text-center">
             <span className="text-[9px] font-bold text-amber-800 uppercase block">Modalidade EJA</span>
             <span className="text-xl font-black text-amber-900 block mt-0.5">
-              {resumo.total_eja ?? 0}
+              {resumoEfetivo.total_eja ?? 0}
             </span>
             <span className="text-[8px] text-amber-700 font-semibold block">
-              {totalCargosCalculado > 0 ? `${Math.round(((resumo.total_eja ?? 0) / totalCargosCalculado) * 100)}% das ocupações` : '0%'}
+              {totalCargosCalculado > 0 ? `${Math.round(((resumoEfetivo.total_eja ?? 0) / totalCargosCalculado) * 100)}% das ocupações` : '0%'}
             </span>
           </div>
         </div>
 
         {/* Quadro de Distribuição por Vínculo */}
-        <div className="mb-5 p-3 border border-gray-300 rounded-lg bg-gray-50 print-section">
+        <div className="mb-5 p-3 border border-gray-300 rounded-lg bg-gray-50">
           <span className="text-[9.5px] font-extrabold text-gray-800 uppercase block mb-1.5">
             Quadro de Distribuição por Vínculo Profissional
           </span>
           <div className="grid grid-cols-4 gap-3 text-center text-xs">
             <div className="p-2 bg-white border border-gray-200 rounded-md">
               <span className="text-[9px] text-gray-500 font-bold block">CONCURSADOS / EFETIVOS</span>
-              <strong className="text-blue-900 text-sm">{resumo.total_concursados ?? 0}</strong>
+              <strong className="text-blue-900 text-sm">{resumoEfetivo.total_concursados ?? 0}</strong>
             </div>
             <div className="p-2 bg-white border border-gray-200 rounded-md">
               <span className="text-[9px] text-gray-500 font-bold block">CONTRATADOS / TEMPORÁRIOS</span>
-              <strong className="text-emerald-900 text-sm">{resumo.total_contratados ?? 0}</strong>
+              <strong className="text-emerald-900 text-sm">{resumoEfetivo.total_contratados ?? 0}</strong>
             </div>
             <div className="p-2 bg-white border border-gray-200 rounded-md">
               <span className="text-[9px] text-gray-500 font-bold block">NOMEADOS / COMISSIONADOS</span>
-              <strong className="text-purple-900 text-sm">{resumo.total_nomeados ?? 0}</strong>
+              <strong className="text-purple-900 text-sm">{resumoEfetivo.total_nomeados ?? 0}</strong>
             </div>
             <div className="p-2 bg-white border border-gray-200 rounded-md">
               <span className="text-[9px] text-gray-500 font-bold block">OUTROS VÍNCULOS</span>
-              <strong className="text-amber-900 text-sm">{resumo.total_outros ?? 0}</strong>
+              <strong className="text-amber-900 text-sm">{resumoEfetivo.total_outros ?? 0}</strong>
             </div>
           </div>
         </div>
@@ -266,11 +360,11 @@ export function PrintRelatorioServidores({
         {/* Conteúdo Dinâmico: Modo Sintético vs Modo Nominal */}
         {isSintetico ? (
           /* Tabela Consolidada por Cargo e Sumário Hierárquico */
-          <div className="mb-6 print-section">
+          <div className="mb-6">
             <div className="flex items-center justify-between mb-2 text-[10px] font-bold uppercase text-gray-800 border-b border-gray-300 pb-1">
               <div className="flex items-center gap-1.5">
                 <FileSpreadsheet className="w-3.5 h-3.5 text-blue-900" />
-                <span>Detalhamento Consolidado por Cargo e Função ({cargos.length} cargos)</span>
+                <span>Detalhamento Consolidado por Cargo e Função ({cargosEfetivos.length} cargos)</span>
               </div>
               <span className="text-gray-500">Valores em número de ocupações</span>
             </div>
@@ -289,7 +383,7 @@ export function PrintRelatorioServidores({
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
-                {cargos.map((item, idx) => (
+                {cargosEfetivos.map((item, idx) => (
                   <tr key={idx} className="hover:bg-gray-50">
                     <td className="py-1.5 px-2 font-bold text-gray-900">{item.cargo}</td>
                     <td className="py-1.5 px-2 text-center font-black text-blue-900">{item.ocupacoes}</td>
@@ -305,13 +399,13 @@ export function PrintRelatorioServidores({
               <tfoot className="border-t-2 border-black font-black bg-gray-100 text-gray-900 text-[10.5px]">
                 <tr>
                   <td className="py-2 px-2 uppercase">TOTAL DA UNIDADE ADMINISTRATIVA</td>
-                  <td className="py-2 px-2 text-center text-blue-900">{resumo.total_cargos_ocupados ?? 0}</td>
-                  <td className="py-2 px-2 text-center">{resumo.total_regular ?? 0}</td>
-                  <td className="py-2 px-2 text-center text-amber-900">{resumo.total_eja ?? 0}</td>
-                  <td className="py-2 px-2 text-center text-blue-900">{resumo.total_concursados ?? 0}</td>
-                  <td className="py-2 px-2 text-center text-emerald-900">{resumo.total_contratados ?? 0}</td>
-                  <td className="py-2 px-2 text-center text-purple-900">{resumo.total_nomeados ?? 0}</td>
-                  <td className="py-2 px-2 text-center text-gray-600">{resumo.total_outros ?? 0}</td>
+                  <td className="py-2 px-2 text-center text-blue-900">{resumoEfetivo.total_cargos_ocupados ?? 0}</td>
+                  <td className="py-2 px-2 text-center">{resumoEfetivo.total_regular ?? 0}</td>
+                  <td className="py-2 px-2 text-center text-amber-900">{resumoEfetivo.total_eja ?? 0}</td>
+                  <td className="py-2 px-2 text-center text-blue-900">{resumoEfetivo.total_concursados ?? 0}</td>
+                  <td className="py-2 px-2 text-center text-emerald-900">{resumoEfetivo.total_contratados ?? 0}</td>
+                  <td className="py-2 px-2 text-center text-purple-900">{resumoEfetivo.total_nomeados ?? 0}</td>
+                  <td className="py-2 px-2 text-center text-gray-600">{resumoEfetivo.total_outros ?? 0}</td>
                 </tr>
               </tfoot>
             </table>
@@ -324,7 +418,7 @@ export function PrintRelatorioServidores({
               </div>
 
               <div className="space-y-4">
-                {cargos.map((cargoItem, cIdx) => {
+                {cargosEfetivos.map((cargoItem, cIdx) => {
                   const servidoresDoCargo = servidoresNominais.filter((s) => {
                     const c1 = (s.cargo || '').trim().toLowerCase()
                     const c2 = cargoItem.cargo.trim().toLowerCase()
@@ -332,7 +426,7 @@ export function PrintRelatorioServidores({
                   })
 
                   return (
-                    <div key={cIdx} className="break-inside-auto">
+                    <div key={cIdx} className="print-cargo-block">
                       {/* Título do Cargo no estilo de Sumário "1", "2", etc. */}
                       <div className="flex items-center justify-between bg-gray-100 border-l-4 border-blue-900 px-3 py-1.5 rounded-r">
                         <span className="font-extrabold text-[11px] text-gray-900">

@@ -188,7 +188,9 @@ export default function RelatorioServidores() {
   }, [])
 
   // Filtros em tempo real
-  const [filtroEscolaId, setFiltroEscolaId] = useState<string>('')
+  const [filtroEscolaId, setFiltroEscolaId] = useState<string>(() => {
+    return useSchoolStore.getState().selectedEscola?.id || useAuthStore.getState().escolaAtivaId || ''
+  })
   const [filtroStatus, setFiltroStatus] = useState<string>('Todos')
   const [filtroCargo, setFiltroCargo] = useState<string>('')
   const [filtroModalidade, setFiltroModalidade] = useState<string>('Todos')
@@ -394,6 +396,8 @@ export default function RelatorioServidores() {
         .select(`
           id,
           cargo,
+          tipo_vinculo,
+          modalidade_ensino,
           escola_id,
           escolas (nome),
           funcionarios!inner (
@@ -419,13 +423,140 @@ export default function RelatorioServidores() {
 
       if (!isMountedRef.current || currentRequest !== requestCounter.current) return
 
-      if (rpcResult.error) {
-        console.error('Erro ao buscar RPC get_relatorio_servidores:', rpcResult.error)
-        toast.error('Erro ao carregar dados do relatório de servidores.')
-      } else if (rpcResult.data) {
-        const payload = rpcResult.data as any
+      let mapped: ServidorNominalPrint[] = []
+      if (nominalResult.data) {
+        mapped = (nominalResult.data as any[])
+          .filter((v) => !v.funcionarios?.is_conta_especial)
+          .map((v) => {
+            const f = v.funcionarios
+            const tipoVincRaw = (v.tipo_vinculo || f.tipo_vinculo || '').toUpperCase()
+            let vinculoNorm = 'Outros'
+            if (tipoVincRaw.includes('EFETIVO') || tipoVincRaw.includes('CONCURSADO')) {
+              vinculoNorm = 'Concursado'
+            } else if (
+              tipoVincRaw.includes('CONTRATADO') ||
+              tipoVincRaw.includes('SUBSTITUTO') ||
+              tipoVincRaw.includes('PRESTADOR') ||
+              tipoVincRaw.includes('RESERVISTA')
+            ) {
+              vinculoNorm = 'Contratado'
+            } else if (tipoVincRaw.includes('NOMEADO') || tipoVincRaw.includes('COMISSIONADO')) {
+              vinculoNorm = 'Nomeado'
+            }
+
+            const modRaw = (v.modalidade_ensino || f.modalidade_ensino || '').toUpperCase()
+            const cargoFinal = (v.cargo || f.cargo || 'Cargo não informado').trim()
+            const cargoUpper = cargoFinal.toUpperCase()
+            let modalidadeNorm = 'Regular'
+            if (modRaw.includes('EJA') || cargoUpper.includes('EJA')) {
+              modalidadeNorm = 'EJA'
+            }
+
+            return {
+              id: f.id,
+              nome: f.nome,
+              cpf: f.cpf,
+              registro_profissional: f.registro_profissional,
+              cargo: cargoFinal,
+              status: f.status || 'ativo',
+              orgao: v.escolas?.nome || 'Escola Não Informada',
+              modalidade_ensino: modalidadeNorm,
+              vinculo_tipo: vinculoNorm,
+            }
+          })
+          .filter((s) => {
+            const matchCargo = !filtroCargo || s.cargo?.toLowerCase() === filtroCargo.toLowerCase()
+            const matchMod = filtroModalidade === 'Todos' || (s.modalidade_ensino ?? '').toUpperCase() === filtroModalidade.toUpperCase()
+            const matchVinc = filtroVinculo === 'Todos' || (s.vinculo_tipo ?? '').toUpperCase() === filtroVinculo.toUpperCase()
+            const matchStatus = filtroStatus === 'Todos' || (s.status ?? '').toLowerCase() === filtroStatus.toLowerCase()
+            return matchCargo && matchMod && matchVinc && matchStatus
+          })
+          .sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'))
+
+        setServidoresNominais(mapped)
+      }
+
+      const rpcPayload = rpcResult.data as any
+      const hasRpcCargos = rpcPayload && Array.isArray(rpcPayload.cargos) && rpcPayload.cargos.length > 0
+
+      if (!rpcResult.error && hasRpcCargos && rpcPayload.resumo) {
         setReportData({
-          resumo: payload.resumo ?? {
+          resumo: rpcPayload.resumo,
+          cargos: rpcPayload.cargos,
+        })
+      } else if (mapped.length > 0) {
+        // Fallback: agrega resumo e cargos dinamicamente a partir dos servidores nominais
+        const cargosMap = new Map<string, CargoBreakdown>()
+        const servidoresUnicos = new Set<string>()
+        let totalRegular = 0
+        let totalEja = 0
+        let totalConcursados = 0
+        let totalContratados = 0
+        let totalNomeados = 0
+        let totalOutros = 0
+
+        for (const s of mapped) {
+          servidoresUnicos.add(s.id)
+          const cName = s.cargo || 'Cargo não informado'
+          if (!cargosMap.has(cName)) {
+            cargosMap.set(cName, {
+              cargo: cName,
+              ocupacoes: 0,
+              regular: 0,
+              eja: 0,
+              concursados: 0,
+              contratados: 0,
+              nomeados: 0,
+              outros: 0,
+            })
+          }
+          const item = cargosMap.get(cName)!
+          item.ocupacoes += 1
+
+          if ((s.modalidade_ensino || '').toUpperCase().includes('EJA') || cName.toUpperCase().includes('EJA')) {
+            item.eja += 1
+            totalEja += 1
+          } else {
+            item.regular += 1
+            totalRegular += 1
+          }
+
+          const vinc = (s.vinculo_tipo || '').toUpperCase()
+          if (vinc.includes('CONCURSADO') || vinc.includes('EFETIVO')) {
+            item.concursados += 1
+            totalConcursados += 1
+          } else if (vinc.includes('CONTRATADO')) {
+            item.contratados += 1
+            totalContratados += 1
+          } else if (vinc.includes('NOMEADO')) {
+            item.nomeados += 1
+            totalNomeados += 1
+          } else {
+            item.outros += 1
+            totalOutros += 1
+          }
+        }
+
+        setReportData({
+          resumo: {
+            total_servidores_unicos: servidoresUnicos.size,
+            total_cargos_ocupados: mapped.length,
+            total_contratados: totalContratados,
+            total_concursados: totalConcursados,
+            total_nomeados: totalNomeados,
+            total_outros: totalOutros,
+            total_regular: totalRegular,
+            total_eja: totalEja,
+          },
+          cargos: Array.from(cargosMap.values()).sort((a, b) => b.ocupacoes - a.ocupacoes),
+        })
+      } else {
+        if (rpcResult.error && (!nominalResult.data || nominalResult.data.length === 0)) {
+          console.error('Erro ao buscar RPC get_relatorio_servidores:', rpcResult.error)
+          toast.error('Erro ao carregar dados do relatório de servidores.')
+        }
+        setReportData({
+          resumo: {
             total_servidores_unicos: 0,
             total_cargos_ocupados: 0,
             total_contratados: 0,
@@ -435,37 +566,8 @@ export default function RelatorioServidores() {
             total_regular: 0,
             total_eja: 0,
           },
-          cargos: Array.isArray(payload.cargos) ? payload.cargos : [],
+          cargos: [],
         })
-      }
-
-      if (nominalResult.data) {
-        const mapped: ServidorNominalPrint[] = (nominalResult.data as any[])
-          .filter((v) => !v.funcionarios?.is_conta_especial)
-          .map((v) => {
-            const f = v.funcionarios
-            return {
-              id: f.id,
-              nome: f.nome,
-              cpf: f.cpf,
-              registro_profissional: f.registro_profissional,
-              cargo: v.cargo || f.cargo || 'Cargo não informado',
-              status: f.status || 'ativo',
-              orgao: v.escolas?.nome || 'Escola Não Informada',
-              modalidade_ensino: f.modalidade_ensino || 'Regular',
-              vinculo_tipo: f.tipo_vinculo || 'Não informado',
-            }
-          })
-          .filter((s) => {
-            const matchCargo = !filtroCargo || s.cargo?.toLowerCase() === filtroCargo.toLowerCase()
-            const matchMod = filtroModalidade === 'Todos' || (s.modalidade_ensino ?? '').toUpperCase().includes(filtroModalidade.toUpperCase())
-            const matchVinc = filtroVinculo === 'Todos' || (s.vinculo_tipo ?? '').toUpperCase().includes(filtroVinculo.toUpperCase())
-            const matchStatus = filtroStatus === 'Todos' || (s.status ?? '').toLowerCase() === filtroStatus.toLowerCase()
-            return matchCargo && matchMod && matchVinc && matchStatus
-          })
-          .sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'))
-
-        setServidoresNominais(mapped)
       }
     } catch (err) {
       if (!isMountedRef.current || currentRequest !== requestCounter.current) return
@@ -504,14 +606,14 @@ export default function RelatorioServidores() {
 
   // Nome da Escola Selecionada
   const nomeEscolaAtiva = useMemo(() => {
-    if (selectedEscola) return selectedEscola.nome
+    if (selectedEscola?.nome) return selectedEscola.nome
     if (filtroEscolaId) {
-      const esc = escolasPermitidas.find(e => e.id === filtroEscolaId)
+      const esc = escolasPermitidas.find(e => e.id === filtroEscolaId) || escolas.find(e => e.id === filtroEscolaId)
       if (esc) return esc.nome
     }
     if (isSuperAdmin) return 'Rede Municipal (Todas as Secretarias)'
     return `${selectedSecretaria?.nome || 'Secretaria Municipal de Educação'} (Todas as Escolas)`
-  }, [selectedEscola, filtroEscolaId, escolasPermitidas, isSuperAdmin, selectedSecretaria?.nome])
+  }, [selectedEscola, filtroEscolaId, escolasPermitidas, escolas, isSuperAdmin, selectedSecretaria?.nome])
 
   // Dados para o Gráfico de Pizza de Vínculos
   const chartDataVinculos = useMemo(() => {
