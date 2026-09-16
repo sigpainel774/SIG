@@ -6,6 +6,7 @@ import { useAuthStore } from '@/store/useAuthStore'
 import { logAudit } from '@/lib/audit/audit-agent'
 import { useAlunoSignaturePolling } from '@/components/modals/modal-aluno/hooks/useAlunoSignaturePolling'
 import { getVisualizacaoUrl, getAvatarUrl } from '@/lib/photoHelper'
+import { invalidarCacheFoto } from '@/lib/photoCache'
 import { getHojeBrasilia } from '@/lib/dateUtils'
 import { VinculoAEEConfig } from '../components/ModalVincularProfissionalAlunoAEE'
 
@@ -152,6 +153,93 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
     setFotoFile(null)
     setFotoUrl(null)
     setFotoRemovidaManualmente(true)
+  }
+
+  // Pipeline unificado e resiliente de upload e otimização de Foto 3x4 do Aluno (EMAEE)
+  const salvarFotoAluno = async (targetId: string, file: File) => {
+    let photoSaved = false
+    const toastFotoId = toast.loading('Processando foto 3x4 do aluno...')
+
+    // 1. Tenta fluxo otimizado no servidor via URL assinada + Sharp
+    try {
+      const requestId = crypto.randomUUID()
+      const presignedRes = await fetch(`/api/fotos/presigned-url?entity=alunos&id=${targetId}&fileName=${encodeURIComponent(file.name)}&requestId=${requestId}`)
+      if (presignedRes.ok) {
+        const presignedData = await presignedRes.json()
+        if (presignedData?.signedUrl) {
+          toast.loading('Enviando foto 3x4...', { id: toastFotoId })
+          const uploadRes = await fetch(presignedData.signedUrl, {
+            method: 'PUT',
+            headers: { 'Content-Type': file.type || 'application/octet-stream' },
+            body: file
+          })
+          if (uploadRes.ok) {
+            toast.loading('Otimizando variantes da foto...', { id: toastFotoId })
+            const processRes = await fetch('/api/fotos/process', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                entity: 'alunos',
+                id: targetId,
+                originalPath: presignedData.path,
+                requestId
+              })
+            })
+            if (processRes.ok) {
+              const processData = await processRes.json()
+              if (processData.success && processData.data?.foto_url) {
+                await invalidarCacheFoto(processData.data.foto_url)
+              }
+              photoSaved = true
+              toast.dismiss(toastFotoId)
+            } else {
+              console.warn('[useMatriculaEmaee] Otimização server-side falhou, acionando fallback direto...')
+            }
+          }
+        }
+      }
+    } catch (serverErr) {
+      console.warn('[useMatriculaEmaee] Erro na rota de otimização de foto do aluno:', serverErr)
+    }
+
+    // 2. Fallback automático resiliente: upload direto no Storage Supabase
+    if (!photoSaved) {
+      try {
+        toast.loading('Salvando foto diretamente...', { id: toastFotoId })
+        const fileExt = file.name.split('.').pop()?.toLowerCase() || 'jpg'
+        const fileName = `${targetId}_${Date.now()}.${fileExt}`
+
+        const { error: uploadError } = await supabase.storage
+          .from('fotos_alunos')
+          .upload(fileName, file, { upsert: true })
+
+        if (!uploadError) {
+          const { data: { publicUrl } } = supabase.storage
+            .from('fotos_alunos')
+            .getPublicUrl(fileName)
+
+          await supabase
+            .from('alunos')
+            .update({
+              foto_url: publicUrl,
+              foto_avatar_path: null,
+              foto_visualizacao_path: null,
+              foto_original_path: null,
+              foto_updated_at: new Date().toISOString()
+            })
+            .eq('id', targetId)
+
+          await invalidarCacheFoto(publicUrl)
+          photoSaved = true
+          toast.dismiss(toastFotoId)
+        } else {
+          throw uploadError
+        }
+      } catch (fallbackErr) {
+        console.error('[useMatriculaEmaee] Erro no fallback de foto 3x4:', fallbackErr)
+        toast.error('Aviso: A ficha foi salva, mas houve um problema ao salvar a foto 3x4 do aluno.', { id: toastFotoId })
+      }
+    }
   }
 
   // 3. Escola Regular
@@ -1441,68 +1529,9 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
           }
         }
 
-        // 2. Upload e otimização da Foto 3x4 se novo arquivo foi selecionado (com fallback resiliente)
+        // 2. Upload e otimização da Foto 3x4 se novo arquivo foi selecionado
         if (fotoFile && targetAlunoId) {
-          let photoSaved = false
-          try {
-            const requestId = crypto.randomUUID()
-            const resUrl = await fetch(`/api/fotos/presigned-url?entity=alunos&id=${targetAlunoId}&fileName=${encodeURIComponent(fotoFile.name)}&requestId=${requestId}`)
-            if (resUrl.ok) {
-              const dataUrl = await resUrl.json()
-              if (dataUrl?.signedUrl) {
-                const uploadRes = await fetch(dataUrl.signedUrl, {
-                  method: 'PUT',
-                  body: fotoFile,
-                  headers: { 'Content-Type': fotoFile.type || 'application/octet-stream' }
-                })
-                if (uploadRes.ok) {
-                  const processRes = await fetch('/api/fotos/process', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ entity: 'alunos', id: targetAlunoId, originalPath: dataUrl.path, requestId })
-                  })
-                  if (processRes.ok) {
-                    photoSaved = true
-                  }
-                }
-              }
-            }
-          } catch (fotoErr: any) {
-            console.warn('[useMatriculaEmaee] Otimização server-side falhou, acionando fallback direto:', fotoErr)
-          }
-
-          // Fallback direto
-          if (!photoSaved) {
-            try {
-              const fileExt = fotoFile.name.split('.').pop()?.toLowerCase() || 'jpg'
-              const fileName = `${targetAlunoId}_${Date.now()}.${fileExt}`
-
-              const { error: uploadError } = await supabase.storage
-                .from('fotos_alunos')
-                .upload(fileName, fotoFile, { upsert: true })
-
-              if (!uploadError) {
-                const { data: { publicUrl } } = supabase.storage
-                  .from('fotos_alunos')
-                  .getPublicUrl(fileName)
-
-                await supabase
-                  .from('alunos')
-                  .update({
-                    foto_url: publicUrl,
-                    foto_avatar_path: null,
-                    foto_visualizacao_path: null,
-                    foto_original_path: null,
-                    foto_updated_at: new Date().toISOString()
-                  })
-                  .eq('id', targetAlunoId)
-                photoSaved = true
-              }
-            } catch (fallbackErr) {
-              console.error('[useMatriculaEmaee] Erro no fallback de foto 3x4:', fallbackErr)
-              toast.error('Aviso: Houve um problema ao salvar a foto 3x4 do aluno.')
-            }
-          }
+          await salvarFotoAluno(targetAlunoId, fotoFile)
         }
 
         // 3. Atualizar matrícula EMAEE
@@ -1841,6 +1870,14 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
           dados_matricula: updatedDadosMatricula
         }
 
+        if (fotoRemovidaManualmente && !fotoFile) {
+          updatePayload.foto_url = null
+          updatePayload.foto_avatar_path = null
+          updatePayload.foto_visualizacao_path = null
+          updatePayload.foto_original_path = null
+          updatePayload.foto_updated_at = new Date().toISOString()
+        }
+
         if (codigoColetaLocal) {
           updatePayload.codigo_temp_resp = codigoColetaLocal
           updatePayload.codigo_temp_resp_criado_em = new Date().toISOString()
@@ -1879,36 +1916,9 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
         }
       }
 
-      // 3. Upload direto da Foto 3x4 se um novo arquivo foi capturado
+      // 3. Upload e otimização da Foto 3x4 se um novo arquivo foi capturado
       if (fotoFile && targetAlunoId) {
-        try {
-          const fileExt = fotoFile.name.split('.').pop()?.toLowerCase() || 'jpg'
-          const fileName = `${targetAlunoId}_${Date.now()}.${fileExt}`
-
-          const { error: uploadError } = await supabase.storage
-            .from('fotos_alunos')
-            .upload(fileName, fotoFile, { upsert: true })
-
-          if (uploadError) throw uploadError
-
-          const { data: { publicUrl } } = supabase.storage
-            .from('fotos_alunos')
-            .getPublicUrl(fileName)
-
-          await supabase
-            .from('alunos')
-            .update({
-              foto_url: publicUrl,
-              foto_avatar_path: null,
-              foto_visualizacao_path: null,
-              foto_original_path: null,
-              foto_updated_at: new Date().toISOString()
-            })
-            .eq('id', targetAlunoId)
-        } catch (fotoErr: any) {
-          console.error('Erro no upload direto da foto 3x4:', fotoErr)
-          toast.error('Aviso: Houve um problema ao salvar a foto 3x4 do aluno.')
-        }
+        await salvarFotoAluno(targetAlunoId, fotoFile)
       }
 
       // 4. Inserir matrícula EMAEE (Sanitizar UUIDs vazios para evitar erro)
