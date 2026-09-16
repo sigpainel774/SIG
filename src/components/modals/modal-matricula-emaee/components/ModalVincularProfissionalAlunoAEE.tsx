@@ -123,12 +123,17 @@ export function ModalVincularProfissionalAlunoAEE({
   const handleDataInicioChange = (novaData: string) => {
     setDataInicio(novaData)
     if (novaData) {
-      const [ano, mes, dia] = novaData.split('-').map(Number)
-      if (ano && mes && dia) {
-        const dt = new Date(ano, mes - 1, dia)
-        const jsDay = dt.getDay() // 0=Dom, 1=Seg, 2=Ter, 3=Qua, 4=Qui, 5=Sex, 6=Sab
-        if (jsDay >= 1 && jsDay <= 6) {
-          setDiaSemana(jsDay)
+      const parts = novaData.split('-').map(Number)
+      if (parts.length === 3) {
+        const [ano, mes, dia] = parts
+        if (ano && mes && dia) {
+          const dt = new Date(ano, mes - 1, dia)
+          const jsDay = dt.getDay() // 0=Dom, 1=Seg, 2=Ter, 3=Qua, 4=Qui, 5=Sex, 6=Sab
+          if (jsDay >= 1 && jsDay <= 6) {
+            setDiaSemana(jsDay)
+          } else if (jsDay === 0) {
+            setDiaSemana(1)
+          }
         }
       }
     }
@@ -771,42 +776,47 @@ export function ModalVincularProfissionalAlunoAEE({
               </div>
 
               {/* 2. Data Inicial e Dia da Semana */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div className="space-y-1.5">
-                  <Label className="text-xs font-bold text-foreground flex items-center gap-1.5">
-                    <CalendarDays className="w-3.5 h-3.5 text-primary" />
-                    Data Inicial do Atendimento <span className="text-rose-500">*</span>
-                  </Label>
-                  <Input
-                    type="date"
-                    value={dataInicio}
-                    onChange={(e) => handleDataInicioChange(e.target.value)}
-                    required
-                    className="h-9 bg-background dark:bg-[#181818] border-border text-foreground text-xs rounded-xl"
-                  />
-                </div>
+              <div className="space-y-1.5">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-bold text-foreground flex items-center gap-1.5">
+                      <CalendarDays className="w-3.5 h-3.5 text-primary" />
+                      Data Inicial do Atendimento <span className="text-rose-500">*</span>
+                    </Label>
+                    <Input
+                      type="date"
+                      value={dataInicio}
+                      onChange={(e) => handleDataInicioChange(e.target.value)}
+                      required
+                      className="h-9 bg-background dark:bg-[#181818] border-border text-foreground text-xs rounded-xl cursor-pointer"
+                    />
+                  </div>
 
-                <div className="space-y-1.5">
-                  <Label className="text-xs font-bold text-foreground flex items-center gap-1.5">
-                    <CalendarDays className="w-3.5 h-3.5 text-primary" />
-                    Dia da Semana <span className="text-rose-500">*</span>
-                  </Label>
-                  <Select
-                    value={String(diaSemana)}
-                    onValueChange={(val) => setDiaSemana(Number(val))}
-                  >
-                    <SelectTrigger className="h-9 bg-background dark:bg-[#181818] border-border text-foreground text-xs rounded-xl">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent className="bg-card dark:bg-[#181818] border-border text-foreground text-xs">
-                      {DIAS_SEMANA.map((dia) => (
-                        <SelectItem key={dia.valor} value={String(dia.valor)}>
-                          {dia.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-bold text-foreground flex items-center gap-1.5">
+                      <CalendarDays className="w-3.5 h-3.5 text-primary" />
+                      Dia da Semana <span className="text-rose-500">*</span>
+                    </Label>
+                    <Select
+                      value={String(diaSemana)}
+                      onValueChange={(val) => setDiaSemana(Number(val))}
+                    >
+                      <SelectTrigger className="h-9 bg-background dark:bg-[#181818] border-border text-foreground text-xs rounded-xl">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent className="bg-card dark:bg-[#181818] border-border text-foreground text-xs">
+                        {DIAS_SEMANA.map((dia) => (
+                          <SelectItem key={dia.valor} value={String(dia.valor)}>
+                            {dia.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
+                <p className="text-[10px] text-muted-foreground">
+                  📅 <strong>Preenchimento no Calendário:</strong> Ao definir uma data inicial retroativa (ex: meses anteriores de 2026), a grade do calendário exibirá automaticamente essas sessões para você registrar presenças e faltas passadas.
+                </p>
               </div>
 
               {/* 3. Horários (Início e Término) */}

@@ -13,6 +13,8 @@ import {
   Trash2,
   Clock,
   Calendar,
+  CalendarDays,
+  Pencil,
   School,
   X,
   Sparkles,
@@ -56,6 +58,10 @@ const DIAS_SEMANA_NOMES: Record<number, string> = {
   7: 'Domingo'
 }
 
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+
 function formatarHora(hora?: string | null): string {
   if (!hora) return '--:--'
   const partes = hora.split(':')
@@ -63,6 +69,16 @@ function formatarHora(hora?: string | null): string {
     return `${partes[0].padStart(2, '0')}:${partes[1].padStart(2, '0')}`
   }
   return hora
+}
+
+function formatarDataBR(dataIso?: string | null): string {
+  if (!dataIso) return 'Não definida'
+  const raw = dataIso.includes('T') ? dataIso.split('T')[0] : dataIso
+  const partes = raw.split('-')
+  if (partes.length === 3) {
+    return `${partes[2]}/${partes[1]}/${partes[0]}`
+  }
+  return dataIso
 }
 
 function calcularIdade(dataNasc?: string | null): string {
@@ -101,6 +117,18 @@ export function ModalPacientesProfissionalAEE({
   const [printOpen, setPrintOpen] = useState(false)
   const [desvinculandoId, setDesvinculandoId] = useState<string | null>(null)
 
+  // Estado para Edição Rápida de Atendimento / Data Inicial
+  const [vinculoEdicao, setVinculoEdicao] = useState<{
+    id: string
+    alunoNome: string
+    dataInicio: string
+    diaSemana: number
+    frequencia: string
+    horarioInicio: string
+    horarioFim: string
+  } | null>(null)
+  const [salvandoEdicao, setSalvandoEdicao] = useState(false)
+
   useEffect(() => {
     isMounted.current = true
     return () => {
@@ -120,6 +148,7 @@ export function ModalPacientesProfissionalAEE({
           especialidade,
           frequencia,
           dia_semana,
+          data_inicio,
           horario_inicio,
           horario_fim,
           ativo,
@@ -168,6 +197,7 @@ export function ModalPacientesProfissionalAEE({
           especialidade: item.especialidade ?? 'Atendimento Especializado',
           frequencia: item.frequencia ?? 'SEMANAL',
           dia_semana: item.dia_semana ?? 1,
+          data_inicio: item.data_inicio ?? null,
           horario_inicio: item.horario_inicio ?? '08:00',
           horario_fim: item.horario_fim ?? null,
           ativo: item.ativo ?? true,
@@ -225,6 +255,65 @@ export function ModalPacientesProfissionalAEE({
       toast.error('Erro ao desvincular paciente do profissional.')
     } finally {
       if (isMounted.current) setDesvinculandoId(null)
+    }
+  }
+
+  const handleSalvarEdicaoVinculo = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!vinculoEdicao) return
+
+    if (!vinculoEdicao.horarioInicio || !vinculoEdicao.horarioFim) {
+      toast.error('Informe os horários de início e término.')
+      return
+    }
+
+    if (vinculoEdicao.horarioInicio >= vinculoEdicao.horarioFim) {
+      toast.error('O Horário de Término deve ser posterior ao Horário de Início.')
+      return
+    }
+
+    setSalvandoEdicao(true)
+    try {
+      const formattedInicio =
+        vinculoEdicao.horarioInicio.length === 5 ? `${vinculoEdicao.horarioInicio}:00` : vinculoEdicao.horarioInicio
+      const formattedFim =
+        vinculoEdicao.horarioFim.length === 5 ? `${vinculoEdicao.horarioFim}:00` : vinculoEdicao.horarioFim
+
+      let { error } = await supabase
+        .from('emaee_especialidades_vinculadas')
+        .update({
+          frequencia: vinculoEdicao.frequencia,
+          dia_semana: vinculoEdicao.diaSemana,
+          data_inicio: vinculoEdicao.dataInicio || new Date().toISOString().split('T')[0],
+          horario_inicio: formattedInicio,
+          horario_fim: formattedFim,
+        } as any)
+        .eq('id', vinculoEdicao.id)
+
+      if (error && (error.code === '42703' || error.message?.includes('data_inicio'))) {
+        const fallbackRes = await supabase
+          .from('emaee_especialidades_vinculadas')
+          .update({
+            frequencia: vinculoEdicao.frequencia,
+            dia_semana: vinculoEdicao.diaSemana,
+            horario_inicio: formattedInicio,
+            horario_fim: formattedFim,
+          } as any)
+          .eq('id', vinculoEdicao.id)
+        error = fallbackRes.error
+      }
+
+      if (error) throw error
+
+      toast.success('Horário e data inicial do atendimento atualizados com sucesso!')
+      setVinculoEdicao(null)
+      if (onSuccess) onSuccess()
+      await carregarPacientes()
+    } catch (err: any) {
+      console.error('Erro ao atualizar horário do atendimento:', err)
+      toast.error(err?.message || 'Erro ao salvar alterações no atendimento.')
+    } finally {
+      if (isMounted.current) setSalvandoEdicao(false)
     }
   }
 
@@ -541,22 +630,54 @@ export function ModalPacientesProfissionalAEE({
                             {item.frequencia?.toLowerCase() ?? 'Semanal'}
                           </span>
                         </div>
+
+                        {/* Linha de Data Inicial do Atendimento */}
+                        <div className="flex items-center justify-between gap-2 pt-1 border-t border-dashed border-border/40 text-[10px] text-muted-foreground">
+                          <span className="flex items-center gap-1">
+                            <CalendarDays className="w-3 h-3 text-primary/70 shrink-0" />
+                            <span>Início do Atendimento:</span>
+                          </span>
+                          <strong className="text-foreground font-semibold">
+                            {formatarDataBR(item.data_inicio)}
+                          </strong>
+                        </div>
                       </div>
                     </div>
 
-                    {/* Botão de Desvincular Condicionado ao Modo de Edição */}
+                    {/* Botões de Ação Condicionados ao Modo de Edição */}
                     {isEditMode && (
-                      <div className="mt-3 pt-2 border-t border-border/40 flex items-center justify-end">
+                      <div className="mt-3 pt-2 border-t border-border/40 flex items-center justify-between gap-2">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() =>
+                            setVinculoEdicao({
+                              id: item.id,
+                              alunoNome: aluno?.nome ?? 'Aluno',
+                              dataInicio: item.data_inicio || new Date().toISOString().split('T')[0],
+                              diaSemana: item.dia_semana || 1,
+                              frequencia: item.frequencia || 'SEMANAL',
+                              horarioInicio: item.horario_inicio ? item.horario_inicio.slice(0, 5) : '08:00',
+                              horarioFim: item.horario_fim ? item.horario_fim.slice(0, 5) : '09:00',
+                            })
+                          }
+                          className="h-7 px-2.5 text-[11px] border-border bg-card hover:bg-accent text-foreground rounded-lg gap-1 transition-colors cursor-pointer"
+                        >
+                          <Pencil className="w-3 h-3 text-primary" />
+                          <span>Editar Horário / Início</span>
+                        </Button>
+
                         <Button
                           type="button"
                           variant="ghost"
                           size="sm"
                           disabled={isDesvinculando}
                           onClick={() => handleDesvincular(item.id, aluno?.nome ?? 'Aluno')}
-                          className="h-7 px-2.5 text-[11px] text-destructive hover:text-destructive hover:bg-destructive/10 rounded-lg gap-1 transition-colors"
+                          className="h-7 px-2.5 text-[11px] text-destructive hover:text-destructive hover:bg-destructive/10 rounded-lg gap-1 transition-colors cursor-pointer"
                         >
                           <Trash2 className="w-3 h-3" />
-                          <span>{isDesvinculando ? 'Removendo...' : 'Desvincular Atendimento'}</span>
+                          <span>{isDesvinculando ? 'Removendo...' : 'Desvincular'}</span>
                         </Button>
                       </div>
                     )}
@@ -567,6 +688,150 @@ export function ModalPacientesProfissionalAEE({
           )}
         </div>
       </StandardDialog>
+
+      {/* Modal de Edição de Horário / Data Inicial */}
+      {vinculoEdicao && (
+        <StandardDialog
+          open={Boolean(vinculoEdicao)}
+          onOpenChange={(open) => {
+            if (!open) setVinculoEdicao(null)
+          }}
+          title="Editar Horário e Início do Atendimento"
+          description={`Ajuste a escala e a data inicial de atendimento de ${vinculoEdicao.alunoNome}.`}
+          maxWidth="sm:max-w-[480px]"
+          footer={
+            <div className="flex items-center justify-end gap-2 w-full pt-2">
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => setVinculoEdicao(null)}
+                disabled={salvandoEdicao}
+                className="text-xs text-muted-foreground hover:text-foreground h-9 rounded-xl"
+              >
+                Cancelar
+              </Button>
+              <Button
+                type="submit"
+                form="form-editar-vinculo-aee"
+                disabled={salvandoEdicao}
+                className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-xs h-9 px-4 rounded-xl shadow-sm cursor-pointer"
+              >
+                {salvandoEdicao ? 'Salvando...' : 'Salvar Alterações'}
+              </Button>
+            </div>
+          }
+        >
+          <form id="form-editar-vinculo-aee" onSubmit={handleSalvarEdicaoVinculo} className="space-y-4 pt-1 text-xs">
+            {/* Frequência */}
+            <div className="space-y-1.5">
+              <Label className="text-xs font-bold text-foreground">Frequência de Atendimento</Label>
+              <Select
+                value={vinculoEdicao.frequencia}
+                onValueChange={(val) => setVinculoEdicao({ ...vinculoEdicao, frequencia: val || 'SEMANAL' })}
+              >
+                <SelectTrigger className="h-9 bg-background border-border text-foreground text-xs rounded-xl">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="bg-card border-border text-foreground text-xs">
+                  <SelectItem value="SEMANAL">Semanal (1x por semana)</SelectItem>
+                  <SelectItem value="QUINZENAL">Quinzenal (A cada 15 dias)</SelectItem>
+                  <SelectItem value="MENSAL">Mensal (1x por mês)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Data Inicial e Dia da Semana */}
+            <div className="space-y-1.5">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-bold text-foreground flex items-center gap-1.5">
+                    <CalendarDays className="w-3.5 h-3.5 text-primary" />
+                    Data Inicial do Atendimento <span className="text-rose-500">*</span>
+                  </Label>
+                  <Input
+                    type="date"
+                    value={vinculoEdicao.dataInicio}
+                    onChange={(e) => {
+                      const novaData = e.target.value
+                      const parts = novaData.split('-').map(Number)
+                      let novoDia = vinculoEdicao.diaSemana
+                      if (parts.length === 3 && parts[0] && parts[1] && parts[2]) {
+                        const dt = new Date(parts[0], parts[1] - 1, parts[2])
+                        const jsDay = dt.getDay()
+                        if (jsDay >= 1 && jsDay <= 6) novoDia = jsDay
+                      }
+                      setVinculoEdicao({
+                        ...vinculoEdicao,
+                        dataInicio: novaData,
+                        diaSemana: novoDia,
+                      })
+                    }}
+                    required
+                    className="h-9 bg-background border-border text-foreground text-xs rounded-xl cursor-pointer"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-bold text-foreground flex items-center gap-1.5">
+                    <Calendar className="w-3.5 h-3.5 text-primary" />
+                    Dia da Semana <span className="text-rose-500">*</span>
+                  </Label>
+                  <Select
+                    value={String(vinculoEdicao.diaSemana)}
+                    onValueChange={(val) => setVinculoEdicao({ ...vinculoEdicao, diaSemana: Number(val) || 1 })}
+                  >
+                    <SelectTrigger className="h-9 bg-background border-border text-foreground text-xs rounded-xl">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="bg-card border-border text-foreground text-xs">
+                      <SelectItem value="1">Segunda-feira</SelectItem>
+                      <SelectItem value="2">Terça-feira</SelectItem>
+                      <SelectItem value="3">Quarta-feira</SelectItem>
+                      <SelectItem value="4">Quinta-feira</SelectItem>
+                      <SelectItem value="5">Sexta-feira</SelectItem>
+                      <SelectItem value="6">Sábado</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <p className="text-[10px] text-muted-foreground">
+                📅 <strong>Preenchimento no Calendário:</strong> Ao definir uma data inicial retroativa (ex: meses passados de 2026), essas sessões aparecerão automaticamente no calendário para lançamento de presenças e faltas.
+              </p>
+            </div>
+
+            {/* Horários */}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label className="text-xs font-bold text-foreground flex items-center gap-1.5">
+                  <Clock className="w-3.5 h-3.5 text-primary" />
+                  Horário de Início <span className="text-rose-500">*</span>
+                </Label>
+                <Input
+                  type="time"
+                  value={vinculoEdicao.horarioInicio}
+                  onChange={(e) => setVinculoEdicao({ ...vinculoEdicao, horarioInicio: e.target.value })}
+                  required
+                  className="h-9 bg-background border-border text-foreground text-xs rounded-xl"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <Label className="text-xs font-bold text-foreground flex items-center gap-1.5">
+                  <Clock className="w-3.5 h-3.5 text-primary" />
+                  Horário de Término <span className="text-rose-500">*</span>
+                </Label>
+                <Input
+                  type="time"
+                  value={vinculoEdicao.horarioFim}
+                  onChange={(e) => setVinculoEdicao({ ...vinculoEdicao, horarioFim: e.target.value })}
+                  required
+                  className="h-9 bg-background border-border text-foreground text-xs rounded-xl"
+                />
+              </div>
+            </div>
+          </form>
+        </StandardDialog>
+      )}
     </>
   )
 }

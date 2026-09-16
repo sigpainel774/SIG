@@ -63,12 +63,18 @@ export function ModalAssociarAlunoAEE({
   const handleDataInicioChange = (novaData: string) => {
     setDataInicio(novaData)
     if (novaData) {
-      const [ano, mes, dia] = novaData.split('-').map(Number)
-      if (ano && mes && dia) {
-        const dt = new Date(ano, mes - 1, dia)
-        const jsDay = dt.getDay() // 0=Dom, 1=Seg...
-        if (jsDay >= 1 && jsDay <= 6) {
-          setDiaSemana(jsDay)
+      const parts = novaData.split('-').map(Number)
+      if (parts.length === 3) {
+        const [ano, mes, dia] = parts
+        if (ano && mes && dia) {
+          // Criação local explícita para evitar off-by-one por UTC
+          const dt = new Date(ano, mes - 1, dia)
+          const jsDay = dt.getDay() // 0=Dom, 1=Seg, 2=Ter, 3=Qua, 4=Qui, 5=Sex, 6=Sab
+          if (jsDay >= 1 && jsDay <= 6) {
+            setDiaSemana(jsDay)
+          } else if (jsDay === 0) {
+            setDiaSemana(1) // Fallback seguro para Segunda se for Domingo
+          }
         }
       }
     }
@@ -550,38 +556,43 @@ export function ModalAssociarAlunoAEE({
           </div>
 
           {/* Data Inicial e Dia da Semana */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div>
-              <Label className="text-xs font-semibold text-foreground">
-                Data Inicial do Atendimento <span className="text-destructive">*</span>
-              </Label>
-              <input
-                type="date"
-                value={dataInicio}
-                onChange={(e) => handleDataInicioChange(e.target.value)}
-                className="w-full bg-background border border-border text-foreground rounded-xl p-2 text-xs mt-1 outline-none focus:border-primary transition-colors"
-                required
-              />
-            </div>
+          <div className="space-y-1.5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <Label className="text-xs font-semibold text-foreground">
+                  Data Inicial do Atendimento <span className="text-destructive">*</span>
+                </Label>
+                <input
+                  type="date"
+                  value={dataInicio}
+                  onChange={(e) => handleDataInicioChange(e.target.value)}
+                  className="w-full bg-background border border-border text-foreground rounded-xl p-2 text-xs mt-1 outline-none focus:border-primary transition-colors cursor-pointer"
+                  required
+                />
+              </div>
 
-            <div>
-              <Label className="text-xs font-semibold text-foreground">
-                Dia da Semana <span className="text-destructive">*</span>
-              </Label>
-              <Select value={String(diaSemana)} onValueChange={(val) => setDiaSemana(Number(val) || 1)}>
-                <SelectTrigger className="bg-background border-border text-foreground mt-1 text-xs">
-                  <SelectValue placeholder="Dia da Semana" />
-                </SelectTrigger>
-                <SelectContent className="bg-popover border-border text-popover-foreground">
-                  <SelectItem value="1">Segunda-feira</SelectItem>
-                  <SelectItem value="2">Terça-feira</SelectItem>
-                  <SelectItem value="3">Quarta-feira</SelectItem>
-                  <SelectItem value="4">Quinta-feira</SelectItem>
-                  <SelectItem value="5">Sexta-feira</SelectItem>
-                  <SelectItem value="6">Sábado</SelectItem>
-                </SelectContent>
-              </Select>
+              <div>
+                <Label className="text-xs font-semibold text-foreground">
+                  Dia da Semana <span className="text-destructive">*</span>
+                </Label>
+                <Select value={String(diaSemana)} onValueChange={(val) => setDiaSemana(Number(val) || 1)}>
+                  <SelectTrigger className="bg-background border-border text-foreground mt-1 text-xs">
+                    <SelectValue placeholder="Dia da Semana" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-popover border-border text-popover-foreground">
+                    <SelectItem value="1">Segunda-feira</SelectItem>
+                    <SelectItem value="2">Terça-feira</SelectItem>
+                    <SelectItem value="3">Quarta-feira</SelectItem>
+                    <SelectItem value="4">Quinta-feira</SelectItem>
+                    <SelectItem value="5">Sexta-feira</SelectItem>
+                    <SelectItem value="6">Sábado</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
+            <p className="text-[10px] text-muted-foreground">
+              📅 <strong>Preenchimento no Calendário:</strong> Ao marcar uma data inicial retroativa (ex: meses anteriores de 2026), a grade do calendário exibirá automaticamente essas sessões para você lançar as presenças e ausências passadas.
+            </p>
           </div>
 
           {/* Horários */}

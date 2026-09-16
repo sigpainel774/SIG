@@ -13,6 +13,7 @@ export interface PacienteProfissionalPrintData {
   especialidade: string
   frequencia: string
   dia_semana: number
+  data_inicio?: string | null
   horario_inicio: string
   horario_fim?: string | null
   ativo: boolean

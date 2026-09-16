@@ -31,6 +31,7 @@ import {
   Info,
   CalendarCheck,
   CalendarX,
+  History,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { IconTile } from '@/components/ui/icon-tile'
@@ -254,6 +255,10 @@ export default function CalendarioAtendimentosPage() {
       dataFimCompleta: formatarDataCompleta(sexta),
     }
   }, [dataSemanaBase, diasDaSemanaObj])
+
+  const isSemanaHistorica = useMemo(() => {
+    return formatarDataIso(dataSemanaBase) < formatarDataIso(getSegundaFeira(hoje))
+  }, [dataSemanaBase, hoje])
 
   // Navegação de Semanas
   const handleNavegarSemana = (direcao: 'anterior' | 'proxima') => {
@@ -604,29 +609,42 @@ export default function CalendarioAtendimentosPage() {
   }, [vinculos, termoBusca, filtroProfissional, filtroEspecialidade, filtroDiaSemana, filtroTurno])
 
   // --------------------------------------------------------------------------
-  // Lógica de Alternância Quinzenal (Ciclo de 15 dias baseado na data inicial)
+  // Lógica de Validação Temporal & Alternância Quinzenal (Baseada na data_inicio)
   // --------------------------------------------------------------------------
   const isAtendimentoNaSemana = useCallback((item: any, dataSessao: Date): boolean => {
-    if (item.frequencia !== 'QUINZENAL') return true
     const dataInicioStr = item.data_inicio || item.created_at
     if (!dataInicioStr) return true
 
-    const dInicioStr = dataInicioStr.includes('T') ? dataInicioStr.split('T')[0] : dataInicioStr
-    const [anoI, mesI, diaI] = dInicioStr.split('-').map(Number)
-    if (!anoI || !mesI || !diaI) return true
-    const dInicio = new Date(anoI, mesI - 1, diaI)
+    const dInicioIso = dataInicioStr.includes('T') ? dataInicioStr.split('T')[0] : dataInicioStr
+    const dataSessaoIso = formatarDataIso(dataSessao)
 
-    const segInicio = getSegundaFeira(dInicio)
-    const segSessao = getSegundaFeira(dataSessao)
+    // Se a data da sessão for anterior à data de início do vínculo, não ocorre na grade daquele dia
+    if (dataSessaoIso < dInicioIso) {
+      return false
+    }
 
-    const diffMs = segSessao.getTime() - segInicio.getTime()
-    const diffSemanas = Math.round(diffMs / (7 * 24 * 60 * 60 * 1000))
+    // Se for frequência Quinzenal, calcula o ciclo de 14 dias a partir da semana da data inicial
+    if (item.frequencia === 'QUINZENAL') {
+      const parts = dInicioIso.split('-').map(Number)
+      if (parts.length !== 3 || !parts[0] || !parts[1] || !parts[2]) return true
+      const [anoI, mesI, diaI] = parts
+      const dInicio = new Date(anoI, mesI - 1, diaI)
 
-    // Se a semana visualizada for anterior à data de início, não ocorre
-    if (diffSemanas < 0) return false
+      const segInicio = getSegundaFeira(dInicio)
+      const segSessao = getSegundaFeira(dataSessao)
 
-    // Ocorre nas semanas 0, 2, 4, 6... (a cada 15 dias a partir da data inicial)
-    return diffSemanas % 2 === 0
+      const diffMs = segSessao.getTime() - segInicio.getTime()
+      const diffSemanas = Math.round(diffMs / (7 * 24 * 60 * 60 * 1000))
+
+      // Se a semana visualizada for anterior à semana de início, não ocorre
+      if (diffSemanas < 0) return false
+
+      // Ocorre nas semanas 0, 2, 4, 6... (a cada 15 dias a partir da semana de início)
+      return diffSemanas % 2 === 0
+    }
+
+    // Para SEMANAL e demais frequências: ocorre normalmente a partir da data de início
+    return true
   }, [])
 
   // Estatísticas e KPIs
@@ -1964,7 +1982,32 @@ export default function CalendarioAtendimentosPage() {
         <>
           {/* MODO 1: GRADE SEMANAL COM DATAS REAIS E BORDAS COLORIDAS */}
           {modoVisualizacao === 'grade' && (
-            <div className="overflow-x-auto pb-4 -mx-1 px-1">
+            <div className="space-y-3">
+              {/* Banner de Período Histórico / Lançamento Retroativo */}
+              {isSemanaHistorica && (
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 p-3 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-xs shadow-xs animate-in fade-in duration-300">
+                  <div className="flex items-center gap-2.5 text-amber-800 dark:text-amber-200">
+                    <History className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
+                    <div>
+                      <strong className="font-bold">Modo Histórico (Ano 2026):</strong>{' '}
+                      <span>
+                        Visualizando a <strong>Semana {semanaInfo.semana} ({semanaInfo.dataInicioFormatada} a {semanaInfo.dataFimFormatada})</strong>. Clique nos cartões dos dias para registrar presenças e faltas passadas.
+                      </span>
+                    </div>
+                  </div>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={handleIrSemanaAtual}
+                    className="h-7 text-xs border-amber-500/30 bg-background hover:bg-amber-500/20 text-amber-800 dark:text-amber-200 rounded-xl font-bold shrink-0 cursor-pointer self-end sm:self-auto shadow-xs"
+                  >
+                    Voltar para Semana Atual
+                  </Button>
+                </div>
+              )}
+
+              <div className="overflow-x-auto pb-4 -mx-1 px-1">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3.5 items-start min-w-[960px] xl:min-w-0">
                 {diasDaSemanaObj.map((diaObj) => {
                   const diaNum = diaObj.diaSemana
@@ -2249,6 +2292,7 @@ export default function CalendarioAtendimentosPage() {
                   )
                 })}
               </div>
+            </div>
             </div>
           )}
 

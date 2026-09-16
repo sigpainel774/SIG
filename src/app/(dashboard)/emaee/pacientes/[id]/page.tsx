@@ -960,8 +960,11 @@ export default function PacienteDetalhesPage() {
                             <>
                               <span>Frequência: <strong>{esp.frequencia ?? 'Semanal'}</strong></span>
                               <span>
+                                {esp.data_inicio
+                                  ? `Início: ${esp.data_inicio.includes('T') ? esp.data_inicio.split('T')[0].split('-').reverse().join('/') : (esp.data_inicio.includes('-') ? esp.data_inicio.split('-').reverse().join('/') : esp.data_inicio)} • `
+                                  : ''}
                                 {esp.horario_inicio
-                                  ? `Horário: ${esp.horario_inicio.slice(0, 5)}${esp.horario_fim ? ` às ${esp.horario_fim.slice(0, 5)}` : ''}`
+                                  ? `${esp.horario_inicio.slice(0, 5)}${esp.horario_fim ? ` às ${esp.horario_fim.slice(0, 5)}` : ''}`
                                   : ''}
                               </span>
                             </>
