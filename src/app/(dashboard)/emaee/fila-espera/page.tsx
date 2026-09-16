@@ -441,7 +441,7 @@ export default function FilaEsperaPage() {
                 className="bg-card border border-border hover:border-primary/30 rounded-2xl p-5 flex flex-col justify-between gap-4 transition-all duration-200 shadow-sm relative group"
               >
                 <div className="space-y-3">
-                  <div className="flex items-start justify-between gap-2 border-b border-border pb-3">
+                  <div className="flex flex-col gap-2.5 border-b border-border pb-3">
                     <div className="flex items-center gap-3 min-w-0">
                       {avatarUrl ? (
                         <img
@@ -454,7 +454,7 @@ export default function FilaEsperaPage() {
                           {paciente.alunos?.nome?.substring(0, 2).toUpperCase() ?? 'AL'}
                         </div>
                       )}
-                      <div className="min-w-0">
+                      <div className="min-w-0 flex-1">
                         <h3 className="text-sm font-semibold text-foreground truncate" title={paciente.alunos?.nome}>
                           {paciente.alunos?.nome ?? 'Sem nome'}
                         </h3>
@@ -465,16 +465,18 @@ export default function FilaEsperaPage() {
                     </div>
 
                     {/* Badge de Demanda de Especialidade */}
-                    {espFila.length === 0 ? (
-                      <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-amber-500/15 text-amber-800 dark:text-amber-300 border border-amber-500/30 shrink-0 flex items-center gap-1">
-                        <AlertCircle className="w-3 h-3 text-amber-600 dark:text-amber-400" />
-                        Pendente de Especialidade
-                      </span>
-                    ) : (
-                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-sky-500/10 text-sky-700 dark:text-sky-300 border border-sky-500/20 shrink-0">
-                        Fila de Especialidade
-                      </span>
-                    )}
+                    <div className="flex items-center gap-1.5">
+                      {espFila.length === 0 ? (
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-amber-500/15 text-amber-800 dark:text-amber-300 border border-amber-500/30 flex items-center gap-1">
+                          <AlertCircle className="w-3 h-3 text-amber-600 dark:text-amber-400" />
+                          Pendente de Especialidade
+                        </span>
+                      ) : (
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-sky-500/10 text-sky-700 dark:text-sky-300 border border-sky-500/20">
+                          Fila de Especialidade
+                        </span>
+                      )}
+                    </div>
                   </div>
 
                   <div className="space-y-2 text-xs font-normal text-muted-foreground">
