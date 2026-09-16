@@ -25,12 +25,17 @@ import Link from 'next/link'
 import { toast } from 'sonner'
 import { StandardDialog } from '@/components/ui/standard-dialog'
 import { getAvatarUrl } from '@/lib/photoHelper'
-import { ESPECIALIDADES_CANONICAS } from '@/components/modals/modal-matricula-emaee/components/ModalVincularProfissionalAlunoAEE'
+import {
+  obterEspecialidadesEmaee,
+  saoEspecialidadesEquivalentes,
+  ESPECIALIDADES_CANONICAS_PADRAO
+} from '@/lib/emaeeEspecialidades'
 
 export default function FilaEsperaPage() {
   const { escolaAtivaId, funcionario } = useAuthStore()
   const { selectedEscola } = useSchoolStore()
   const [fila, setFila] = useState<any[]>([])
+  const [listaEspecialidades, setListaEspecialidades] = useState<string[]>(Array.from(ESPECIALIDADES_CANONICAS_PADRAO))
   const [carregando, setCarregando] = useState(true)
   const [busca, setBusca] = useState('')
   const [filtroEspecialidade, setFiltroEspecialidade] = useState('TODAS')
@@ -186,6 +191,16 @@ export default function FilaEsperaPage() {
         })
         setFila(apenasFila)
       }
+
+      // Carregar especialidades da unidade EMAEE
+      try {
+        const esps = await obterEspecialidadesEmaee(escolaAtivaId || selectedEscola?.id)
+        if (isMounted.current && esps && esps.length > 0) {
+          setListaEspecialidades(esps)
+        }
+      } catch (espErr) {
+        console.warn('Aviso ao carregar especialidades dinâmicas:', espErr)
+      }
     } catch (err: any) {
       console.error('Erro ao carregar fila de espera:', err)
       toast.error('Erro ao obter os registros da fila de espera.')
@@ -236,13 +251,13 @@ export default function FilaEsperaPage() {
         if (espAtivas.length === 0 || espFila.length === 0) return false
       }
 
-      // Filtro de Especialidade Específica
+      // Filtro de Especialidade Específica com Equivalência Segura (reconhece tanto cargo quanto especialidade)
       if (filtroEspecialidade !== 'TODAS') {
         if (filtroEspecialidade === 'PENDENTE_ESPECIALIDADE') {
           if (espFila.length > 0) return false
         } else {
           const matchEsp = espFila.some(
-            (e: any) => (e.especialidade || '').toLowerCase() === filtroEspecialidade.toLowerCase()
+            (e: any) => saoEspecialidadesEquivalentes(e.especialidade, filtroEspecialidade)
           )
           if (!matchEsp) return false
         }
@@ -363,7 +378,7 @@ export default function FilaEsperaPage() {
           >
             <option value="TODAS">Todas as Especialidades</option>
             <option value="PENDENTE_ESPECIALIDADE">⚠️ Pendente de Especialidade ({totalPendentesEspecialidade})</option>
-            {ESPECIALIDADES_CANONICAS.map((esp) => (
+            {listaEspecialidades.map((esp) => (
               <option key={esp} value={esp}>
                 {esp}
               </option>

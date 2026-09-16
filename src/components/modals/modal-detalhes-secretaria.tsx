@@ -41,6 +41,10 @@ const ModalCargo = dynamic(
   () => import('@/components/modals/modal-cargo').then(m => m.ModalCargo),
   { ssr: false }
 )
+const ModalGerenciarEspecialidadesEmaee = dynamic(
+  () => import('@/components/modals/modal-gerenciar-especialidades-emaee').then(m => m.ModalGerenciarEspecialidadesEmaee),
+  { ssr: false }
+)
 
 /* ─────────────────────────── types ─────────────────────────── */
 
@@ -79,6 +83,8 @@ export function ModalDetalhesSecretaria({
   const [configAnexosOpen, setConfigAnexosOpen] = useState(false)
   const [escolaParaPais, setEscolaParaPais] = useState<any | null>(null)
   const [contasPaisOpen, setContasPaisOpen] = useState(false)
+  const [escolaParaEspecialidades, setEscolaParaEspecialidades] = useState<any | null>(null)
+  const [especialidadesEmaeeOpen, setEspecialidadesEmaeeOpen] = useState(false)
 
   /* ── Modais de Educação ── */
   const [modalCalendarioOpen, setModalCalendarioOpen] = useState(false)
@@ -519,6 +525,23 @@ export function ModalDetalhesSecretaria({
                         <Paperclip className="w-4 h-4" />
                       </Button>
 
+                      {/* Especialidades do EMAEE (ao lado do botão de Editar) */}
+                      {(u.tipo === 'EMAEE' || /emaee/i.test(u.nome || '')) && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            setEscolaParaEspecialidades(u)
+                            setEspecialidadesEmaeeOpen(true)
+                          }}
+                          className="h-8 w-8 p-0 text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-500/10 rounded-lg cursor-pointer"
+                          title="Gerenciar Especialidades do EMAEE"
+                        >
+                          <Stethoscope className="w-4 h-4" />
+                        </Button>
+                      )}
+
                       {/* Editar */}
                       <Button
                         type="button"
@@ -756,6 +779,16 @@ export function ModalDetalhesSecretaria({
           onOpenChange={setModalCargoOpen}
           cargoToEdit={cargoToEdit}
           onSuccess={loadCargos}
+        />
+      )}
+
+      {/* Modal de Gestão de Especialidades do EMAEE */}
+      {especialidadesEmaeeOpen && escolaParaEspecialidades && (
+        <ModalGerenciarEspecialidadesEmaee
+          open={especialidadesEmaeeOpen}
+          onOpenChange={setEspecialidadesEmaeeOpen}
+          escola={escolaParaEspecialidades}
+          onSuccess={loadUnidades}
         />
       )}
     </>

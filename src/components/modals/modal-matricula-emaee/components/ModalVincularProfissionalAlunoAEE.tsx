@@ -11,19 +11,16 @@ import { createBrowserClient } from '@/lib/supabaseClient'
 import { toast } from 'sonner'
 import { getAvatarUrl } from '@/lib/photoHelper'
 
-export const ESPECIALIDADES_CANONICAS = [
-  'Psicologia',
-  'Fonoaudiologia',
-  'Psicopedagogia',
-  'Terapia Ocupacional',
-  'Fisioterapia',
-  'Psicomotricidade',
-  'Neuropsicopedagogia',
-  'Atendimento Pedagógico Especializado',
-  'Outros'
-] as const
+import {
+  ESPECIALIDADES_CANONICAS_PADRAO,
+  deduzirEspecialidadeDeCargo,
+  obterEspecialidadesEmaee,
+  saoEspecialidadesEquivalentes
+} from '@/lib/emaeeEspecialidades'
 
+export const ESPECIALIDADES_CANONICAS = ESPECIALIDADES_CANONICAS_PADRAO
 export type EspecialidadeCanonicasTipo = (typeof ESPECIALIDADES_CANONICAS)[number]
+export { deduzirEspecialidadeDeCargo }
 
 export interface ProfissionalAEEItem {
   id: string
@@ -59,7 +56,7 @@ export interface VinculoAEEConfig {
   isEditado?: boolean // Flag local para indicar alteração pendente
 }
 
-interface ModalVincularProfissionalAlunoAEEProps {
+export interface ModalVincularProfissionalAlunoAEEProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   vinculosExistentes: VinculoAEEConfig[]
@@ -70,7 +67,7 @@ interface ModalVincularProfissionalAlunoAEEProps {
   modoInicial?: 'ATENDIMENTO' | 'FILA_ESPERA'
 }
 
-const DIAS_SEMANA = [
+export const DIAS_SEMANA = [
   { valor: 1, label: 'Segunda-feira' },
   { valor: 2, label: 'Terça-feira' },
   { valor: 3, label: 'Quarta-feira' },
@@ -78,19 +75,6 @@ const DIAS_SEMANA = [
   { valor: 5, label: 'Sexta-feira' },
   { valor: 6, label: 'Sábado' }
 ]
-
-export function deduzirEspecialidadeDeCargo(cargo: string | null | undefined): string {
-  if (!cargo) return 'Atendimento Pedagógico Especializado'
-  const c = cargo.toLowerCase()
-  if (c.includes('psicólog') || c.includes('psicolog')) return 'Psicologia'
-  if (c.includes('fono')) return 'Fonoaudiologia'
-  if (c.includes('psicopedagog')) return 'Psicopedagogia'
-  if (c.includes('terapia ocupacional') || c.includes('terapeuta')) return 'Terapia Ocupacional'
-  if (c.includes('fisio')) return 'Fisioterapia'
-  if (c.includes('psicomotric')) return 'Psicomotricidade'
-  if (c.includes('neuropsicopedagog')) return 'Neuropsicopedagogia'
-  return cargo
-}
 
 export function ModalVincularProfissionalAlunoAEE({
   open,
@@ -120,6 +104,7 @@ export function ModalVincularProfissionalAlunoAEE({
   const [horarioFim, setHorarioFim] = useState('09:00')
 
   // Estados da Fila de Espera
+  const [listaEspecialidades, setListaEspecialidades] = useState<string[]>(Array.from(ESPECIALIDADES_CANONICAS_PADRAO))
   const [especialidadeFila, setEspecialidadeFila] = useState<string>('Psicologia')
   const [especialidadeOutrosFila, setEspecialidadeOutrosFila] = useState<string>('')
   const [prioridadeFila, setPrioridadeFila] = useState<'NORMAL' | 'PRIORITARIO' | 'JUDICIAL'>('NORMAL')
@@ -152,6 +137,14 @@ export function ModalVincularProfissionalAlunoAEE({
   // Reset / Inicialização ao fechar/abrir
   useEffect(() => {
     if (open) {
+      obterEspecialidadesEmaee(escolaEmaeeId).then((esps) => {
+        if (isMounted.current && esps && esps.length > 0) {
+          setListaEspecialidades(esps)
+        }
+      }).catch((err) => {
+        console.warn('Erro ao carregar especialidades dinâmicas do EMAEE:', err)
+      })
+
       if (vinculoParaEditar) {
         const isFila = vinculoParaEditar.status === 'FILA_ESPERA' || !vinculoParaEditar.profissionalId
         if (isFila) {
@@ -359,7 +352,7 @@ export function ModalVincularProfissionalAlunoAEE({
         const mesmoTempId = vinculoParaEditar.tempId && v.tempId === vinculoParaEditar.tempId
         if (mesmoId || mesmoTempId) return false
       }
-      return v.especialidade.toLowerCase() === espFinal.toLowerCase()
+      return saoEspecialidadesEquivalentes(v.especialidade, espFinal)
     })
 
     if (jaCadastrada) {
@@ -489,7 +482,7 @@ export function ModalVincularProfissionalAlunoAEE({
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent className="bg-card dark:bg-[#181818] border-border text-foreground text-xs">
-                    {ESPECIALIDADES_CANONICAS.map((esp) => (
+                    {listaEspecialidades.map((esp) => (
                       <SelectItem key={esp} value={esp}>
                         {esp}
                       </SelectItem>

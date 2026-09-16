@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabaseClient'
-import { Building2, Plus, Edit, Trash2, RefreshCw, Search, Paperclip, LayoutGrid } from 'lucide-react'
+import { Building2, Plus, Edit, Trash2, RefreshCw, Search, Paperclip, LayoutGrid, Stethoscope } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { StandardTable, TableColumn } from '@/components/ui/table'
@@ -14,6 +14,7 @@ const ModalEscola = dynamic(() => import('@/components/modals/modal-escola').the
 const ModalConfigAnexosEscola = dynamic(() => import('@/components/modals/modal-config-anexos-escola').then(m => m.ModalConfigAnexosEscola), { ssr: false })
 const ModalGerenciarFilaImpressao = dynamic(() => import('@/components/modals/modal-gerenciar-fila-impressao').then(m => m.ModalGerenciarFilaImpressao), { ssr: false })
 const ModalContasPaisEscola = dynamic(() => import('@/components/modals/modal-contas-pais-escola').then(m => m.ModalContasPaisEscola), { ssr: false })
+const ModalGerenciarEspecialidadesEmaee = dynamic(() => import('@/components/modals/modal-gerenciar-especialidades-emaee').then(m => m.ModalGerenciarEspecialidadesEmaee), { ssr: false })
 
 import { toast } from 'sonner'
 import { softDeleteToTrash } from '@/lib/audit/audit-agent'
@@ -39,6 +40,9 @@ export default function AdminEscolasPage() {
 
   const [escolaParaPais, setEscolaParaPais] = useState<any | null>(null)
   const [contasPaisOpen, setContasPaisOpen] = useState(false)
+
+  const [escolaParaEspecialidades, setEscolaParaEspecialidades] = useState<any | null>(null)
+  const [especialidadesEmaeeOpen, setEspecialidadesEmaeeOpen] = useState(false)
 
   const isMounted = useRef(true)
 
@@ -182,6 +186,20 @@ export default function AdminEscolasPage() {
           >
             <Paperclip className="w-4 h-4" />
           </Button>
+          {(escola.tipo === 'EMAEE' || /emaee/i.test(escola.nome || '')) && (
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={() => {
+                setEscolaParaEspecialidades(escola)
+                setEspecialidadesEmaeeOpen(true)
+              }}
+              className="text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-500/10"
+              title="Gerenciar Especialidades do EMAEE"
+            >
+              <Stethoscope className="w-4 h-4" />
+            </Button>
+          )}
           <Button 
             variant="ghost" 
             size="sm" 
@@ -309,6 +327,16 @@ export default function AdminEscolasPage() {
               e.id === escolaParaPais.id ? { ...e, eja_ativo: novoEstado } : e
             ))
           }}
+        />
+      )}
+
+      {/* Modal de Gestão de Especialidades do EMAEE */}
+      {especialidadesEmaeeOpen && escolaParaEspecialidades && (
+        <ModalGerenciarEspecialidadesEmaee
+          open={especialidadesEmaeeOpen}
+          onOpenChange={setEspecialidadesEmaeeOpen}
+          escola={escolaParaEspecialidades}
+          onSuccess={loadEscolas}
         />
       )}
     </div>
