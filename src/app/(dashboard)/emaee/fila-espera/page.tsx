@@ -56,9 +56,70 @@ export default function FilaEsperaPage() {
     try {
       const isEmaeeUnit = selectedEscola?.tipo === 'EMAEE' || /emaee/i.test(selectedEscola?.nome ?? '')
 
-      let query = supabase
+      const selectCompleto = `
+        *,
+        alunos (
+          id,
+          nome,
+          cpf,
+          telefone,
+          data_nascimento,
+          foto_url,
+          foto_avatar_path,
+          foto_visualizacao_path,
+          foto_updated_at
+        ),
+        escola_origem_fora_rede,
+        escola_origem_nome,
+        escola_origem_municipio,
+        escola_origem_uf,
+        escolas:escola_regular_id (
+          nome
+        ),
+        especialidades:emaee_especialidades_vinculadas (
+          id,
+          status,
+          especialidade,
+          especialidade_outros,
+          prioridade,
+          motivo_fila,
+          data_solicitacao,
+          profissional_id,
+          ativo,
+          frequencia,
+          dia_semana,
+          horario_inicio,
+          horario_fim,
+          data_inicio,
+          funcionarios:profissional_id (
+            id,
+            nome,
+            cargo,
+            foto_url
+          )
+        )
+      `
+
+      let q = supabase
         .from('emaee_matriculas')
-        .select(`
+        .select(selectCompleto)
+        .is('deleted_at', null)
+        .order('data_matricula', { ascending: true })
+
+      if (escolaAtivaId && isEmaeeUnit) {
+        q = q.eq('escola_atendimento_id', escolaAtivaId)
+      }
+
+      let data: any[] | null = null
+      let error: any = null
+
+      const resCompleta: any = await q
+      data = resCompleta.data
+      error = resCompleta.error
+
+      // Fallback seguro caso as colunas opcionais status/motivo_fila/prioridade ainda não existam no banco (erro 42703)
+      if (error && (error.code === '42703' || error.message?.includes('status') || error.message?.includes('prioridade') || error.message?.includes('motivo_fila'))) {
+        const selectFallback = `
           *,
           alunos (
             id,
@@ -80,18 +141,15 @@ export default function FilaEsperaPage() {
           ),
           especialidades:emaee_especialidades_vinculadas (
             id,
-            status,
             especialidade,
             especialidade_outros,
-            prioridade,
-            motivo_fila,
-            data_solicitacao,
             profissional_id,
             ativo,
             frequencia,
             dia_semana,
             horario_inicio,
             horario_fim,
+            data_inicio,
             funcionarios:profissional_id (
               id,
               nome,
@@ -99,19 +157,26 @@ export default function FilaEsperaPage() {
               foto_url
             )
           )
-        `)
-        .is('deleted_at', null)
-        .order('data_matricula', { ascending: true })
+        `
+        let qFallback = supabase
+          .from('emaee_matriculas')
+          .select(selectFallback)
+          .is('deleted_at', null)
+          .order('data_matricula', { ascending: true })
 
-      if (escolaAtivaId && isEmaeeUnit) {
-        query = query.eq('escola_atendimento_id', escolaAtivaId)
+        if (escolaAtivaId && isEmaeeUnit) {
+          qFallback = qFallback.eq('escola_atendimento_id', escolaAtivaId)
+        }
+
+        const resFallback: any = await qFallback
+        data = resFallback.data
+        error = resFallback.error
       }
 
-      const { data, error } = await query
-
       if (error) throw error
+
       if (isMounted.current) {
-        // Aluno está na fila se status geral for FILA_ESPERA OU possuir qualquer especialidade em FILA_ESPERA ativa
+        // Aluno está na fila se status geral for FILA_ESPERA OU possuir qualquer especialidade ativa em espera
         const apenasFila = (data ?? []).filter((m: any) => {
           const isFilaGlobal = m.status === 'FILA_ESPERA'
           const temDemandaFila = (m.especialidades || []).some(
@@ -137,6 +202,15 @@ export default function FilaEsperaPage() {
   useEffect(() => {
     carregarFila()
   }, [escolaAtivaId, selectedEscola?.id])
+
+  const totalPendentesEspecialidade = useMemo(() => {
+    return fila.filter((item) => {
+      const espFila = (item.especialidades || []).filter(
+        (e: any) => e.ativo && (e.status === 'FILA_ESPERA' || (!e.status && !e.profissional_id))
+      )
+      return espFila.length === 0
+    }).length
+  }, [fila])
 
   const filaFiltrada = useMemo(() => {
     return fila.filter((item) => {
@@ -164,10 +238,14 @@ export default function FilaEsperaPage() {
 
       // Filtro de Especialidade Específica
       if (filtroEspecialidade !== 'TODAS') {
-        const matchEsp = espFila.some(
-          (e: any) => (e.especialidade || '').toLowerCase() === filtroEspecialidade.toLowerCase()
-        )
-        if (!matchEsp) return false
+        if (filtroEspecialidade === 'PENDENTE_ESPECIALIDADE') {
+          if (espFila.length > 0) return false
+        } else {
+          const matchEsp = espFila.some(
+            (e: any) => (e.especialidade || '').toLowerCase() === filtroEspecialidade.toLowerCase()
+          )
+          if (!matchEsp) return false
+        }
       }
 
       return true
@@ -249,10 +327,16 @@ export default function FilaEsperaPage() {
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <span className="text-xs font-bold text-muted-foreground bg-card border border-border px-3 py-1.5 rounded-xl shadow-sm">
             Total em Fila: <strong className="text-foreground">{filaFiltrada.length}</strong>
           </span>
+          {totalPendentesEspecialidade > 0 && (
+            <span className="text-xs font-bold text-amber-800 dark:text-amber-300 bg-amber-500/10 border border-amber-500/25 px-3 py-1.5 rounded-xl shadow-sm flex items-center gap-1.5">
+              <AlertCircle className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+              Pendentes de Especialidade: <strong>{totalPendentesEspecialidade}</strong>
+            </span>
+          )}
         </div>
       </div>
 
@@ -278,6 +362,7 @@ export default function FilaEsperaPage() {
             className="bg-background border border-border text-foreground rounded-xl px-3 py-2 text-xs font-medium outline-none cursor-pointer focus:border-primary/50"
           >
             <option value="TODAS">Todas as Especialidades</option>
+            <option value="PENDENTE_ESPECIALIDADE">⚠️ Pendente de Especialidade ({totalPendentesEspecialidade})</option>
             {ESPECIALIDADES_CANONICAS.map((esp) => (
               <option key={esp} value={esp}>
                 {esp}
@@ -378,6 +463,18 @@ export default function FilaEsperaPage() {
                         </span>
                       </div>
                     </div>
+
+                    {/* Badge de Demanda de Especialidade */}
+                    {espFila.length === 0 ? (
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-amber-500/15 text-amber-800 dark:text-amber-300 border border-amber-500/30 shrink-0 flex items-center gap-1">
+                        <AlertCircle className="w-3 h-3 text-amber-600 dark:text-amber-400" />
+                        Pendente de Especialidade
+                      </span>
+                    ) : (
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-sky-500/10 text-sky-700 dark:text-sky-300 border border-sky-500/20 shrink-0">
+                        Fila de Especialidade
+                      </span>
+                    )}
                   </div>
 
                   <div className="space-y-2 text-xs font-normal text-muted-foreground">
@@ -403,9 +500,10 @@ export default function FilaEsperaPage() {
                         Aguardando Vaga em:
                       </p>
                       {espFila.length === 0 ? (
-                        <span className="text-[11px] text-amber-600 dark:text-amber-400 font-medium">
-                          Fila Geral (Aguardando Triagem/Acolhimento)
-                        </span>
+                        <div className="flex items-center gap-1.5 p-2 rounded-xl bg-amber-500/10 border border-amber-500/25 text-amber-900 dark:text-amber-200 text-xs font-semibold">
+                          <AlertCircle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
+                          <span>Pendente de Especialidade (Aguardando Triagem)</span>
+                        </div>
                       ) : (
                         <div className="flex flex-wrap gap-1.5">
                           {espFila.map((ef: any) => (
