@@ -140,14 +140,22 @@ export function PrintFichaInscricaoEmaee({ prontuario, onClose }: PrintFichaInsc
 
   // Lista de condições de saúde e neurodesenvolvimento
   const condicoesSaudeLabels: Record<string, string> = {
+    em_investigacao: 'Em Investigação Diagnóstica (Aguardando Laudo)',
     transtorno_tea: 'TEA (Autismo)',
     tdah: 'TDAH',
     deficiencia_intelectual: 'Def. Intelectual (DI)',
+    epilepsia: 'Epilepsia / Distúrbios Convulsivos',
+    transtorno_linguagem: 'Transtorno da Fala e Linguagem (TDL)',
+    sindrome_down: 'Síndrome de Down (T21)',
+    paralisia_cerebral: 'Paralisia Cerebral (PC)',
     dislexia: 'Dislexia',
     disgrafia_disortografia: 'Disgrafia/Disortografia',
+    discalculia: 'Discalculia',
+    tpac: 'TPAC (Proc. Auditivo Central)',
     tod: 'TOD',
+    transtorno_conduta: 'Transtorno de Conduta',
     ansiedade: 'Transtorno de Ansiedade',
-    superdotacao: 'Superdotação',
+    superdotacao: 'Superdotação / Altas Habilidades',
   }
 
   const condicoesSaudeData = (prontuario?.condicoes_saude as Record<string, { selecionado?: boolean, cid?: string }>) || {}

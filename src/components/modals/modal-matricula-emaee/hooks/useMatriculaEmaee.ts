@@ -184,18 +184,28 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
     transtorno_outros: false,
   })
 
-  const [condicoesSaude, setCondicoesSaude] = useState({
+  const INITIAL_CONDICOES_SAUDE = {
+    em_investigacao: { selecionado: false, cid: '' },
     transtorno_tea: { selecionado: false, cid: '' },
     tdah: { selecionado: false, cid: '' },
     deficiencia_intelectual: { selecionado: false, cid: '' },
+    epilepsia: { selecionado: false, cid: '' },
+    transtorno_linguagem: { selecionado: false, cid: '' },
+    sindrome_down: { selecionado: false, cid: '' },
+    paralisia_cerebral: { selecionado: false, cid: '' },
     dislexia: { selecionado: false, cid: '' },
     disgrafia_disortografia: { selecionado: false, cid: '' },
+    discalculia: { selecionado: false, cid: '' },
+    tpac: { selecionado: false, cid: '' },
     tod: { selecionado: false, cid: '' },
+    transtorno_conduta: { selecionado: false, cid: '' },
     ansiedade: { selecionado: false, cid: '' },
     superdotacao: { selecionado: false, cid: '' },
-  })
+  }
 
-  const toggleCondicao = (key: keyof typeof condicoesSaude) => {
+  const [condicoesSaude, setCondicoesSaude] = useState<Record<string, { selecionado: boolean; cid: string }>>(INITIAL_CONDICOES_SAUDE)
+
+  const toggleCondicao = (key: string) => {
     setCondicoesSaude(prev => {
       const current = prev[key] || { selecionado: false, cid: '' }
       const nextSelected = !current.selecionado
@@ -209,7 +219,7 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
     })
   }
 
-  const setCidCondicao = (key: keyof typeof condicoesSaude, cid: string) => {
+  const setCidCondicao = (key: string, cid: string) => {
     setCondicoesSaude(prev => ({
       ...prev,
       [key]: {
@@ -412,16 +422,7 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
       transtorno_tea: false,
       transtorno_outros: false,
     })
-    setCondicoesSaude({
-      transtorno_tea: { selecionado: false, cid: '' },
-      tdah: { selecionado: false, cid: '' },
-      deficiencia_intelectual: { selecionado: false, cid: '' },
-      dislexia: { selecionado: false, cid: '' },
-      disgrafia_disortografia: { selecionado: false, cid: '' },
-      tod: { selecionado: false, cid: '' },
-      ansiedade: { selecionado: false, cid: '' },
-      superdotacao: { selecionado: false, cid: '' },
-    })
+    setCondicoesSaude({ ...INITIAL_CONDICOES_SAUDE })
     setAssinaturaResponsavelUrl(null)
     setAssinaturaServidorUrl(funcionario?.assinatura_url || null)
     setCodigoColetaLocal(null)
@@ -494,7 +495,9 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
     setOutrosTranstornos(savedDraft.outrosTranstornos || '')
     setObservacoes(savedDraft.observacoes || '')
     if (savedDraft.deficiencias) setDeficiencias(savedDraft.deficiencias)
-    if (savedDraft.condicoesSaude) setCondicoesSaude(savedDraft.condicoesSaude)
+    if (savedDraft.condicoesSaude) {
+      setCondicoesSaude({ ...INITIAL_CONDICOES_SAUDE, ...savedDraft.condicoesSaude })
+    }
     if (Array.isArray(savedDraft.vinculosAEE)) setVinculosAEE(savedDraft.vinculosAEE)
 
     setDraftApplied(true)
@@ -646,8 +649,12 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
         transtorno_outros: Boolean(mat.transtorno_outros),
       })
 
-      const condicoesJson = mat.condicoes_saude || {}
+      const condicoesJson = (mat.condicoes_saude as any) || {}
       setCondicoesSaude({
+        em_investigacao: {
+          selecionado: Boolean(condicoesJson.em_investigacao?.selecionado),
+          cid: condicoesJson.em_investigacao?.cid ?? ''
+        },
         transtorno_tea: {
           selecionado: Boolean(condicoesJson.transtorno_tea?.selecionado ?? mat.transtorno_tea),
           cid: condicoesJson.transtorno_tea?.cid ?? (mat.transtorno_tea ? (mat.cid_codigo ?? '') : '')
@@ -660,6 +667,22 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
           selecionado: Boolean(condicoesJson.deficiencia_intelectual?.selecionado ?? mat.def_intelectual),
           cid: condicoesJson.deficiencia_intelectual?.cid ?? ''
         },
+        epilepsia: {
+          selecionado: Boolean(condicoesJson.epilepsia?.selecionado),
+          cid: condicoesJson.epilepsia?.cid ?? ''
+        },
+        transtorno_linguagem: {
+          selecionado: Boolean(condicoesJson.transtorno_linguagem?.selecionado),
+          cid: condicoesJson.transtorno_linguagem?.cid ?? ''
+        },
+        sindrome_down: {
+          selecionado: Boolean(condicoesJson.sindrome_down?.selecionado),
+          cid: condicoesJson.sindrome_down?.cid ?? ''
+        },
+        paralisia_cerebral: {
+          selecionado: Boolean(condicoesJson.paralisia_cerebral?.selecionado),
+          cid: condicoesJson.paralisia_cerebral?.cid ?? ''
+        },
         dislexia: {
           selecionado: Boolean(condicoesJson.dislexia?.selecionado),
           cid: condicoesJson.dislexia?.cid ?? ''
@@ -668,9 +691,21 @@ export function useMatriculaEmaee({ props, isOpen, setIsOpen }: { props: ModalMa
           selecionado: Boolean(condicoesJson.disgrafia_disortografia?.selecionado),
           cid: condicoesJson.disgrafia_disortografia?.cid ?? ''
         },
+        discalculia: {
+          selecionado: Boolean(condicoesJson.discalculia?.selecionado),
+          cid: condicoesJson.discalculia?.cid ?? ''
+        },
+        tpac: {
+          selecionado: Boolean(condicoesJson.tpac?.selecionado),
+          cid: condicoesJson.tpac?.cid ?? ''
+        },
         tod: {
           selecionado: Boolean(condicoesJson.tod?.selecionado),
           cid: condicoesJson.tod?.cid ?? ''
+        },
+        transtorno_conduta: {
+          selecionado: Boolean(condicoesJson.transtorno_conduta?.selecionado),
+          cid: condicoesJson.transtorno_conduta?.cid ?? ''
         },
         ansiedade: {
           selecionado: Boolean(condicoesJson.ansiedade?.selecionado),

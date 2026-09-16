@@ -16,14 +16,22 @@ export function SecaoDadosClinicos() {
   } = useMatriculaEmaeeContext()
 
   const condicoesList = [
-    { key: 'transtorno_tea', label: 'Transtorno do Espectro Autista (TEA)' },
-    { key: 'tdah', label: 'Transtorno do Déficit de Atenção com Hiperatividade (TDAH)' },
-    { key: 'deficiencia_intelectual', label: 'Deficiência Intelectual (DI)' },
-    { key: 'dislexia', label: 'Dislexia' },
-    { key: 'disgrafia_disortografia', label: 'Disgrafia / Disortografia' },
-    { key: 'tod', label: 'Transtorno Opositor Desafiador (TOD)' },
-    { key: 'ansiedade', label: 'Transtornos de Ansiedade' },
-    { key: 'superdotacao', label: 'Superdotação' },
+    { key: 'em_investigacao', label: 'Em Investigação Diagnóstica / Aguardando Laudo', placeholder: 'Suspeita / Especialidade médica (ex: Neuro, TEA)', isDestaque: true },
+    { key: 'transtorno_tea', label: 'Transtorno do Espectro Autista (TEA)', placeholder: 'Especifique o CID (Ex.: F84.0)' },
+    { key: 'tdah', label: 'Transtorno do Déficit de Atenção com Hiperatividade (TDAH)', placeholder: 'Especifique o CID (Ex.: F90.0)' },
+    { key: 'deficiencia_intelectual', label: 'Deficiência Intelectual (DI)', placeholder: 'Especifique o CID (Ex.: F70-F72)' },
+    { key: 'epilepsia', label: 'Epilepsia / Distúrbios Convulsivos', placeholder: 'Especifique o CID (Ex.: G40)' },
+    { key: 'transtorno_linguagem', label: 'Transtornos da Fala e Linguagem (TDL / Fala)', placeholder: 'Especifique o CID (Ex.: F80)' },
+    { key: 'sindrome_down', label: 'Síndrome de Down (T21)', placeholder: 'Especifique o CID (Ex.: Q90)' },
+    { key: 'paralisia_cerebral', label: 'Paralisia Cerebral (PC)', placeholder: 'Especifique o CID (Ex.: G80)' },
+    { key: 'dislexia', label: 'Dislexia', placeholder: 'Especifique o CID (Ex.: F81.0)' },
+    { key: 'disgrafia_disortografia', label: 'Disgrafia / Disortografia', placeholder: 'Especifique o CID (Ex.: F81.1)' },
+    { key: 'discalculia', label: 'Discalculia', placeholder: 'Especifique o CID (Ex.: F81.2)' },
+    { key: 'tpac', label: 'Transtorno do Processamento Auditivo Central (TPAC)', placeholder: 'Especifique o CID (Ex.: H93.25)' },
+    { key: 'tod', label: 'Transtorno Opositor Desafiador (TOD)', placeholder: 'Especifique o CID (Ex.: F91.3)' },
+    { key: 'transtorno_conduta', label: 'Transtorno de Conduta', placeholder: 'Especifique o CID (Ex.: F91)' },
+    { key: 'ansiedade', label: 'Transtornos de Ansiedade', placeholder: 'Especifique o CID (Ex.: F41)' },
+    { key: 'superdotacao', label: 'Superdotação / Altas Habilidades', placeholder: 'Especifique o CID (Ex.: Z55)' },
   ] as const
 
   return (
@@ -80,23 +88,28 @@ export function SecaoDadosClinicos() {
           <legend className="px-1 text-xs font-bold text-foreground">Outras Condições de Saúde e Neurodesenvolvimento</legend>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2.5 mt-2">
             {condicoesList.map((item) => {
-              const cond = condicoesSaude[item.key]
+              const cond = (condicoesSaude as any)[item.key]
               const isChecked = Boolean(cond?.selecionado)
+              const isDestaque = (item as any).isDestaque
               return (
                 <div
                   key={item.key}
                   className={`flex flex-col justify-between p-3 rounded-xl border transition-all ${
                     isChecked
-                      ? 'border-primary/60 bg-primary/10 text-foreground'
-                      : 'border-border bg-input text-foreground/80 hover:border-primary/40'
+                      ? isDestaque
+                        ? 'border-amber-500/70 bg-amber-500/10 text-foreground shadow-sm dark:bg-amber-500/15'
+                        : 'border-primary/60 bg-primary/10 text-foreground'
+                      : isDestaque
+                        ? 'border-amber-500/30 bg-amber-500/5 hover:border-amber-500/50 text-foreground/90'
+                        : 'border-border bg-input text-foreground/80 hover:border-primary/40'
                   }`}
                 >
                   <label className="flex items-start gap-2 text-xs font-medium cursor-pointer select-none">
                     <input
                       type="checkbox"
                       checked={isChecked}
-                      onChange={() => toggleCondicao(item.key)}
-                      className="w-4 h-4 mt-0.5 rounded accent-primary shrink-0"
+                      onChange={() => toggleCondicao(item.key as any)}
+                      className={`w-4 h-4 mt-0.5 rounded shrink-0 ${isDestaque ? 'accent-amber-600' : 'accent-primary'}`}
                     />
                     <span className={isChecked ? 'font-semibold text-foreground' : 'text-foreground/90'}>
                       {item.label}
@@ -104,12 +117,12 @@ export function SecaoDadosClinicos() {
                   </label>
 
                   {isChecked && (
-                    <div className="mt-2.5 pt-2 border-t border-primary/20" onClick={(e) => e.stopPropagation()}>
+                    <div className={`mt-2.5 pt-2 border-t ${isDestaque ? 'border-amber-500/25' : 'border-primary/20'}`} onClick={(e) => e.stopPropagation()}>
                       <Input
                         type="text"
-                        placeholder="Especifíque o CID"
+                        placeholder={item.placeholder || 'Especifique o CID'}
                         value={cond?.cid ?? ''}
-                        onChange={(e) => setCidCondicao(item.key, e.target.value)}
+                        onChange={(e) => setCidCondicao(item.key as any, e.target.value)}
                         className="h-7 text-xs bg-background/80 border-border text-foreground placeholder:text-muted-foreground/60 rounded-lg px-2 shadow-inner"
                       />
                     </div>
