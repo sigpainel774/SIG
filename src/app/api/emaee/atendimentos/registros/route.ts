@@ -62,27 +62,72 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
 
+    // Resolução segura de funcionário e escola para garantir integridade referencial
+    let funcionarioId: string | null = null
+    let funcionarioNome: string = user.email || 'Usuário'
+
+    if (user) {
+      const { data: func } = await supabaseAdmin
+        .from('funcionarios')
+        .select('id, nome')
+        .or(`auth_user_id.eq.${user.id},email.ilike.${user.email}`)
+        .limit(1)
+        .maybeSingle()
+
+      if (func) {
+        funcionarioId = func.id
+        funcionarioNome = func.nome || funcionarioNome
+      }
+    }
+
     // Suporte a operações em lote (ex: marcar o dia inteiro como Feriado ou Recesso)
     if (body.batch && Array.isArray(body.registros)) {
       const { escola_id, data_atendimento, status, observacoes } = body
+
+      let validEscolaId: string | null = null
+      if (escola_id) {
+        const { data: esc } = await supabaseAdmin
+          .from('escolas')
+          .select('id')
+          .eq('id', escola_id)
+          .maybeSingle()
+        if (esc) validEscolaId = esc.id
+      }
+
       const registrosParaSalvar = body.registros.map((vinculo_id: string) => ({
         vinculo_id,
-        escola_id: escola_id || null,
+        escola_id: validEscolaId,
         data_atendimento,
         status: status || 'feriado',
         aluno_nao_compareceu: false,
         motivo_recusa_falta: null,
         observacoes: observacoes?.trim() || null,
-        registrado_por: user.id || null,
-        registrado_por_nome: user.email || 'Usuário',
+        registrado_por: funcionarioId,
+        registrado_por_nome: funcionarioNome,
         registrado_em: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       }))
 
-      const { data: batchSalvo, error: batchErr } = await (supabaseAdmin as any)
+      let { data: batchSalvo, error: batchErr } = await (supabaseAdmin as any)
         .from('emaee_atendimentos_registros')
         .upsert(registrosParaSalvar, { onConflict: 'vinculo_id,data_atendimento' })
         .select()
+
+      // Fallback em caso de violação de Foreign Key
+      if (batchErr && batchErr.code === '23503') {
+        console.warn('[api/emaee/atendimentos/registros] FK violation no batch, retentando com chaves nulas:', batchErr)
+        const batchSafe = registrosParaSalvar.map((r: any) => ({
+          ...r,
+          registrado_por: null,
+          escola_id: null,
+        }))
+        const retryBatch = await (supabaseAdmin as any)
+          .from('emaee_atendimentos_registros')
+          .upsert(batchSafe, { onConflict: 'vinculo_id,data_atendimento' })
+          .select()
+        batchSalvo = retryBatch.data
+        batchErr = retryBatch.error
+      }
 
       if (batchErr) {
         console.error('[api/emaee/atendimentos/registros] Erro batch:', batchErr)
@@ -130,9 +175,49 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    // Se veio registrado_por customizado no payload, checa se existe em funcionarios
+    if (registrado_por) {
+      const { data: funcCustom } = await supabaseAdmin
+        .from('funcionarios')
+        .select('id, nome')
+        .eq('id', registrado_por)
+        .maybeSingle()
+      if (funcCustom) {
+        funcionarioId = funcCustom.id
+        funcionarioNome = funcCustom.nome || funcionarioNome
+      }
+    }
+
+    if (registrado_por_nome) {
+      funcionarioNome = registrado_por_nome
+    }
+
+    // Resolução segura de escola_id
+    let validEscolaId: string | null = null
+    if (escola_id) {
+      const { data: esc } = await supabaseAdmin
+        .from('escolas')
+        .select('id')
+        .eq('id', escola_id)
+        .maybeSingle()
+      if (esc) validEscolaId = esc.id
+    }
+
+    if (!validEscolaId && vinculo_id) {
+      const { data: vinculo } = await supabaseAdmin
+        .from('emaee_especialidades_vinculadas')
+        .select('emaee_matriculas(escola_atendimento_id)')
+        .eq('id', vinculo_id)
+        .maybeSingle()
+      const escIdFromVinculo = (vinculo as any)?.emaee_matriculas?.escola_atendimento_id
+      if (escIdFromVinculo) {
+        validEscolaId = escIdFromVinculo
+      }
+    }
+
     const payload: any = {
       vinculo_id,
-      escola_id: escola_id || null,
+      escola_id: validEscolaId,
       data_atendimento,
       status,
       aluno_nao_compareceu: Boolean(aluno_nao_compareceu),
@@ -141,8 +226,8 @@ export async function POST(req: NextRequest) {
       data_remarcada: data_remarcada || null,
       horario_remarcado: horario_remarcado || null,
       motivo_remarcacao: motivo_remarcacao?.trim() || null,
-      registrado_por: registrado_por || user.id || null,
-      registrado_por_nome: registrado_por_nome || user.email || 'Usuário',
+      registrado_por: funcionarioId,
+      registrado_por_nome: funcionarioNome,
       registrado_em: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     }
@@ -154,27 +239,58 @@ export async function POST(req: NextRequest) {
       .select()
       .single()
 
-    // Fallback resiliente se colunas novas de remarcação ainda não existirem no schema do banco
+    // Fallback 1: Violação de Foreign Key (código 23503)
+    if (upsertError && upsertError.code === '23503') {
+      console.warn('[api/emaee/atendimentos/registros] Foreign key violation capturada, retentando com chaves seguras nulas:', upsertError)
+      const safePayload = {
+        ...payload,
+        registrado_por: null,
+        escola_id: null,
+      }
+      const retryFk = await (supabaseAdmin as any)
+        .from('emaee_atendimentos_registros')
+        .upsert(safePayload, { onConflict: 'vinculo_id,data_atendimento' })
+        .select()
+        .single()
+      registroSalvo = retryFk.data
+      upsertError = retryFk.error
+    }
+
+    // Fallback 2: Colunas novas de remarcação ainda não existentes no schema
     if (upsertError && (upsertError.code === '42703' || upsertError.message?.includes('remarcad'))) {
       console.warn('[api/emaee/atendimentos/registros] Fallback compatível sem colunas de remarcação:', upsertError)
       const fallbackPayload = {
         vinculo_id,
-        escola_id: escola_id || null,
+        escola_id: validEscolaId,
         data_atendimento,
         status,
         aluno_nao_compareceu: Boolean(aluno_nao_compareceu),
         motivo_recusa_falta: motivo_recusa_falta?.trim() || null,
         observacoes: observacoes?.trim() || (motivo_remarcacao ? `Remarcação: ${motivo_remarcacao}` : null),
-        registrado_por: registrado_por || user.id || null,
-        registrado_por_nome: registrado_por_nome || user.email || 'Usuário',
+        registrado_por: funcionarioId,
+        registrado_por_nome: funcionarioNome,
         registrado_em: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       }
-      const retry = await (supabaseAdmin as any)
+      let retry = await (supabaseAdmin as any)
         .from('emaee_atendimentos_registros')
         .upsert(fallbackPayload, { onConflict: 'vinculo_id,data_atendimento' })
         .select()
         .single()
+
+      if (retry.error && retry.error.code === '23503') {
+        const safeFallbackPayload = {
+          ...fallbackPayload,
+          registrado_por: null,
+          escola_id: null,
+        }
+        retry = await (supabaseAdmin as any)
+          .from('emaee_atendimentos_registros')
+          .upsert(safeFallbackPayload, { onConflict: 'vinculo_id,data_atendimento' })
+          .select()
+          .single()
+      }
+
       registroSalvo = retry.data
       upsertError = retry.error
     }

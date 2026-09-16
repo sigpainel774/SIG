@@ -47,6 +47,7 @@ import {
 import { Label } from '@/components/ui/label'
 import { useSchoolStore } from '@/store/useSchoolStore'
 import { useEditModeStore } from '@/store/useEditModeStore'
+import { useAuthStore } from '@/store/useAuthStore'
 import { createClient } from '@/lib/supabaseClient'
 import { toast } from 'sonner'
 import { ModalAssociarAlunoAEE } from '@/components/modals/modal-associar-aluno-aee'
@@ -142,6 +143,7 @@ function getNumeroSemanaAno(data: Date): { semana: number; ano: number } {
 export default function CalendarioAtendimentosPage() {
   const { selectedEscola } = useSchoolStore()
   const { isEditMode } = useEditModeStore()
+  const { funcionario } = useAuthStore()
   const escolaEmaeeId = selectedEscola?.id
   const supabase = useMemo(() => createClient(), [])
 
@@ -835,6 +837,8 @@ export default function CalendarioAtendimentosPage() {
           data_remarcada: statusForm === 'remarcado' ? dataRemarcadaForm : null,
           horario_remarcado: statusForm === 'remarcado' ? horarioRemarcadoForm : null,
           motivo_remarcacao: statusForm === 'remarcado' ? motivoRemarcacaoForm : null,
+          registrado_por: funcionario?.id || null,
+          registrado_por_nome: funcionario?.nome || funcionario?.email || 'Secretaria EMAEE',
         }),
       })
 
@@ -900,6 +904,8 @@ export default function CalendarioAtendimentosPage() {
             status === 'feriado'
               ? 'Feriado cadastrado no calendário do EMAEE'
               : 'Recesso escolar cadastrado no calendário do EMAEE',
+          registrado_por: funcionario?.id || null,
+          registrado_por_nome: funcionario?.nome || funcionario?.email || 'Secretaria EMAEE',
         }),
       })
 
