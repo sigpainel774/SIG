@@ -666,8 +666,16 @@ export function ModalRankingSimulado({
           <div className="bg-card border border-emerald-500/40 rounded-2xl p-4 space-y-4 animate-in fade-in">
             <div className="flex items-center justify-between border-b border-border pb-3">
               <div>
-                <h4 className="font-extrabold text-foreground text-sm">
-                  Espelho da Folha: {selectedAlunoResposta.aluno?.nome || selectedAlunoResposta.nome_identificado}
+                <h4 className="font-extrabold text-foreground text-sm flex items-center gap-2">
+                  <span>Espelho da Folha: {selectedAlunoResposta.aluno?.nome || selectedAlunoResposta.nome_identificado}</span>
+                  {selectedAlunoResposta.lingua_estrangeira && (
+                    <Badge
+                      variant="outline"
+                      className="text-[9px] font-bold py-0 h-4 border-blue-500/30 text-blue-600 dark:text-blue-400 bg-blue-500/10"
+                    >
+                      {selectedAlunoResposta.lingua_estrangeira === 'espanhol' ? '🇪🇸 Espanhol' : '🇬🇧 Inglês'}
+                    </Badge>
+                  )}
                 </h4>
                 <span className="text-xs text-muted-foreground">
                   Nota: <strong>{Number(selectedAlunoResposta.nota_final).toFixed(1)}</strong> • {selectedAlunoResposta.total_acertos} Acertos • {selectedAlunoResposta.total_erros} Erros
@@ -688,7 +696,21 @@ export function ModalRankingSimulado({
                 const q = idx + 1
                 const qStr = q.toString()
                 const respAluno = (selectedAlunoResposta.respostas?.[qStr] || 'BRANCO').toUpperCase()
-                const respCorreta = (simulado.gabarito_oficial[qStr] || '').toUpperCase()
+
+                const isLingua =
+                  Boolean(simulado.possui_lingua_estrangeira) &&
+                  q >= (simulado.lingua_estrangeira_inicio || 1) &&
+                  q <= (simulado.lingua_estrangeira_fim || 5)
+
+                let respCorreta = (simulado.gabarito_oficial[qStr] || '').toUpperCase()
+                if (isLingua && selectedAlunoResposta.lingua_estrangeira) {
+                  respCorreta = (
+                    selectedAlunoResposta.lingua_estrangeira === 'espanhol'
+                      ? (simulado.gabarito_espanhol?.[qStr] || respCorreta)
+                      : (simulado.gabarito_ingles?.[qStr] || respCorreta)
+                  ).toUpperCase()
+                }
+
                 const acertou = respAluno === respCorreta
 
                 return (
@@ -702,7 +724,14 @@ export function ModalRankingSimulado({
                         : 'bg-rose-500/10 border-rose-500/40 text-rose-700 dark:text-rose-300'
                     }`}
                   >
-                    <span className="text-[10px] text-muted-foreground block">Q{q < 10 ? `0${q}` : q}</span>
+                    <span className="text-[10px] text-muted-foreground block">
+                      Q{q < 10 ? `0${q}` : q}
+                      {isLingua && (
+                        <span className="text-[8px] font-bold block text-blue-600 dark:text-blue-400">
+                          {selectedAlunoResposta.lingua_estrangeira === 'espanhol' ? 'ESP' : 'ING'}
+                        </span>
+                      )}
+                    </span>
                     <span className="font-extrabold text-sm">{respAluno}</span>
                     {!acertou && <span className="text-[9px] text-muted-foreground block">({respCorreta})</span>}
                   </div>

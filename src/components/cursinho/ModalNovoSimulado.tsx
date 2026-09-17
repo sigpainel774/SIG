@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { Save, CheckSquare, Sparkles, Trash2, FileText, BookOpen, Edit3, Check, Globe } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -150,7 +150,7 @@ export function ModalNovoSimulado({
 
   const handlePreencherAleatorio = () => {
     const novoGabarito: Record<string, string> = {}
-    for (let q = 1; q <= qtdQuestoes; q++) {
+    for (const q of questoesGerais) {
       const randomLetra = letras[Math.floor(Math.random() * letras.length)]
       novoGabarito[q.toString()] = randomLetra
     }
@@ -159,7 +159,7 @@ export function ModalNovoSimulado({
     if (possuiLinguaEstrangeira) {
       const gIngles: Record<string, string> = {}
       const gEspanhol: Record<string, string> = {}
-      for (let q = linguaInicio; q <= linguaFim; q++) {
+      for (let q = Math.max(1, linguaInicio); q <= Math.min(qtdQuestoes, linguaFim); q++) {
         gIngles[q.toString()] = letras[Math.floor(Math.random() * letras.length)]
         gEspanhol[q.toString()] = letras[Math.floor(Math.random() * letras.length)]
       }
@@ -188,11 +188,20 @@ export function ModalNovoSimulado({
       return
     }
 
-    // Verifica se todas as questões têm resposta definida no gabarito
+    // Verifica se todas as questões gerais têm resposta definida no gabarito
     const questoesFaltando: number[] = []
-    for (let q = 1; q <= qtdQuestoes; q++) {
+    for (const q of questoesGerais) {
       if (!gabaritoOficial[q.toString()]) {
         questoesFaltando.push(q)
+      }
+    }
+
+    if (possuiLinguaEstrangeira) {
+      for (let q = Math.max(1, linguaInicio); q <= Math.min(qtdQuestoes, linguaFim); q++) {
+        const qStr = q.toString()
+        if (!gabaritoIngles[qStr] || !gabaritoEspanhol[qStr]) {
+          questoesFaltando.push(q)
+        }
       }
     }
 
@@ -202,6 +211,16 @@ export function ModalNovoSimulado({
 
     setSaving(true)
     try {
+      const gabaritoFinal = { ...gabaritoOficial }
+      if (possuiLinguaEstrangeira) {
+        for (let q = Math.max(1, linguaInicio); q <= Math.min(qtdQuestoes, linguaFim); q++) {
+          const qStr = q.toString()
+          if (!gabaritoFinal[qStr]) {
+            gabaritoFinal[qStr] = gabaritoIngles[qStr] || gabaritoEspanhol[qStr] || 'A'
+          }
+        }
+      }
+
       const payload = {
         escola_id: escolaId,
         titulo: titulo.trim(),
@@ -212,7 +231,7 @@ export function ModalNovoSimulado({
         alternativas_por_questao: alternativasPorQuestao,
         turmas_ids: turmasIds,
         auto_correcao_ativa: autoCorrecaoAtiva,
-        gabarito_oficial: gabaritoOficial,
+        gabarito_oficial: gabaritoFinal,
         possui_lingua_estrangeira: possuiLinguaEstrangeira,
         lingua_estrangeira_inicio: possuiLinguaEstrangeira ? linguaInicio : 1,
         lingua_estrangeira_fim: possuiLinguaEstrangeira ? linguaFim : 5,
@@ -296,21 +315,34 @@ export function ModalNovoSimulado({
     }
   }
 
+  // Lista de questões que pertencem ao gabarito geral (exclui a faixa de língua estrangeira se ativa)
+  const questoesGerais = useMemo<number[]>(() => {
+    const todas: number[] = Array.from({ length: qtdQuestoes }, (_, i) => i + 1)
+    if (!possuiLinguaEstrangeira) return todas
+    return todas.filter((q: number) => q < linguaInicio || q > linguaFim)
+  }, [qtdQuestoes, possuiLinguaEstrangeira, linguaInicio, linguaFim])
+
   // Gera blocos de gabarito no MODO PAISAGEM (Letras na vertical, Números na horizontal)
-  const numBlocosGabarito = qtdQuestoes <= 20 ? 1 : qtdQuestoes <= 45 ? 3 : qtdQuestoes <= 60 ? 3 : 4
-  const questoesPorBlocoGabarito = Math.ceil(qtdQuestoes / numBlocosGabarito)
+  const numBlocosGabarito = questoesGerais.length <= 20 ? 1 : questoesGerais.length <= 45 ? 3 : questoesGerais.length <= 60 ? 3 : 4
+  const questoesPorBlocoGabarito = Math.ceil(questoesGerais.length / (numBlocosGabarito || 1))
 
   const renderGabaritoPaisagem = () => {
+    if (questoesGerais.length === 0) {
+      return (
+        <div className="p-6 text-center text-xs text-muted-foreground bg-muted/20 rounded-xl border border-border">
+          Todas as questões deste simulado estão alocadas na faixa de Língua Estrangeira (Inglês / Espanhol).
+        </div>
+      )
+    }
+
     const blocos = []
 
     for (let b = 0; b < numBlocosGabarito; b++) {
-      const startQ = b * questoesPorBlocoGabarito + 1
-      const endQ = Math.min(qtdQuestoes, (b + 1) * questoesPorBlocoGabarito)
-      const questoes: number[] = []
+      const startIndex = b * questoesPorBlocoGabarito
+      const endIndex = Math.min(questoesGerais.length, (b + 1) * questoesPorBlocoGabarito)
+      const questoes: number[] = questoesGerais.slice(startIndex, endIndex)
 
-      for (let q = startQ; q <= endQ; q++) {
-        questoes.push(q)
-      }
+      if (questoes.length === 0) continue
 
       blocos.push(
         <div key={b} className="w-full border-2 border-border/80 dark:border-zinc-700 rounded-xl overflow-hidden bg-card mb-3 shadow-sm">
@@ -321,7 +353,7 @@ export function ModalNovoSimulado({
                   <th className="w-12 py-2 px-2 text-xs font-black text-foreground border-r border-border uppercase">
                     Nº
                   </th>
-                  {questoes.map((q) => {
+                  {questoes.map((q: number) => {
                     const temResposta = Boolean(gabaritoOficial[q.toString()])
                     return (
                       <th
@@ -342,7 +374,7 @@ export function ModalNovoSimulado({
                     <td className="w-12 py-1.5 px-2 font-black text-xs text-foreground bg-muted/40 border-r border-border">
                       {letra}
                     </td>
-                    {questoes.map((q) => {
+                    {questoes.map((q: number) => {
                       const isSelected = gabaritoOficial[q.toString()] === letra
                       return (
                         <td key={`${q}-${letra}`} className="py-1 px-1 border-r border-border/40 last:border-r-0">
@@ -736,10 +768,25 @@ export function ModalNovoSimulado({
             <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border pb-3 px-2">
               <div>
                 <h4 className="font-extrabold text-sm text-foreground flex items-center gap-2">
-                  <CheckSquare className="w-4 h-4 text-emerald-500 dark:text-emerald-400" /> Gabarito Oficial
+                  <CheckSquare className="w-4 h-4 text-emerald-500 dark:text-emerald-400" />
+                  {possuiLinguaEstrangeira && questoesGerais.length > 0 ? (
+                    <span>
+                      Gabarito Geral • Questões Comuns ({questoesGerais[0] < 10 ? `0${questoesGerais[0]}` : questoesGerais[0]} a {questoesGerais[questoesGerais.length - 1] < 10 ? `0${questoesGerais[questoesGerais.length - 1]}` : questoesGerais[questoesGerais.length - 1]})
+                    </span>
+                  ) : (
+                    <span>Gabarito Oficial (01 a {qtdQuestoes < 10 ? `0${qtdQuestoes}` : qtdQuestoes})</span>
+                  )}
                 </h4>
                 <span className="text-xs text-muted-foreground">
-                  Letras na vertical (A-E) e questões na horizontal (01-{qtdQuestoes < 10 ? `0${qtdQuestoes}` : qtdQuestoes}). Clique para marcar a chave de respostas oficial.
+                  {possuiLinguaEstrangeira && questoesGerais.length > 0 ? (
+                    <>
+                      As questões {linguaInicio < 10 ? `0${linguaInicio}` : linguaInicio} a {linguaFim < 10 ? `0${linguaFim}` : linguaFim} são de Língua Estrangeira (definidas nos blocos de Inglês e Espanhol acima). Abaixo, marque o gabarito das questões de {questoesGerais[0] < 10 ? `0${questoesGerais[0]}` : questoesGerais[0]} a {questoesGerais[questoesGerais.length - 1] < 10 ? `0${questoesGerais[questoesGerais.length - 1]}` : questoesGerais[questoesGerais.length - 1]}.
+                    </>
+                  ) : (
+                    <>
+                      Letras na vertical (A-E) e questões na horizontal (01-{qtdQuestoes < 10 ? `0${qtdQuestoes}` : qtdQuestoes}). Clique para marcar a chave de respostas oficial.
+                    </>
+                  )}
                 </span>
               </div>
 

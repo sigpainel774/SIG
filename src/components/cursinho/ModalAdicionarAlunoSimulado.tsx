@@ -97,6 +97,16 @@ export function ModalAdicionarAlunoSimulado({
     return qtd === 4 ? ['A', 'B', 'C', 'D'] : ['A', 'B', 'C', 'D', 'E']
   }, [simulado])
 
+  // Identifica se o simulado possui configuração de Língua Estrangeira
+  const temLinguaEstrangeira = useMemo(() => {
+    if (!simulado) return false
+    return Boolean(
+      simulado.possui_lingua_estrangeira ||
+      (simulado.gabarito_ingles && Object.keys(simulado.gabarito_ingles).length > 0) ||
+      (simulado.gabarito_espanhol && Object.keys(simulado.gabarito_espanhol).length > 0)
+    )
+  }, [simulado])
+
   // Carrega lista de alunos da escola / turmas do simulado
   useEffect(() => {
     if (!open || !simulado) return
@@ -210,7 +220,7 @@ export function ModalAdicionarAlunoSimulado({
       const qStr = q.toString()
       const respAluno = (respostasAluno[qStr] || '').toUpperCase()
 
-      const isLingua = Boolean(simulado.possui_lingua_estrangeira) && q >= linguaInicio && q <= linguaFim
+      const isLingua = Boolean(temLinguaEstrangeira) && q >= linguaInicio && q <= linguaFim
 
       let respCorreta = (simulado.gabarito_oficial[qStr] || '').toUpperCase()
       if (isLingua) {
@@ -238,7 +248,7 @@ export function ModalAdicionarAlunoSimulado({
     const nota = Number(((acertos / qtdTotal) * 10).toFixed(1))
 
     return { totalAcertos: acertos, totalErros: erros, totalEmBranco: emBranco, percentual, nota }
-  }, [simulado, modoLancamento, respostasAluno, acertosDireto, linguaEscolhida])
+  }, [simulado, modoLancamento, respostasAluno, acertosDireto, linguaEscolhida, temLinguaEstrangeira])
 
   // Salva a resposta do aluno no banco de dados e gera QR Code
   const handleSalvarResposta = async () => {
@@ -271,7 +281,7 @@ export function ModalAdicionarAlunoSimulado({
       let acertosContados = 0
       for (let q = 1; q <= simulado.qtd_questoes; q++) {
         const qStr = q.toString()
-        const isLingua = Boolean(simulado.possui_lingua_estrangeira) && q >= (simulado.lingua_estrangeira_inicio || 1) && q <= (simulado.lingua_estrangeira_fim || 5)
+        const isLingua = Boolean(temLinguaEstrangeira) && q >= (simulado.lingua_estrangeira_inicio || 1) && q <= (simulado.lingua_estrangeira_fim || 5)
         let gab = simulado.gabarito_oficial[qStr] || 'A'
         if (isLingua) {
           gab = (linguaEscolhida === 'espanhol' ? simulado.gabarito_espanhol?.[qStr] : simulado.gabarito_ingles?.[qStr]) || gab
@@ -298,7 +308,7 @@ export function ModalAdicionarAlunoSimulado({
         cpf_aluno: cpfAluno.trim() || null,
         data_nascimento_aluno: dataNascimentoAluno.trim() || null,
         nome_mae_aluno: nomeMaeAluno.trim() || null,
-        lingua_estrangeira: simulado.possui_lingua_estrangeira ? linguaEscolhida : null,
+        lingua_estrangeira: temLinguaEstrangeira ? linguaEscolhida : null,
         respostas: respostasSalvar,
         total_acertos: metricasCalculadas.totalAcertos,
         total_erros: metricasCalculadas.totalErros,
@@ -401,7 +411,7 @@ export function ModalAdicionarAlunoSimulado({
                     const qStr = q.toString()
                     const resp = respostasAluno[qStr]
 
-                    const isLingua = Boolean(simulado.possui_lingua_estrangeira) && q >= (simulado.lingua_estrangeira_inicio || 1) && q <= (simulado.lingua_estrangeira_fim || 5)
+                    const isLingua = Boolean(temLinguaEstrangeira) && q >= (simulado.lingua_estrangeira_inicio || 1) && q <= (simulado.lingua_estrangeira_fim || 5)
                     let gab = simulado.gabarito_oficial[qStr]
                     if (isLingua) {
                       gab = (linguaEscolhida === 'espanhol' ? simulado.gabarito_espanhol?.[qStr] : simulado.gabarito_ingles?.[qStr]) || gab
@@ -419,12 +429,19 @@ export function ModalAdicionarAlunoSimulado({
                             : isErrada
                             ? 'text-rose-600 dark:text-rose-400 bg-rose-500/10'
                             : isLingua
-                            ? 'text-blue-500 dark:text-blue-400 bg-blue-500/5'
+                            ? linguaEscolhida === 'ingles'
+                              ? 'text-blue-700 dark:text-blue-300 bg-blue-500/15 border-b-2 border-b-blue-500'
+                              : 'text-amber-700 dark:text-amber-300 bg-amber-500/15 border-b-2 border-b-amber-500'
                             : 'text-muted-foreground'
                         }`}
-                        title={isLingua ? `Questão de Língua Estrangeira (${linguaEscolhida === 'ingles' ? 'Inglês' : 'Espanhol'})` : undefined}
+                        title={isLingua ? `Questão ${q} de Língua Estrangeira (${linguaEscolhida === 'ingles' ? 'Inglês' : 'Espanhol'} - Gabarito: ${gab || '?'})` : undefined}
                       >
-                        {q < 10 ? `0${q}` : q}
+                        <div>{q < 10 ? `0${q}` : q}</div>
+                        {isLingua && (
+                          <span className={`text-[8px] font-black uppercase tracking-tighter block ${linguaEscolhida === 'ingles' ? 'text-blue-600 dark:text-blue-400' : 'text-amber-600 dark:text-amber-400'}`}>
+                            {linguaEscolhida === 'ingles' ? 'ING' : 'ESP'}
+                          </span>
+                        )}
                       </th>
                     )
                   })}
@@ -440,7 +457,7 @@ export function ModalAdicionarAlunoSimulado({
                       const qStr = q.toString()
                       const isSelected = respostasAluno[qStr] === letra
 
-                      const isLingua = Boolean(simulado.possui_lingua_estrangeira) && q >= (simulado.lingua_estrangeira_inicio || 1) && q <= (simulado.lingua_estrangeira_fim || 5)
+                      const isLingua = Boolean(temLinguaEstrangeira) && q >= (simulado.lingua_estrangeira_inicio || 1) && q <= (simulado.lingua_estrangeira_fim || 5)
                       let gab = simulado.gabarito_oficial[qStr]
                       if (isLingua) {
                         gab = (linguaEscolhida === 'espanhol' ? simulado.gabarito_espanhol?.[qStr] : simulado.gabarito_ingles?.[qStr]) || gab
@@ -677,7 +694,7 @@ export function ModalAdicionarAlunoSimulado({
           </div>
 
           {/* SELEÇÃO DE LÍNGUA ESTRANGEIRA (QUANDO O SIMULADO POSSUI A OPÇÃO) */}
-          {simulado.possui_lingua_estrangeira && (
+          {temLinguaEstrangeira && (
             <div className="p-3.5 bg-blue-500/10 border border-blue-500/20 rounded-xl space-y-2.5">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div className="flex items-center gap-2">
@@ -753,6 +770,52 @@ export function ModalAdicionarAlunoSimulado({
               </Button>
             </div>
           </div>
+
+          {/* BANNER PROMINENTE DE SELEÇÃO DE LÍNGUA ESTRANGEIRA (NAS 5 PRIMEIRAS QUESTÕES) */}
+          {temLinguaEstrangeira && (
+            <div className="p-3 bg-blue-500/10 dark:bg-blue-950/40 border-2 border-blue-500/30 rounded-xl flex flex-wrap items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <Globe className="w-5 h-5 text-blue-500 shrink-0" />
+                <div>
+                  <span className="text-xs font-black text-foreground block">
+                    Língua Estrangeira Escolhida pelo Estudante (Questões {simulado.lingua_estrangeira_inicio || 1} a {simulado.lingua_estrangeira_fim || 5})
+                  </span>
+                  <span className="text-[11px] text-muted-foreground">
+                    Selecione qual prova de língua o aluno realizou para aplicar o gabarito correto:
+                  </span>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <Button
+                  type="button"
+                  size="sm"
+                  variant={linguaEscolhida === 'ingles' ? 'default' : 'outline'}
+                  onClick={() => setLinguaEscolhida('ingles')}
+                  className={`text-xs font-bold gap-1.5 h-8 px-3.5 cursor-pointer ${
+                    linguaEscolhida === 'ingles'
+                      ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-md ring-2 ring-blue-400 scale-105'
+                      : 'border-border'
+                  }`}
+                >
+                  🇬🇧 Inglês (Q0{simulado.lingua_estrangeira_inicio || 1}-Q0{simulado.lingua_estrangeira_fim || 5})
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant={linguaEscolhida === 'espanhol' ? 'default' : 'outline'}
+                  onClick={() => setLinguaEscolhida('espanhol')}
+                  className={`text-xs font-bold gap-1.5 h-8 px-3.5 cursor-pointer ${
+                    linguaEscolhida === 'espanhol'
+                      ? 'bg-amber-600 hover:bg-amber-700 text-white shadow-md ring-2 ring-amber-400 scale-105'
+                      : 'border-border'
+                  }`}
+                >
+                  🇪🇸 Espanhol (Q0{simulado.lingua_estrangeira_inicio || 1}-Q0{simulado.lingua_estrangeira_fim || 5})
+                </Button>
+              </div>
+            </div>
+          )}
 
           {/* Cards de Métricas em Tempo Real */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
