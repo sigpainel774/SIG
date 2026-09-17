@@ -171,9 +171,23 @@ export function ModalVincularProfissionalAlunoAEE({
             foto_visualizacao_path: null,
             foto_updated_at: null,
           })
-          setFrequencia(vinculoParaEditar.frequencia || 'SEMANAL')
-          setDataInicio(vinculoParaEditar.dataInicio || new Date().toISOString().split('T')[0])
-          setDiaSemana(vinculoParaEditar.diaSemana || 1)
+          const dataIniStr = vinculoParaEditar.dataInicio || new Date().toISOString().split('T')[0]
+          setDataInicio(dataIniStr)
+          // Se já houver dia da semana válido no vínculo preserva, caso contrário calcula a partir da data de início
+          if (vinculoParaEditar.diaSemana && vinculoParaEditar.diaSemana >= 1 && vinculoParaEditar.diaSemana <= 6) {
+            setDiaSemana(vinculoParaEditar.diaSemana)
+          } else if (dataIniStr) {
+            const parts = dataIniStr.split('-').map(Number)
+            if (parts.length === 3 && parts[0] && parts[1] && parts[2]) {
+              const dt = new Date(parts[0], parts[1] - 1, parts[2])
+              const jsDay = dt.getDay()
+              setDiaSemana(jsDay === 0 ? 1 : jsDay)
+            } else {
+              setDiaSemana(1)
+            }
+          } else {
+            setDiaSemana(1)
+          }
           setHorarioInicio(vinculoParaEditar.horarioInicio?.slice(0, 5) || '08:00')
           setHorarioFim(vinculoParaEditar.horarioFim?.slice(0, 5) || '09:00')
         }
