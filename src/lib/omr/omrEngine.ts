@@ -295,13 +295,25 @@ export function processOMRCanvas(
   }
 }
 
+export interface OpcoesCalculoSimulado {
+  possuiLinguaEstrangeira?: boolean
+  linguaEscolhida?: 'ingles' | 'espanhol' | null
+  linguaInicio?: number
+  linguaFim?: number
+  gabaritoIngles?: Record<string, string>
+  gabaritoEspanhol?: Record<string, string>
+}
+
 /**
- * Compara respostas do aluno com o gabarito oficial e calcula a nota e acertos
+ * Compara respostas do aluno com o gabarito oficial e calcula a nota e acertos,
+ * considerando opcionalmente a língua estrangeira escolhida (Inglês ou Espanhol)
+ * e questões anuladas no gabarito.
  */
 export function calcularResultadoSimulado(
   respostasAluno: Record<string, string | null>,
   gabaritoOficial: Record<string, string>,
-  qtdQuestoes: number
+  qtdQuestoes: number,
+  opcoes?: OpcoesCalculoSimulado
 ) {
   let totalAcertos = 0
   let totalErros = 0
@@ -313,21 +325,53 @@ export function calcularResultadoSimulado(
     respostaAluno: string | null
     respostaCorreta: string
     acertou: boolean
+    isLinguaEstrangeira?: boolean
+    linguaAplicada?: 'ingles' | 'espanhol' | null
+    isAnuladaOficial?: boolean
   }> = []
+
+  const {
+    possuiLinguaEstrangeira = false,
+    linguaEscolhida = null,
+    linguaInicio = 1,
+    linguaFim = 5,
+    gabaritoIngles = {},
+    gabaritoEspanhol = {}
+  } = opcoes || {}
 
   for (let q = 1; q <= qtdQuestoes; q++) {
     const qStr = q.toString()
     const respAluno = (respostasAluno[qStr] || 'BRANCO').toUpperCase()
-    const respCorreta = (gabaritoOficial[qStr] || '').toUpperCase()
+
+    // Verifica se esta questão faz parte do bloco de língua estrangeira
+    const isLinguaEstrangeira =
+      Boolean(possuiLinguaEstrangeira) && q >= linguaInicio && q <= linguaFim
+
+    let respCorreta = (gabaritoOficial[qStr] || '').toUpperCase()
+
+    if (isLinguaEstrangeira) {
+      if (linguaEscolhida === 'espanhol') {
+        respCorreta = (gabaritoEspanhol[qStr] || gabaritoOficial[qStr] || '').toUpperCase()
+      } else {
+        // Padrão para Inglês se escolhido ou padrão
+        respCorreta = (gabaritoIngles[qStr] || gabaritoOficial[qStr] || '').toUpperCase()
+      }
+    }
+
+    const isAnuladaOficial = respCorreta === 'ANULADA' || respCorreta === '*'
 
     let acertou = false
 
-    if (respAluno === 'BRANCO') {
+    if (isAnuladaOficial) {
+      // Questão anulada pela banca/cursinho: pontua para todos os alunos
+      totalAcertos++
+      acertou = true
+    } else if (respAluno === 'BRANCO') {
       totalEmBranco++
     } else if (respAluno === 'ANULADA') {
       totalAnuladas++
       totalErros++
-    } else if (respAluno === respCorreta) {
+    } else if (respCorreta && respAluno === respCorreta) {
       totalAcertos++
       acertou = true
     } else {
@@ -337,8 +381,11 @@ export function calcularResultadoSimulado(
     detalhes.push({
       questao: q,
       respostaAluno: respAluno,
-      respostaCorreta: respCorreta,
-      acertou
+      respostaCorreta: isAnuladaOficial ? 'ANULADA' : respCorreta,
+      acertou,
+      isLinguaEstrangeira,
+      linguaAplicada: isLinguaEstrangeira ? (linguaEscolhida || 'ingles') : null,
+      isAnuladaOficial
     })
   }
 

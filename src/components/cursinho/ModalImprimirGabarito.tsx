@@ -871,26 +871,41 @@ export function ModalImprimirGabarito({
 
           {/* Bloco de Identificação do Aluno Paisagem */}
           <div className="grid grid-cols-12 gap-2 my-2 p-2 bg-gray-50 border-1.5 border-black rounded text-xs">
-            <div className="col-span-6">
+            <div className={simulado.possui_lingua_estrangeira ? 'col-span-5' : 'col-span-6'}>
               <span className="text-[9px] font-bold text-gray-600 block uppercase">Nome do(a) Estudante:</span>
               <div className="font-extrabold text-xs text-gray-900 uppercase truncate">
                 {aluno?.nome ? aluno.nome : '____________________________________________________________________'}
               </div>
             </div>
-            <div className="col-span-2">
+            <div className={simulado.possui_lingua_estrangeira ? 'col-span-2' : 'col-span-2'}>
               <span className="text-[9px] font-bold text-gray-600 block uppercase">Matrícula:</span>
               <div className="font-mono font-bold text-gray-800">{aluno?.numero_matricula || '__________'}</div>
             </div>
-            <div className="col-span-2">
+            <div className={simulado.possui_lingua_estrangeira ? 'col-span-2' : 'col-span-2'}>
               <span className="text-[9px] font-bold text-gray-600 block uppercase">Turma:</span>
               <div className="font-bold text-gray-800 uppercase truncate">{aluno?.turma_nome || 'Regular'}</div>
             </div>
-            <div className="col-span-2">
+            <div className={simulado.possui_lingua_estrangeira ? 'col-span-1' : 'col-span-2'}>
               <span className="text-[9px] font-bold text-gray-600 block uppercase">Data:</span>
-              <div className="font-bold text-gray-800">
+              <div className="font-bold text-[11px] text-gray-800">
                 {simulado.data_aplicacao ? new Date(simulado.data_aplicacao + 'T00:00:00').toLocaleDateString('pt-BR') : '__/__/____'}
               </div>
             </div>
+            {simulado.possui_lingua_estrangeira && (
+              <div className="col-span-2 bg-blue-50/80 border border-blue-400 p-1 rounded">
+                <span className="text-[8px] font-black text-blue-900 block uppercase leading-tight">
+                  Língua Estrangeira (Q0{simulado.lingua_estrangeira_inicio || 1}-Q0{simulado.lingua_estrangeira_fim || 5}):
+                </span>
+                <div className="flex items-center justify-around pt-0.5 text-[8.5px] font-bold text-gray-900">
+                  <span className="flex items-center gap-1">
+                    <span className="inline-block w-2.5 h-2.5 rounded-full border border-black bg-white" /> INGLÊS
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <span className="inline-block w-2.5 h-2.5 rounded-full border border-black bg-white" /> ESPANHOL
+                  </span>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Instruções de Preenchimento Compactas */}

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { Camera, RefreshCw, Award, Check, Volume2 } from 'lucide-react'
+import { Camera, RefreshCw, Award, Check, Volume2, Globe } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { StandardDialog } from '@/components/ui/standard-dialog'
 import { Simulado, SimuladoResposta } from '@/types/simulado'
@@ -50,6 +50,7 @@ export function ModalScannerCamera({
 
   const [saving, setSaving] = useState(false)
   const [historicoSessao, setHistoricoSessao] = useState<Array<{ nome: string; nota: number; acertos: number }>>([])
+  const [linguaScanner, setLinguaScanner] = useState<'ingles' | 'espanhol'>('ingles')
 
   const videoRef = useRef<HTMLVideoElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -271,6 +272,7 @@ export function ModalScannerCamera({
         aluno_id: dados.alunoId || null,
         turma_id: turmaId,
         nome_identificado: dados.alunoNome || 'Aluno Não Identificado',
+        lingua_estrangeira: simulado.possui_lingua_estrangeira ? linguaScanner : null,
         respostas: dados.respostas,
         total_acertos: dados.totalAcertos,
         total_erros: dados.totalErros,
@@ -375,7 +377,15 @@ export function ModalScannerCamera({
         const apuracao = calcularResultadoSimulado(
           resultadoOMR.respostas,
           simulado.gabarito_oficial,
-          simulado.qtd_questoes
+          simulado.qtd_questoes,
+          {
+            possuiLinguaEstrangeira: simulado.possui_lingua_estrangeira,
+            linguaEscolhida: linguaScanner,
+            linguaInicio: simulado.lingua_estrangeira_inicio || 1,
+            linguaFim: simulado.lingua_estrangeira_fim || 5,
+            gabaritoIngles: simulado.gabarito_ingles || {},
+            gabaritoEspanhol: simulado.gabarito_espanhol || {}
+          }
         )
 
         playScanSound('success')
@@ -509,6 +519,40 @@ export function ModalScannerCamera({
               </Button>
             </div>
           </div>
+
+          {/* Seletor de Língua Estrangeira para Provas com Opção de Idioma */}
+          {simulado?.possui_lingua_estrangeira && (
+            <div className="flex items-center justify-between p-2.5 bg-blue-500/10 border border-blue-500/20 rounded-xl text-xs">
+              <span className="font-bold text-foreground flex items-center gap-1.5">
+                <Globe className="w-3.5 h-3.5 text-blue-500" />
+                Língua da Prova Atual:
+              </span>
+              <div className="flex items-center gap-1.5">
+                <Button
+                  type="button"
+                  size="sm"
+                  variant={linguaScanner === 'ingles' ? 'default' : 'outline'}
+                  onClick={() => setLinguaScanner('ingles')}
+                  className={`text-xs font-bold h-7 ${
+                    linguaScanner === 'ingles' ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-sm' : 'border-border'
+                  }`}
+                >
+                  🇬🇧 Inglês
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant={linguaScanner === 'espanhol' ? 'default' : 'outline'}
+                  onClick={() => setLinguaScanner('espanhol')}
+                  className={`text-xs font-bold h-7 ${
+                    linguaScanner === 'espanhol' ? 'bg-amber-600 hover:bg-amber-700 text-white shadow-sm' : 'border-border'
+                  }`}
+                >
+                  🇪🇸 Espanhol
+                </Button>
+              </div>
+            </div>
+          )}
 
           {/* Identificação para Folhas em Branco / Preenchidas Manualmente */}
           <div className="p-3 bg-muted/40 border border-border rounded-xl space-y-2">

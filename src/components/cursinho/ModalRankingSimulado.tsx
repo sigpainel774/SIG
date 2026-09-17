@@ -1,12 +1,32 @@
 'use client'
 
 import { useState, useEffect, useMemo } from 'react'
-import { Award, Trophy, Search, Printer, Users, Eye, Trash2, BarChart3, UserPlus, Camera } from 'lucide-react'
+import QRCode from 'qrcode'
+import {
+  Award,
+  Trophy,
+  Search,
+  Printer,
+  Users,
+  Eye,
+  Trash2,
+  BarChart3,
+  UserPlus,
+  Camera,
+  QrCode,
+  RefreshCw,
+  Copy,
+  ExternalLink,
+  Globe,
+  Check
+} from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { Badge } from '@/components/ui/badge'
 import { StandardDialog } from '@/components/ui/standard-dialog'
 import { Simulado, SimuladoResposta } from '@/types/simulado'
 import { createClient } from '@/lib/supabaseClient'
+import { calcularResultadoSimulado } from '@/lib/omr/omrEngine'
 import { toast } from 'sonner'
 import { ModalAdicionarAlunoSimulado } from './ModalAdicionarAlunoSimulado'
 import { ModalScannerCamera } from './ModalScannerCamera'
@@ -33,6 +53,18 @@ export function ModalRankingSimulado({
   const [isModalAdicionarAlunoOpen, setIsModalAdicionarAlunoOpen] = useState(false)
   const [isModalScannerOpen, setIsModalScannerOpen] = useState(false)
 
+  // QR Code do Aluno
+  const [modalQrAlunoOpen, setModalQrAlunoOpen] = useState(false)
+  const [qrAlunoData, setQrAlunoData] = useState<{
+    nome: string
+    nota: number
+    acertos: number
+    qrUrl: string
+    linkUrl: string
+  } | null>(null)
+  const [copiado, setCopiado] = useState(false)
+  const [recalculando, setRecalculando] = useState(false)
+
   const supabase = createClient()
 
   const carregarRespostas = async () => {
@@ -41,7 +73,7 @@ export function ModalRankingSimulado({
     try {
       const { data, error } = await (supabase as any)
         .from('simulados_respostas')
-        .select('*, aluno:alunos(id, nome, numero_matricula, foto), turma:turmas(id, nome)')
+        .select('*, aluno:alunos(id, nome, numero_matricula, foto, cpf, data_nascimento), turma:turmas(id, nome)')
         .eq('simulado_id', simulado.id)
         .order('nota_final', { ascending: false })
         .order('total_acertos', { ascending: false })
@@ -78,6 +110,93 @@ export function ModalRankingSimulado({
       if (selectedAlunoResposta?.id === id) setSelectedAlunoResposta(null)
     } catch (err: any) {
       toast.error('Erro ao excluir correção')
+    }
+  }
+
+  // Gera o QR Code individual do aluno para compartilhamento
+  const handleAbrirQrAluno = async (r: SimuladoResposta) => {
+    if (typeof window === 'undefined') return
+    const linkUrl = `${window.location.origin}/simulado-resultado/${r.id}`
+    try {
+      const qrUrl = await QRCode.toDataURL(linkUrl, {
+        width: 280,
+        margin: 2,
+        color: {
+          dark: '#000000',
+          light: '#ffffff'
+        }
+      })
+      setQrAlunoData({
+        nome: r.aluno?.nome || r.nome_identificado,
+        nota: Number(r.nota_final),
+        acertos: r.total_acertos,
+        qrUrl,
+        linkUrl
+      })
+      setModalQrAlunoOpen(true)
+    } catch (err) {
+      console.error('Erro ao gerar QR Code do aluno:', err)
+      toast.error('Erro ao gerar QR Code')
+    }
+  }
+
+  // Recalcular as notas de todas as respostas do simulado
+  const handleRecalcularTodasNotas = async () => {
+    if (!simulado) return
+    if (!confirm('Deseja recalcular as notas de todos os alunos com base no gabarito oficial atual deste simulado?')) {
+      return
+    }
+
+    setRecalculando(true)
+    try {
+      const { data: respList, error } = await (supabase as any)
+        .from('simulados_respostas')
+        .select('id, respostas, lingua_estrangeira')
+        .eq('simulado_id', simulado.id)
+
+      if (error) throw error
+
+      if (!respList || respList.length === 0) {
+        toast.info('Nenhuma resposta registrada para recalcular.')
+        return
+      }
+
+      for (const r of respList) {
+        const recalc = calcularResultadoSimulado(
+          r.respostas || {},
+          simulado.gabarito_oficial || {},
+          simulado.qtd_questoes,
+          {
+            possuiLinguaEstrangeira: simulado.possui_lingua_estrangeira,
+            linguaEscolhida: r.lingua_estrangeira,
+            linguaInicio: simulado.lingua_estrangeira_inicio || 1,
+            linguaFim: simulado.lingua_estrangeira_fim || 5,
+            gabaritoIngles: simulado.gabarito_ingles || {},
+            gabaritoEspanhol: simulado.gabarito_espanhol || {}
+          }
+        )
+
+        await (supabase as any)
+          .from('simulados_respostas')
+          .update({
+            total_acertos: recalc.totalAcertos,
+            total_erros: recalc.totalErros,
+            total_em_branco: recalc.totalEmBranco,
+            total_anuladas: recalc.totalAnuladas,
+            nota_final: recalc.notaFinal,
+            percentual_acerto: recalc.percentualAcerto,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', r.id)
+      }
+
+      toast.success(`${respList.length} notas de alunos recalculadas com sucesso!`)
+      carregarRespostas()
+    } catch (err: any) {
+      console.error('Erro ao recalcular notas:', err)
+      toast.error('Erro ao recalcular notas: ' + (err.message || 'Falha no banco'))
+    } finally {
+      setRecalculando(false)
     }
   }
 
@@ -317,6 +436,18 @@ export function ModalRankingSimulado({
             <Button
               size="sm"
               variant="outline"
+              disabled={recalculando}
+              onClick={handleRecalcularTodasNotas}
+              className="border-border text-foreground hover:bg-muted font-bold gap-1.5 text-xs"
+              title="Recalcular notas com base no gabarito oficial atual"
+            >
+              <RefreshCw className={`w-4 h-4 text-emerald-600 dark:text-emerald-400 ${recalculando ? 'animate-spin' : ''}`} />
+              {recalculando ? 'Recalculando...' : 'Recalcular Notas'}
+            </Button>
+
+            <Button
+              size="sm"
+              variant="outline"
               onClick={() => setIsModalScannerOpen(true)}
               className="border-emerald-500/40 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10 font-bold gap-1.5 text-xs"
               title="Corrigir mais provas por câmera"
@@ -350,7 +481,7 @@ export function ModalRankingSimulado({
                     <th className="py-3 px-4 text-center">Branco</th>
                     <th className="py-3 px-4 text-center">Aprov.</th>
                     <th className="py-3 px-4 text-right">Nota Final</th>
-                    <th className="py-3 px-4 text-center w-24">Ações</th>
+                    <th className="py-3 px-4 text-center w-28">Ações</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
@@ -383,8 +514,18 @@ export function ModalRankingSimulado({
                             )}
                           </td>
                           <td className="py-3 px-4">
-                            <div className="font-extrabold text-foreground">
-                              {r.aluno?.nome || r.nome_identificado}
+                            <div className="flex items-center gap-2">
+                              <span className="font-extrabold text-foreground">
+                                {r.aluno?.nome || r.nome_identificado}
+                              </span>
+                              {r.lingua_estrangeira && (
+                                <Badge
+                                  variant="outline"
+                                  className="text-[9px] font-bold py-0 h-4 border-blue-500/30 text-blue-600 dark:text-blue-400 bg-blue-500/10"
+                                >
+                                  {r.lingua_estrangeira === 'espanhol' ? '🇪🇸 Espanhol' : '🇬🇧 Inglês'}
+                                </Badge>
+                              )}
                             </div>
                             <div className="text-[10px] text-muted-foreground font-mono">
                               Matrícula: {r.aluno?.numero_matricula || '---'} • Canal: {r.canal_correcao}
@@ -409,7 +550,16 @@ export function ModalRankingSimulado({
                             {Number(r.nota_final).toFixed(1)}
                           </td>
                           <td className="py-3 px-4 text-center">
-                            <div className="flex items-center justify-center gap-1.5">
+                            <div className="flex items-center justify-center gap-1">
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => handleAbrirQrAluno(r)}
+                                className="h-7 w-7 p-0 text-blue-600 dark:text-blue-400 hover:bg-blue-500/10"
+                                title="Ver QR Code / Link do Aluno"
+                              >
+                                <QrCode className="w-3.5 h-3.5" />
+                              </Button>
                               <Button
                                 size="sm"
                                 variant="ghost"
@@ -582,6 +732,93 @@ export function ModalRankingSimulado({
           carregarRespostas()
         }}
       />
+
+      {/* Modal Popup com QR Code Individual do Aluno */}
+      <StandardDialog
+        open={modalQrAlunoOpen}
+        onOpenChange={setModalQrAlunoOpen}
+        title="QR Code do Espelho de Prova do Aluno"
+        description="Compartilhe este QR Code ou link com o estudante para consulta individual do espelho no celular."
+        maxWidth="sm:max-w-md"
+      >
+        <div className="flex flex-col items-center text-center space-y-4 py-2">
+          {qrAlunoData && (
+            <div className="p-3 bg-muted/50 rounded-xl border border-border w-full space-y-1">
+              <span className="text-xs text-muted-foreground block">Aluno</span>
+              <h4 className="font-black text-sm text-foreground">{qrAlunoData.nome}</h4>
+              <div className="flex items-center justify-center gap-3 pt-1 text-xs font-bold">
+                <span className="text-emerald-600 dark:text-emerald-400">
+                  {qrAlunoData.acertos} Acertos
+                </span>
+                <span>•</span>
+                <span className="text-foreground">Nota: {qrAlunoData.nota.toFixed(1)}</span>
+              </div>
+            </div>
+          )}
+
+          {qrAlunoData?.qrUrl ? (
+            <div className="p-3 bg-white rounded-2xl shadow-md border-2 border-emerald-500/40">
+              <img
+                src={qrAlunoData.qrUrl}
+                alt="QR Code do Aluno"
+                className="w-56 h-56 object-contain mx-auto"
+              />
+            </div>
+          ) : (
+            <div className="w-56 h-56 bg-muted/40 rounded-2xl flex items-center justify-center">
+              <QrCode className="w-12 h-12 text-muted-foreground animate-pulse" />
+            </div>
+          )}
+
+          <div className="space-y-1 px-4">
+            <p className="text-xs text-muted-foreground">
+              O aluno precisará confirmar seu CPF e data de nascimento ao escanear o QR Code para visualizar o espelho.
+            </p>
+          </div>
+
+          <div className="w-full space-y-2 pt-2 border-t border-border">
+            <Button
+              type="button"
+              onClick={() => {
+                if (qrAlunoData?.linkUrl) {
+                  navigator.clipboard.writeText(qrAlunoData.linkUrl)
+                  setCopiado(true)
+                  toast.success('Link do espelho copiado para a área de transferência!')
+                  setTimeout(() => setCopiado(false), 2500)
+                }
+              }}
+              className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold gap-2 text-xs h-9 shadow-sm"
+            >
+              {copiado ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+              {copiado ? 'Link Copiado!' : 'Copiar Link do Resultado'}
+            </Button>
+
+            <div className="grid grid-cols-2 gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  if (qrAlunoData?.linkUrl) {
+                    window.open(qrAlunoData.linkUrl, '_blank')
+                  }
+                }}
+                className="text-xs font-bold gap-1.5 border-border h-8"
+              >
+                <ExternalLink className="w-3.5 h-3.5 text-blue-500" /> Abrir Espelho
+              </Button>
+
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={() => setModalQrAlunoOpen(false)}
+                className="text-xs font-bold h-8"
+              >
+                Fechar
+              </Button>
+            </div>
+          </div>
+        </div>
+      </StandardDialog>
     </StandardDialog>
   )
 }

@@ -24,6 +24,11 @@ export interface Simulado {
   auto_correcao_limite?: string | null
   caderno_questoes?: string | null
   incluir_questoes_impressao?: boolean
+  possui_lingua_estrangeira?: boolean
+  lingua_estrangeira_inicio?: number
+  lingua_estrangeira_fim?: number
+  gabarito_ingles?: Record<string, string>
+  gabarito_espanhol?: Record<string, string>
   status: StatusSimulado
   created_by?: string | null
   created_at: string
@@ -40,6 +45,9 @@ export interface SimuladoResposta {
   aluno_id?: string | null
   turma_id?: string | null
   nome_identificado: string
+  lingua_estrangeira?: 'ingles' | 'espanhol' | null
+  cpf_aluno?: string | null
+  data_nascimento_aluno?: string | null
   respostas: Record<string, string | null> // "A", "B", "C", "D", "E", "ANULADA", "BRANCO"
   total_acertos: number
   total_erros: number
@@ -47,7 +55,7 @@ export interface SimuladoResposta {
   total_anuladas: number
   nota_final: number
   percentual_acerto: number
-  canal_correcao: 'camera_painel' | 'celular_aluno' | 'manual'
+  canal_correcao: 'camera_painel' | 'celular_aluno' | 'manual' | 'manual_painel'
   imagem_captura_url?: string | null
   data_correcao: string
   ip_origem?: string | null
@@ -58,6 +66,8 @@ export interface SimuladoResposta {
     id: string
     nome: string
     numero_matricula?: string
+    cpf?: string | null
+    data_nascimento?: string | null
     foto?: string | null
   } | null
   turma?: {

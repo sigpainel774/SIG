@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Save, CheckSquare, Sparkles, Trash2, FileText, BookOpen, Edit3, Check } from 'lucide-react'
+import { Save, CheckSquare, Sparkles, Trash2, FileText, BookOpen, Edit3, Check, Globe } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge'
 import { StandardDialog } from '@/components/ui/standard-dialog'
 import { Simulado } from '@/types/simulado'
 import { createClient } from '@/lib/supabaseClient'
+import { calcularResultadoSimulado } from '@/lib/omr/omrEngine'
 import { toast } from 'sonner'
 import { EditorCadernoQuestoes } from './EditorCadernoQuestoes'
 
@@ -40,6 +41,14 @@ export function ModalNovoSimulado({
   const [turmasDisponiveis, setTurmasDisponiveis] = useState<any[]>([])
   const [loadingTurmas, setLoadingTurmas] = useState(false)
   const [saving, setSaving] = useState(false)
+
+  // Configuração de Língua Estrangeira (Inglês / Espanhol)
+  const [possuiLinguaEstrangeira, setPossuiLinguaEstrangeira] = useState(false)
+  const [linguaInicio, setLinguaInicio] = useState(1)
+  const [linguaFim, setLinguaFim] = useState(5)
+  const [gabaritoIngles, setGabaritoIngles] = useState<Record<string, string>>({})
+  const [gabaritoEspanhol, setGabaritoEspanhol] = useState<Record<string, string>>({})
+  const [linguaTabAtiva, setLinguaTabAtiva] = useState<'ingles' | 'espanhol'>('ingles')
 
   // Caderno de Questões
   const [cadernoQuestoes, setCadernoQuestoes] = useState<string>('')
@@ -82,6 +91,11 @@ export function ModalNovoSimulado({
       setTurmasIds(simuladoParaEditar.turmas_ids || [])
       setAutoCorrecaoAtiva(simuladoParaEditar.auto_correcao_ativa ?? true)
       setGabaritoOficial(simuladoParaEditar.gabarito_oficial || {})
+      setPossuiLinguaEstrangeira(simuladoParaEditar.possui_lingua_estrangeira || false)
+      setLinguaInicio(simuladoParaEditar.lingua_estrangeira_inicio || 1)
+      setLinguaFim(simuladoParaEditar.lingua_estrangeira_fim || 5)
+      setGabaritoIngles(simuladoParaEditar.gabarito_ingles || {})
+      setGabaritoEspanhol(simuladoParaEditar.gabarito_espanhol || {})
       setCadernoQuestoes(simuladoParaEditar.caderno_questoes || '')
       setIncluirQuestoesImpressao(simuladoParaEditar.incluir_questoes_impressao ?? Boolean(simuladoParaEditar.caderno_questoes))
     } else {
@@ -94,6 +108,11 @@ export function ModalNovoSimulado({
       setTurmasIds([])
       setAutoCorrecaoAtiva(true)
       setGabaritoOficial({})
+      setPossuiLinguaEstrangeira(false)
+      setLinguaInicio(1)
+      setLinguaFim(5)
+      setGabaritoIngles({})
+      setGabaritoEspanhol({})
       setCadernoQuestoes('')
       setIncluirQuestoesImpressao(false)
     }
@@ -104,6 +123,20 @@ export function ModalNovoSimulado({
 
   const handleSelectAlternativa = (questao: number, letra: string) => {
     setGabaritoOficial((prev) => ({
+      ...prev,
+      [questao.toString()]: letra
+    }))
+  }
+
+  const handleSelectAlternativaIngles = (questao: number, letra: string) => {
+    setGabaritoIngles((prev) => ({
+      ...prev,
+      [questao.toString()]: letra
+    }))
+  }
+
+  const handleSelectAlternativaEspanhol = (questao: number, letra: string) => {
+    setGabaritoEspanhol((prev) => ({
       ...prev,
       [questao.toString()]: letra
     }))
@@ -122,11 +155,25 @@ export function ModalNovoSimulado({
       novoGabarito[q.toString()] = randomLetra
     }
     setGabaritoOficial(novoGabarito)
+
+    if (possuiLinguaEstrangeira) {
+      const gIngles: Record<string, string> = {}
+      const gEspanhol: Record<string, string> = {}
+      for (let q = linguaInicio; q <= linguaFim; q++) {
+        gIngles[q.toString()] = letras[Math.floor(Math.random() * letras.length)]
+        gEspanhol[q.toString()] = letras[Math.floor(Math.random() * letras.length)]
+      }
+      setGabaritoIngles(gIngles)
+      setGabaritoEspanhol(gEspanhol)
+    }
+
     toast.success('Gabarito preenchido aleatoriamente!')
   }
 
   const handleLimparGabarito = () => {
     setGabaritoOficial({})
+    setGabaritoIngles({})
+    setGabaritoEspanhol({})
     toast.info('Gabarito limpo')
   }
 
@@ -166,6 +213,11 @@ export function ModalNovoSimulado({
         turmas_ids: turmasIds,
         auto_correcao_ativa: autoCorrecaoAtiva,
         gabarito_oficial: gabaritoOficial,
+        possui_lingua_estrangeira: possuiLinguaEstrangeira,
+        lingua_estrangeira_inicio: possuiLinguaEstrangeira ? linguaInicio : 1,
+        lingua_estrangeira_fim: possuiLinguaEstrangeira ? linguaFim : 5,
+        gabarito_ingles: possuiLinguaEstrangeira ? gabaritoIngles : {},
+        gabarito_espanhol: possuiLinguaEstrangeira ? gabaritoEspanhol : {},
         caderno_questoes: cadernoQuestoes.trim() || null,
         incluir_questoes_impressao: incluirQuestoesImpressao,
         status: simuladoParaEditar?.status || 'ativo',
@@ -179,7 +231,52 @@ export function ModalNovoSimulado({
           .eq('id', simuladoParaEditar.id)
 
         if (error) throw error
-        toast.success('Simulado atualizado com sucesso!')
+
+        // Recalcular notas de todas as respostas existentes caso o gabarito tenha sido alterado
+        const { data: respostasExistentes } = await (supabase as any)
+          .from('simulados_respostas')
+          .select('id, respostas, lingua_estrangeira')
+          .eq('simulado_id', simuladoParaEditar.id)
+
+        if (respostasExistentes && respostasExistentes.length > 0) {
+          let atualizadas = 0
+          for (const resp of respostasExistentes) {
+            const resultado = calcularResultadoSimulado(
+              resp.respostas || {},
+              gabaritoOficial,
+              qtdQuestoes,
+              {
+                possuiLinguaEstrangeira,
+                linguaEscolhida: resp.lingua_estrangeira,
+                linguaInicio,
+                linguaFim,
+                gabaritoIngles,
+                gabaritoEspanhol
+              }
+            )
+
+            await (supabase as any)
+              .from('simulados_respostas')
+              .update({
+                total_acertos: resultado.totalAcertos,
+                total_erros: resultado.totalErros,
+                total_em_branco: resultado.totalEmBranco,
+                total_anuladas: resultado.totalAnuladas,
+                nota_final: resultado.notaFinal,
+                percentual_acerto: resultado.percentualAcerto,
+                updated_at: new Date().toISOString()
+              })
+              .eq('id', resp.id)
+
+            atualizadas++
+          }
+
+          toast.success(
+            `Simulado atualizado! ${atualizadas} prova${atualizadas > 1 ? 's foram recalculadas' : ' foi recalculada'} automaticamente.`
+          )
+        } else {
+          toast.success('Simulado atualizado com sucesso!')
+        }
       } else {
         const { error } = await (supabase as any)
           .from('simulados')
@@ -273,6 +370,82 @@ export function ModalNovoSimulado({
     }
 
     return <div className="space-y-2">{blocos}</div>
+  }
+
+  const renderGabaritoLinguaEstrangeira = (idioma: 'ingles' | 'espanhol') => {
+    const gabaritoAtual = idioma === 'ingles' ? gabaritoIngles : gabaritoEspanhol
+    const handleSelect = idioma === 'ingles' ? handleSelectAlternativaIngles : handleSelectAlternativaEspanhol
+
+    const questoes: number[] = []
+    for (let q = Math.max(1, linguaInicio); q <= Math.min(qtdQuestoes, linguaFim); q++) {
+      questoes.push(q)
+    }
+
+    if (questoes.length === 0) {
+      return (
+        <div className="text-xs text-muted-foreground p-3 text-center">
+          Defina um intervalo de questões válido para a língua estrangeira.
+        </div>
+      )
+    }
+
+    return (
+      <div className="w-full border border-border rounded-xl overflow-hidden bg-card shadow-xs">
+        <div className="overflow-x-auto">
+          <table className="w-full border-collapse text-center">
+            <thead>
+              <tr className="bg-muted/60 border-b border-border">
+                <th className="w-12 py-1.5 px-2 text-xs font-black text-foreground border-r border-border uppercase">
+                  Nº
+                </th>
+                {questoes.map((q) => {
+                  const temResposta = Boolean(gabaritoAtual[q.toString()])
+                  return (
+                    <th
+                      key={q}
+                      className={`py-1.5 px-2 font-mono font-black text-xs border-r border-border/60 last:border-r-0 ${
+                        temResposta ? 'text-foreground' : 'text-amber-500 dark:text-amber-400'
+                      }`}
+                    >
+                      {q < 10 ? `0${q}` : q}
+                    </th>
+                  )
+                })}
+              </tr>
+            </thead>
+            <tbody>
+              {letras.map((letra) => (
+                <tr key={letra} className="border-b border-border/40 last:border-b-0 hover:bg-muted/20 transition-colors">
+                  <td className="w-12 py-1 px-2 font-black text-xs text-foreground bg-muted/40 border-r border-border">
+                    {letra}
+                  </td>
+                  {questoes.map((q) => {
+                    const isSelected = gabaritoAtual[q.toString()] === letra
+                    return (
+                      <td key={`${q}-${letra}`} className="py-1 px-1 border-r border-border/40 last:border-r-0">
+                        <button
+                          type="button"
+                          onClick={() => handleSelect(q, letra)}
+                          className={`w-7 h-7 rounded-full font-extrabold text-xs transition-all flex items-center justify-center mx-auto ${
+                            isSelected
+                              ? idioma === 'ingles'
+                                ? 'bg-blue-600 text-white font-extrabold shadow-md scale-110 ring-2 ring-blue-400'
+                                : 'bg-amber-600 text-white font-extrabold shadow-md scale-110 ring-2 ring-amber-400'
+                              : 'bg-background hover:bg-muted text-foreground border border-border/70 hover:scale-105'
+                          }`}
+                        >
+                          {letra}
+                        </button>
+                      </td>
+                    )
+                  })}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -427,6 +600,100 @@ export function ModalNovoSimulado({
                 <p className="text-[11px] text-muted-foreground pl-6">
                   Permite imprimir as folhas de perguntas logo após a folha de respostas OMR, formando a prova completa para o estudante.
                 </p>
+              </div>
+
+              {/* Opção: Língua Estrangeira (Inglês / Espanhol) */}
+              <div className="md:col-span-12 p-4 bg-muted/40 dark:bg-zinc-900/60 border border-border rounded-xl space-y-3">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div className="flex items-center gap-2.5">
+                    <Globe className="w-5 h-5 text-blue-500 shrink-0" />
+                    <div>
+                      <label className="flex items-center gap-2 cursor-pointer text-xs font-bold text-foreground">
+                        <input
+                          type="checkbox"
+                          checked={possuiLinguaEstrangeira}
+                          onChange={(e) => setPossuiLinguaEstrangeira(e.target.checked)}
+                          className="w-4 h-4 rounded border-border text-blue-600 focus:ring-0"
+                        />
+                        <span>Opção de Língua Estrangeira na Prova (Inglês ou Espanhol)</span>
+                      </label>
+                      <p className="text-[11px] text-muted-foreground mt-0.5">
+                        Permite que os alunos optem por Inglês ou Espanhol (ex: questões de 1 a 5). O sistema corrigirá a prova usando o gabarito do idioma escolhido por cada um.
+                      </p>
+                    </div>
+                  </div>
+
+                  {possuiLinguaEstrangeira && (
+                    <div className="flex items-center gap-2 text-xs bg-background/80 p-2 rounded-lg border border-border">
+                      <span className="font-bold text-foreground">Faixa das Questões:</span>
+                      <span className="text-muted-foreground">Questão</span>
+                      <Input
+                        type="number"
+                        min={1}
+                        max={qtdQuestoes}
+                        value={linguaInicio}
+                        onChange={(e) => setLinguaInicio(Math.max(1, parseInt(e.target.value) || 1))}
+                        className="w-14 h-8 text-center font-bold bg-background text-xs"
+                      />
+                      <span className="text-muted-foreground">até</span>
+                      <Input
+                        type="number"
+                        min={linguaInicio}
+                        max={qtdQuestoes}
+                        value={linguaFim}
+                        onChange={(e) =>
+                          setLinguaFim(Math.max(linguaInicio, Math.min(qtdQuestoes, parseInt(e.target.value) || 1)))
+                        }
+                        className="w-14 h-8 text-center font-bold bg-background text-xs"
+                      />
+                    </div>
+                  )}
+                </div>
+
+                {possuiLinguaEstrangeira && (
+                  <div className="pt-2 border-t border-border/60 space-y-3">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <div className="flex items-center gap-2">
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant={linguaTabAtiva === 'ingles' ? 'default' : 'outline'}
+                          onClick={() => setLinguaTabAtiva('ingles')}
+                          className={`text-xs font-bold gap-1.5 ${
+                            linguaTabAtiva === 'ingles'
+                              ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-sm'
+                              : 'border-border'
+                          }`}
+                        >
+                          🇬🇧 Gabarito de Inglês (Questões {linguaInicio < 10 ? `0${linguaInicio}` : linguaInicio} a {linguaFim < 10 ? `0${linguaFim}` : linguaFim})
+                        </Button>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant={linguaTabAtiva === 'espanhol' ? 'default' : 'outline'}
+                          onClick={() => setLinguaTabAtiva('espanhol')}
+                          className={`text-xs font-bold gap-1.5 ${
+                            linguaTabAtiva === 'espanhol'
+                              ? 'bg-amber-600 hover:bg-amber-700 text-white shadow-sm'
+                              : 'border-border'
+                          }`}
+                        >
+                          🇪🇸 Gabarito de Espanhol (Questões {linguaInicio < 10 ? `0${linguaInicio}` : linguaInicio} a {linguaFim < 10 ? `0${linguaFim}` : linguaFim})
+                        </Button>
+                      </div>
+
+                      <span className="text-[11px] text-muted-foreground font-medium">
+                        {linguaTabAtiva === 'ingles'
+                          ? 'Clique abaixo para definir as respostas corretas de Inglês'
+                          : 'Clique abaixo para definir as respostas corretas de Espanhol'}
+                      </span>
+                    </div>
+
+                    <div className="pt-1">
+                      {renderGabaritoLinguaEstrangeira(linguaTabAtiva)}
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div className="md:col-span-12 space-y-1.5">

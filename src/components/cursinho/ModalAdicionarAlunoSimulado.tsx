@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState, useEffect, useMemo } from 'react'
+import QRCode from 'qrcode'
 import {
   UserPlus,
   Users,
@@ -13,7 +14,14 @@ import {
   GraduationCap,
   FileSpreadsheet,
   HelpCircle,
-  AlertCircle
+  AlertCircle,
+  QrCode,
+  Share2,
+  Copy,
+  ExternalLink,
+  Globe,
+  ShieldCheck,
+  Check
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -35,6 +43,8 @@ interface AlunoSIG {
   id: string
   nome: string
   numero_matricula?: string
+  cpf?: string | null
+  data_nascimento?: string | null
   turma_id?: string
   turmas?: { nome: string } | null
 }
@@ -53,10 +63,24 @@ export function ModalAdicionarAlunoSimulado({
   const [buscaAluno, setBuscaAluno] = useState('')
   const [alunoSelecionado, setAlunoSelecionado] = useState<AlunoSIG | null>(null)
 
+  // Dados para validação de acesso ao QR Code
+  const [cpfAluno, setCpfAluno] = useState('')
+  const [dataNascimentoAluno, setDataNascimentoAluno] = useState('')
+
   // Estado para Aluno Avulso
   const [nomeAvulso, setNomeAvulso] = useState('')
   const [matriculaAvulsa, setMatriculaAvulsa] = useState('')
   const [turmaAvulsa, setTurmaAvulsa] = useState('')
+
+  // Opção de Língua Estrangeira escolhida pelo aluno (quando o simulado tem a opção)
+  const [linguaEscolhida, setLinguaEscolhida] = useState<'ingles' | 'espanhol'>('ingles')
+
+  // Estado para o Modal de QR Code após salvar
+  const [modalQrAberto, setModalQrAberto] = useState(false)
+  const [qrCodeUrl, setQrCodeUrl] = useState('')
+  const [linkResultadoUrl, setLinkResultadoUrl] = useState('')
+  const [alunoSalvoInfo, setAlunoSalvoInfo] = useState<{ nome: string; nota: number; acertos: number } | null>(null)
+  const [copiado, setCopiado] = useState(false)
 
   // Modo de Lançamento de Respostas
   const [modoLancamento, setModoLancamento] = useState<'grade' | 'acertos_direto'>('grade')
@@ -79,7 +103,7 @@ export function ModalAdicionarAlunoSimulado({
       try {
         let query = (supabase as any)
           .from('alunos')
-          .select('id, nome, numero_matricula, turma_id, turmas(nome)')
+          .select('id, nome, numero_matricula, cpf, data_nascimento, turma_id, turmas(nome)')
           .is('deleted_at', null)
           .order('nome', { ascending: true })
 
@@ -105,9 +129,16 @@ export function ModalAdicionarAlunoSimulado({
     setNomeAvulso('')
     setMatriculaAvulsa('')
     setTurmaAvulsa('')
+    setCpfAluno('')
+    setDataNascimentoAluno('')
+    setLinguaEscolhida('ingles')
     setRespostasAluno({})
     setAcertosDireto(0)
     setBuscaAluno('')
+    setModalQrAberto(false)
+    setQrCodeUrl('')
+    setLinkResultadoUrl('')
+    setAlunoSalvoInfo(null)
   }, [open, simulado])
 
   // Alunos filtrados pela busca
@@ -148,7 +179,7 @@ export function ModalAdicionarAlunoSimulado({
     setAcertosDireto(0)
   }
 
-  // Cálculos estatísticos da folha do aluno
+  // Cálculos estatísticos da folha do aluno considerando Língua Estrangeira
   const metricasCalculadas = useMemo(() => {
     if (!simulado) {
       return { totalAcertos: 0, totalErros: 0, totalEmBranco: 0, percentual: 0, nota: 0 }
@@ -168,12 +199,29 @@ export function ModalAdicionarAlunoSimulado({
     let erros = 0
     let emBranco = 0
 
+    const linguaInicio = simulado.lingua_estrangeira_inicio || 1
+    const linguaFim = simulado.lingua_estrangeira_fim || 5
+
     for (let q = 1; q <= qtdTotal; q++) {
       const qStr = q.toString()
       const respAluno = (respostasAluno[qStr] || '').toUpperCase()
-      const respCorreta = (simulado.gabarito_oficial[qStr] || '').toUpperCase()
 
-      if (!respAluno) {
+      const isLingua = Boolean(simulado.possui_lingua_estrangeira) && q >= linguaInicio && q <= linguaFim
+
+      let respCorreta = (simulado.gabarito_oficial[qStr] || '').toUpperCase()
+      if (isLingua) {
+        respCorreta = (
+          linguaEscolhida === 'espanhol'
+            ? (simulado.gabarito_espanhol?.[qStr] || respCorreta)
+            : (simulado.gabarito_ingles?.[qStr] || respCorreta)
+        ).toUpperCase()
+      }
+
+      const isAnulada = respCorreta === 'ANULADA' || respCorreta === '*'
+
+      if (isAnulada) {
+        acertos++
+      } else if (!respAluno) {
         emBranco++
       } else if (respAluno === respCorreta) {
         acertos++
@@ -186,9 +234,9 @@ export function ModalAdicionarAlunoSimulado({
     const nota = Number(((acertos / qtdTotal) * 10).toFixed(1))
 
     return { totalAcertos: acertos, totalErros: erros, totalEmBranco: emBranco, percentual, nota }
-  }, [simulado, modoLancamento, respostasAluno, acertosDireto])
+  }, [simulado, modoLancamento, respostasAluno, acertosDireto, linguaEscolhida])
 
-  // Salva a resposta do aluno no banco de dados
+  // Salva a resposta do aluno no banco de dados e gera QR Code
   const handleSalvarResposta = async () => {
     if (!simulado) return
 
@@ -219,7 +267,12 @@ export function ModalAdicionarAlunoSimulado({
       let acertosContados = 0
       for (let q = 1; q <= simulado.qtd_questoes; q++) {
         const qStr = q.toString()
-        const gab = simulado.gabarito_oficial[qStr] || 'A'
+        const isLingua = Boolean(simulado.possui_lingua_estrangeira) && q >= (simulado.lingua_estrangeira_inicio || 1) && q <= (simulado.lingua_estrangeira_fim || 5)
+        let gab = simulado.gabarito_oficial[qStr] || 'A'
+        if (isLingua) {
+          gab = (linguaEscolhida === 'espanhol' ? simulado.gabarito_espanhol?.[qStr] : simulado.gabarito_ingles?.[qStr]) || gab
+        }
+
         if (acertosContados < metricasCalculadas.totalAcertos) {
           respostasSalvar[qStr] = gab
           acertosContados++
@@ -238,6 +291,9 @@ export function ModalAdicionarAlunoSimulado({
         aluno_id: alunoId,
         turma_id: turmaId,
         nome_identificado: nomeFinal,
+        cpf_aluno: cpfAluno.trim() || null,
+        data_nascimento_aluno: dataNascimentoAluno.trim() || null,
+        lingua_estrangeira: simulado.possui_lingua_estrangeira ? linguaEscolhida : null,
         respostas: respostasSalvar,
         total_acertos: metricasCalculadas.totalAcertos,
         total_erros: metricasCalculadas.totalErros,
@@ -249,23 +305,58 @@ export function ModalAdicionarAlunoSimulado({
         data_correcao: new Date().toISOString()
       }
 
+      let respostaIdSalva = ''
+
       if (alunoId) {
-        const { error } = await (supabase as any)
+        const { data, error } = await (supabase as any)
           .from('simulados_respostas')
           .upsert(payload, { onConflict: 'simulado_id, aluno_id' })
+          .select('id')
+          .single()
 
         if (error) throw error
+        respostaIdSalva = data?.id
       } else {
-        const { error } = await (supabase as any)
+        const { data, error } = await (supabase as any)
           .from('simulados_respostas')
           .insert(payload)
+          .select('id')
+          .single()
 
         if (error) throw error
+        respostaIdSalva = data?.id
       }
 
       toast.success(`Nota de ${nomeFinal} registrada com sucesso! (Nota: ${metricasCalculadas.nota})`)
       onSuccess?.()
-      onOpenChange(false)
+
+      // Gera QR Code de compartilhamento do resultado para o aluno
+      if (typeof window !== 'undefined' && respostaIdSalva) {
+        const urlResultado = `${window.location.origin}/simulado-resultado/${respostaIdSalva}`
+        setLinkResultadoUrl(urlResultado)
+        try {
+          const qrDataUrl = await QRCode.toDataURL(urlResultado, {
+            width: 280,
+            margin: 2,
+            color: {
+              dark: '#000000',
+              light: '#ffffff'
+            }
+          })
+          setQrCodeUrl(qrDataUrl)
+          setAlunoSalvoInfo({
+            nome: nomeFinal,
+            nota: metricasCalculadas.nota,
+            acertos: metricasCalculadas.totalAcertos
+          })
+          setModalQrAberto(true)
+        } catch (qrErr) {
+          console.error('Erro ao gerar QR Code:', qrErr)
+          onOpenChange(false)
+        }
+      } else {
+        onOpenChange(false)
+      }
     } catch (err: any) {
       console.error('Erro ao registrar resposta:', err)
       toast.error('Erro ao salvar nota do aluno: ' + (err.message || 'Falha no banco'))
@@ -304,7 +395,13 @@ export function ModalAdicionarAlunoSimulado({
                   {questoes.map((q) => {
                     const qStr = q.toString()
                     const resp = respostasAluno[qStr]
-                    const gab = simulado.gabarito_oficial[qStr]
+
+                    const isLingua = Boolean(simulado.possui_lingua_estrangeira) && q >= (simulado.lingua_estrangeira_inicio || 1) && q <= (simulado.lingua_estrangeira_fim || 5)
+                    let gab = simulado.gabarito_oficial[qStr]
+                    if (isLingua) {
+                      gab = (linguaEscolhida === 'espanhol' ? simulado.gabarito_espanhol?.[qStr] : simulado.gabarito_ingles?.[qStr]) || gab
+                    }
+
                     const isCorreta = resp && resp === gab
                     const isErrada = resp && resp !== gab
 
@@ -316,8 +413,11 @@ export function ModalAdicionarAlunoSimulado({
                             ? 'text-emerald-600 dark:text-emerald-400 bg-emerald-500/10'
                             : isErrada
                             ? 'text-rose-600 dark:text-rose-400 bg-rose-500/10'
+                            : isLingua
+                            ? 'text-blue-500 dark:text-blue-400 bg-blue-500/5'
                             : 'text-muted-foreground'
                         }`}
+                        title={isLingua ? `Questão de Língua Estrangeira (${linguaEscolhida === 'ingles' ? 'Inglês' : 'Espanhol'})` : undefined}
                       >
                         {q < 10 ? `0${q}` : q}
                       </th>
@@ -334,7 +434,14 @@ export function ModalAdicionarAlunoSimulado({
                     {questoes.map((q) => {
                       const qStr = q.toString()
                       const isSelected = respostasAluno[qStr] === letra
-                      const isGabarito = simulado.gabarito_oficial[qStr] === letra
+
+                      const isLingua = Boolean(simulado.possui_lingua_estrangeira) && q >= (simulado.lingua_estrangeira_inicio || 1) && q <= (simulado.lingua_estrangeira_fim || 5)
+                      let gab = simulado.gabarito_oficial[qStr]
+                      if (isLingua) {
+                        gab = (linguaEscolhida === 'espanhol' ? simulado.gabarito_espanhol?.[qStr] : simulado.gabarito_ingles?.[qStr]) || gab
+                      }
+
+                      const isGabarito = gab === letra
 
                       return (
                         <td key={`${q}-${letra}`} className="py-1 px-0.5 border-r border-border/40 last:border-r-0">
@@ -369,7 +476,8 @@ export function ModalAdicionarAlunoSimulado({
   if (!simulado) return null
 
   return (
-    <StandardDialog
+    <>
+      <StandardDialog
       open={open}
       onOpenChange={onOpenChange}
       title={`Adicionar Aluno / Lançar Nota • ${simulado.titulo}`}
@@ -463,7 +571,11 @@ export function ModalAdicionarAlunoSimulado({
                     alunosFiltrados.map((aluno) => (
                       <div
                         key={aluno.id}
-                        onClick={() => setAlunoSelecionado(aluno)}
+                        onClick={() => {
+                          setAlunoSelecionado(aluno)
+                          setCpfAluno(aluno.cpf || '')
+                          setDataNascimentoAluno(aluno.data_nascimento || '')
+                        }}
                         className="p-2.5 px-3 hover:bg-muted/50 cursor-pointer transition-colors flex items-center justify-between text-xs"
                       >
                         <div>
@@ -514,6 +626,84 @@ export function ModalAdicionarAlunoSimulado({
                   className="bg-background border-border text-xs font-mono"
                 />
               </div>
+            </div>
+          )}
+
+          {/* DADOS DE ACESSO DO ALUNO (CPF E DATA DE NASCIMENTO PARA O QR CODE) */}
+          <div className="p-3.5 bg-muted/40 dark:bg-zinc-900/60 border border-border rounded-xl space-y-3">
+            <div className="flex items-center gap-2">
+              <ShieldCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+              <span className="text-xs font-bold text-foreground">
+                Dados de Acesso do Estudante ao Espelho via QR Code
+              </span>
+            </div>
+            <p className="text-[11px] text-muted-foreground">
+              Para visualizar a própria prova no QR Code, o aluno precisará confirmar seu CPF e data de nascimento.
+            </p>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <Label className="text-[11px] font-bold text-foreground">CPF do Aluno</Label>
+                <Input
+                  value={cpfAluno}
+                  onChange={(e) => setCpfAluno(e.target.value)}
+                  placeholder="000.000.000-00"
+                  className="bg-background border-border text-xs font-mono h-8"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <Label className="text-[11px] font-bold text-foreground">Data de Nascimento</Label>
+                <Input
+                  type="date"
+                  value={dataNascimentoAluno}
+                  onChange={(e) => setDataNascimentoAluno(e.target.value)}
+                  className="bg-background border-border text-xs h-8"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* SELEÇÃO DE LÍNGUA ESTRANGEIRA (QUANDO O SIMULADO POSSUI A OPÇÃO) */}
+          {simulado.possui_lingua_estrangeira && (
+            <div className="p-3.5 bg-blue-500/10 border border-blue-500/20 rounded-xl space-y-2.5">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <Globe className="w-4 h-4 text-blue-500" />
+                  <span className="text-xs font-bold text-foreground">
+                    Língua Estrangeira Escolhida (Questões {simulado.lingua_estrangeira_inicio || 1} a {simulado.lingua_estrangeira_fim || 5}) *
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant={linguaEscolhida === 'ingles' ? 'default' : 'outline'}
+                    onClick={() => setLinguaEscolhida('ingles')}
+                    className={`text-xs font-bold gap-1.5 h-7 ${
+                      linguaEscolhida === 'ingles' ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-sm' : 'border-border'
+                    }`}
+                  >
+                    🇬🇧 Inglês
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant={linguaEscolhida === 'espanhol' ? 'default' : 'outline'}
+                    onClick={() => setLinguaEscolhida('espanhol')}
+                    className={`text-xs font-bold gap-1.5 h-7 ${
+                      linguaEscolhida === 'espanhol' ? 'bg-amber-600 hover:bg-amber-700 text-white shadow-sm' : 'border-border'
+                    }`}
+                  >
+                    🇪🇸 Espanhol
+                  </Button>
+                </div>
+              </div>
+
+              <p className="text-[11px] text-muted-foreground">
+                As questões {simulado.lingua_estrangeira_inicio || 1} a {simulado.lingua_estrangeira_fim || 5} serão corrigidas com o gabarito oficial de <strong>{linguaEscolhida === 'ingles' ? 'Inglês' : 'Espanhol'}</strong>.
+              </p>
             </div>
           )}
         </div>
@@ -606,5 +796,105 @@ export function ModalAdicionarAlunoSimulado({
         </div>
       </div>
     </StandardDialog>
+
+    {/* Modal Popup com QR Code do Estudante */}
+    <StandardDialog
+      open={modalQrAberto}
+      onOpenChange={(aberto) => {
+        setModalQrAberto(aberto)
+        if (!aberto) {
+          onOpenChange(false)
+        }
+      }}
+      title="QR Code do Espelho de Prova do Aluno"
+      description="Compartilhe este QR Code ou link com o estudante para que ele acesse seu resultado detalhado no celular."
+      maxWidth="sm:max-w-md"
+    >
+      <div className="flex flex-col items-center text-center space-y-4 py-2">
+        {alunoSalvoInfo && (
+          <div className="p-3 bg-muted/50 rounded-xl border border-border w-full space-y-1">
+            <span className="text-xs text-muted-foreground block">Aluno</span>
+            <h4 className="font-black text-sm text-foreground">{alunoSalvoInfo.nome}</h4>
+            <div className="flex items-center justify-center gap-3 pt-1 text-xs font-bold">
+              <span className="text-emerald-600 dark:text-emerald-400">
+                {alunoSalvoInfo.acertos} Acertos
+              </span>
+              <span>•</span>
+              <span className="text-foreground">Nota: {alunoSalvoInfo.nota.toFixed(1)}</span>
+            </div>
+          </div>
+        )}
+
+        {/* Imagem do QR Code */}
+        {qrCodeUrl ? (
+          <div className="p-3 bg-white rounded-2xl shadow-md border-2 border-emerald-500/40">
+            <img
+              src={qrCodeUrl}
+              alt="QR Code do Resultado"
+              className="w-56 h-56 object-contain mx-auto"
+            />
+          </div>
+        ) : (
+          <div className="w-56 h-56 bg-muted/40 rounded-2xl flex items-center justify-center">
+            <QrCode className="w-12 h-12 text-muted-foreground animate-pulse" />
+          </div>
+        )}
+
+        <div className="space-y-1 px-4">
+          <p className="text-xs text-muted-foreground">
+            Aponte a câmera do smartphone para ler o QR Code ou copie o link para envio via WhatsApp.
+          </p>
+          <p className="text-[10px] text-amber-600 dark:text-amber-400 font-semibold">
+            🔒 O aluno precisará digitar seu CPF e data de nascimento para visualizar o espelho.
+          </p>
+        </div>
+
+        <div className="w-full space-y-2 pt-2 border-t border-border">
+          <Button
+            type="button"
+            onClick={() => {
+              if (linkResultadoUrl) {
+                navigator.clipboard.writeText(linkResultadoUrl)
+                setCopiado(true)
+                toast.success('Link do espelho copiado para a área de transferência!')
+                setTimeout(() => setCopiado(false), 2500)
+              }
+            }}
+            className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold gap-2 text-xs h-9 shadow-sm"
+          >
+            {copiado ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+            {copiado ? 'Link Copiado!' : 'Copiar Link do Resultado'}
+          </Button>
+
+          <div className="grid grid-cols-2 gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                if (linkResultadoUrl) {
+                  window.open(linkResultadoUrl, '_blank')
+                }
+              }}
+              className="text-xs font-bold gap-1.5 border-border h-8"
+            >
+              <ExternalLink className="w-3.5 h-3.5 text-blue-500" /> Abrir Espelho
+            </Button>
+
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => {
+                setModalQrAberto(false)
+                onOpenChange(false)
+              }}
+              className="text-xs font-bold h-8"
+            >
+              Concluir
+            </Button>
+          </div>
+        </div>
+      </div>
+    </StandardDialog>
+  </>
   )
 }
