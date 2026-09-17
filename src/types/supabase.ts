@@ -1902,9 +1902,12 @@ export type Database = {
           aluno_nao_compareceu: boolean | null
           created_at: string | null
           data_atendimento: string
+          data_remarcada: string | null
           escola_id: string | null
+          horario_remarcado: string | null
           id: string
           motivo_recusa_falta: string | null
+          motivo_remarcacao: string | null
           observacoes: string | null
           registrado_em: string | null
           registrado_por: string | null
@@ -1917,9 +1920,12 @@ export type Database = {
           aluno_nao_compareceu?: boolean | null
           created_at?: string | null
           data_atendimento: string
+          data_remarcada?: string | null
           escola_id?: string | null
+          horario_remarcado?: string | null
           id?: string
           motivo_recusa_falta?: string | null
+          motivo_remarcacao?: string | null
           observacoes?: string | null
           registrado_em?: string | null
           registrado_por?: string | null
@@ -1932,9 +1938,12 @@ export type Database = {
           aluno_nao_compareceu?: boolean | null
           created_at?: string | null
           data_atendimento?: string
+          data_remarcada?: string | null
           escola_id?: string | null
+          horario_remarcado?: string | null
           id?: string
           motivo_recusa_falta?: string | null
+          motivo_remarcacao?: string | null
           observacoes?: string | null
           registrado_em?: string | null
           registrado_por?: string | null

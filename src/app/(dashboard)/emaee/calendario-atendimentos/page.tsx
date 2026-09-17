@@ -51,6 +51,7 @@ import { useAuthStore } from '@/store/useAuthStore'
 import { createClient } from '@/lib/supabaseClient'
 import { toast } from 'sonner'
 import { ModalAssociarAlunoAEE } from '@/components/modals/modal-associar-aluno-aee'
+import { ModalRemarcarAtendimento } from '@/components/modals/modal-remarcar-atendimento'
 import { getAvatarUrl } from '@/lib/photoHelper'
 import { PrintCalendarioAtendimentos } from '@/components/print/print-calendario-atendimentos'
 
@@ -126,6 +127,22 @@ function formatarDataCompleta(d: Date): string {
   return `${dia}/${mes}/${ano}`
 }
 
+/** Formata string ISO YYYY-MM-DD para DD/MM sem deslocamento de timezone UTC */
+function formatarDataIsoCurta(dataIso: string | null | undefined): string {
+  if (!dataIso) return ''
+  const partes = dataIso.split('T')[0].split('-')
+  if (partes.length !== 3) return dataIso
+  return `${partes[2]}/${partes[1]}`
+}
+
+/** Formata string ISO YYYY-MM-DD para DD/MM/YYYY sem deslocamento de timezone UTC */
+function formatarDataIsoBr(dataIso: string | null | undefined): string {
+  if (!dataIso) return ''
+  const partes = dataIso.split('T')[0].split('-')
+  if (partes.length !== 3) return dataIso
+  return `${partes[2]}/${partes[1]}/${partes[0]}`
+}
+
 /** Retorna o número da semana ISO do ano e o ano correspondente */
 function getNumeroSemanaAno(data: Date): { semana: number; ano: number } {
   const target = new Date(data.valueOf())
@@ -185,6 +202,11 @@ export default function CalendarioAtendimentosPage() {
   const [modalDetalhesOpen, setModalDetalhesOpen] = useState(false)
   const [atendimentoSelecionado, setAtendimentoSelecionado] = useState<any>(null)
   const [dataAtendimentoSelecionada, setDataAtendimentoSelecionada] = useState<Date | null>(null)
+
+  // Pequeno Modal Dedicado de Remarcação de Consulta
+  const [modalRemarcarOpen, setModalRemarcarOpen] = useState(false)
+  const [atendimentoParaRemarcar, setAtendimentoParaRemarcar] = useState<any>(null)
+  const [dataParaRemarcar, setDataParaRemarcar] = useState<Date | string>(new Date())
 
   // Estados do Formulário de Registro dentro do Modal
   const [statusForm, setStatusForm] = useState<
@@ -439,14 +461,28 @@ export default function CalendarioAtendimentosPage() {
   }, [escolaEmaeeId, supabase])
 
   // --------------------------------------------------------------------------
-  // Carregar Registros de Presença da Semana Visualizada
+  // Carregar Registros de Presença da Semana ou Mês Visualizado
   // --------------------------------------------------------------------------
-  const carregarRegistrosSemana = useCallback(async () => {
-    if (!escolaEmaeeId || diasDaSemanaObj.length === 0) return
+  const carregarRegistros = useCallback(async () => {
+    if (!escolaEmaeeId) return
 
     setLoadingRegistros(true)
-    const dataInicioIso = diasDaSemanaObj[0].dataIso
-    const dataFimIso = diasDaSemanaObj[4].dataIso
+    let dataInicioIso = ''
+    let dataFimIso = ''
+
+    if (modoVisualizacao === 'calendario') {
+      const primDia = new Date(anoSelecionado, mesSelecionado, 1)
+      const ultDia = new Date(anoSelecionado, mesSelecionado + 1, 0)
+      dataInicioIso = formatarDataIso(primDia)
+      dataFimIso = formatarDataIso(ultDia)
+    } else {
+      if (diasDaSemanaObj.length === 0) {
+        if (isMounted.current) setLoadingRegistros(false)
+        return
+      }
+      dataInicioIso = diasDaSemanaObj[0].dataIso
+      dataFimIso = diasDaSemanaObj[4].dataIso
+    }
 
     try {
       const res = await fetch(
@@ -469,7 +505,7 @@ export default function CalendarioAtendimentosPage() {
     } finally {
       if (isMounted.current) setLoadingRegistros(false)
     }
-  }, [escolaEmaeeId, diasDaSemanaObj])
+  }, [escolaEmaeeId, diasDaSemanaObj, modoVisualizacao, anoSelecionado, mesSelecionado])
 
   // --------------------------------------------------------------------------
   // Verificar e Notificar Pendências do Dia Anterior (Execução Automática)
@@ -491,8 +527,8 @@ export default function CalendarioAtendimentosPage() {
   }, [carregarDados])
 
   useEffect(() => {
-    carregarRegistrosSemana()
-  }, [carregarRegistrosSemana])
+    carregarRegistros()
+  }, [carregarRegistros])
 
   // Normalização de texto para busca dinâmica
   const normalizar = (str: string) =>
@@ -657,17 +693,36 @@ export default function CalendarioAtendimentosPage() {
 
     const diaJs = hoje.getDay()
     const diaAeeHoje = diaJs === 0 ? 7 : diaJs
-    const atendimentosHoje = vinculos.filter((v) => {
+    const hojeIso = formatarDataIso(hoje)
+
+    // Atendimentos que realmente ocorrem hoje:
+    // 1. Regulares de hoje que NÃO foram remarcados para outro dia
+    // 2. Remarcados de outros dias PARA hoje
+    const regularesHoje = vinculos.filter((v) => {
       if (v.dia_semana !== diaAeeHoje) return false
-      return isAtendimentoNaSemana(v, hoje)
+      if (!isAtendimentoNaSemana(v, hoje)) return false
+      const regHoje = registrosSemana[`${v.id}_${hojeIso}`]
+      if (regHoje?.status === 'remarcado') return false
+      return true
     }).length
+
+    let remarcadosParaHoje = 0
+    Object.values(registrosSemana).forEach((reg: any) => {
+      if (reg.status === 'remarcado' && reg.data_remarcada === hojeIso) {
+        remarcadosParaHoje++
+      }
+    })
+
+    const atendimentosHoje = regularesHoje + remarcadosParaHoje
 
     // Contagem de realizados e não realizados na semana atual
     let totalRealizadosSemana = 0
     let totalNaoRealizadosSemana = 0
+    let totalRemarcadosSemana = 0
     Object.values(registrosSemana).forEach((reg: any) => {
       if (reg.status === 'realizado') totalRealizadosSemana++
       if (reg.status === 'nao_realizado') totalNaoRealizadosSemana++
+      if (reg.status === 'remarcado') totalRemarcadosSemana++
     })
 
     return {
@@ -678,6 +733,7 @@ export default function CalendarioAtendimentosPage() {
       diaAeeHoje,
       totalRealizadosSemana,
       totalNaoRealizadosSemana,
+      totalRemarcadosSemana,
     }
   }, [vinculos, hoje, registrosSemana, isAtendimentoNaSemana])
 
@@ -726,11 +782,12 @@ export default function CalendarioAtendimentosPage() {
     }
   }
 
-  // Agrupamento por dia da semana para a Grade Semanal (respeitando quinzenas)
+  // Agrupamento por dia da semana para a Grade Semanal (respeitando quinzenas e remarcações)
   const gradePorDia = useMemo(() => {
     const dias = [1, 2, 3, 4, 5]
     const agrupado: Record<number, any[]> = { 1: [], 2: [], 3: [], 4: [], 5: [] }
 
+    // 1. Atendimentos regulares da semana
     atendimentosFiltrados.forEach((item) => {
       const diaObj = diasDaSemanaObj.find((d) => d.diaSemana === item.dia_semana)
       if (diaObj && agrupado[item.dia_semana]) {
@@ -740,12 +797,119 @@ export default function CalendarioAtendimentosPage() {
       }
     })
 
+    // 2. Projeção de atendimentos remarcados para cada dia da semana visualizada
+    diasDaSemanaObj.forEach((diaObj) => {
+      const diaNum = diaObj.diaSemana
+      if (agrupado[diaNum]) {
+        Object.values(registrosSemana).forEach((reg: any) => {
+          if (reg.status === 'remarcado' && reg.data_remarcada === diaObj.dataIso) {
+            const vinculoOriginal = vinculos.find((v) => v.id === reg.vinculo_id)
+            if (vinculoOriginal) {
+              // Verifica se passa nos filtros ativos
+              const aluno = vinculoOriginal.emaee_matriculas?.alunos
+              const prof = vinculoOriginal.funcionarios
+              const termo = normalizar(termoBusca)
+              if (termo) {
+                const nomeAluno = normalizar(aluno?.nome || '')
+                const nomeMae = normalizar(aluno?.nome_mae || '')
+                const nomeProf = normalizar(prof?.nome || '')
+                const numMatr = normalizar(
+                  vinculoOriginal.emaee_matriculas?.numero_matricula_emaee || '',
+                )
+                if (
+                  !nomeAluno.includes(termo) &&
+                  !nomeMae.includes(termo) &&
+                  !nomeProf.includes(termo) &&
+                  !numMatr.includes(termo)
+                ) {
+                  return
+                }
+              }
+              if (filtroProfissional !== 'todos' && vinculoOriginal.profissional_id !== filtroProfissional) {
+                return
+              }
+              if (filtroEspecialidade !== 'todos') {
+                const filtroNorm = normalizar(filtroEspecialidade)
+                const espResolvidaNorm = normalizar(getEspecialidadeNome(vinculoOriginal))
+                const espNorm = normalizar(vinculoOriginal.especialidade || '')
+                const profCargoNorm = normalizar(prof?.cargo || '')
+                if (
+                  espResolvidaNorm !== filtroNorm &&
+                  espNorm !== filtroNorm &&
+                  profCargoNorm !== filtroNorm
+                ) {
+                  return
+                }
+              }
+              if (filtroTurno !== 'todos') {
+                const hInicio =
+                  reg.horario_remarcado || vinculoOriginal.horario_inicio || ''
+                const isMatutino = hInicio < '12:00:00'
+                if (filtroTurno === 'matutino' && !isMatutino) return
+                if (filtroTurno === 'vespertino' && isMatutino) return
+              }
+
+              // Adiciona sessão projetada com identificadores únicos
+              agrupado[diaNum].push({
+                ...vinculoOriginal,
+                _idExibicao: `${vinculoOriginal.id}_remarcado_${reg.data_atendimento}_${diaObj.dataIso}`,
+                _isSessaoRemarcadaParaHoje: true,
+                _dataOrigemRemarcacao: reg.data_atendimento,
+                _dataRemarcada: reg.data_remarcada,
+                _horarioRemarcado: reg.horario_remarcado,
+                _motivoRemarcacao: reg.motivo_remarcacao,
+                _registroOrigem: reg,
+              })
+            }
+          }
+        })
+      }
+    })
+
+    // Ordenação pelo horário
     dias.forEach((d) => {
-      agrupado[d].sort((a, b) => (a.horario_inicio || '').localeCompare(b.horario_inicio || ''))
+      agrupado[d].sort((a, b) => {
+        const hA = a._horarioRemarcado || a.horario_inicio || ''
+        const hB = b._horarioRemarcado || b.horario_inicio || ''
+        return hA.localeCompare(hB)
+      })
     })
 
     return agrupado
-  }, [atendimentosFiltrados, diasDaSemanaObj, isAtendimentoNaSemana])
+  }, [
+    atendimentosFiltrados,
+    diasDaSemanaObj,
+    isAtendimentoNaSemana,
+    registrosSemana,
+    vinculos,
+    termoBusca,
+    filtroProfissional,
+    filtroEspecialidade,
+    filtroTurno,
+  ])
+
+  // Abertura do pequeno modal de remarcação
+  const handleAbrirRemarcar = (item: any, dataSessao?: Date | string) => {
+    setAtendimentoParaRemarcar(item)
+    if (dataSessao) {
+      setDataParaRemarcar(dataSessao)
+    } else {
+      const diaObj = diasDaSemanaObj.find((d) => d.diaSemana === item.dia_semana)
+      setDataParaRemarcar(diaObj?.data || new Date())
+    }
+    setModalRemarcarOpen(true)
+  }
+
+  // Callback de sucesso após remarcar consulta
+  const handleRemarcacaoSucesso = (novoRegistro: any) => {
+    if (!novoRegistro) return
+    const key = `${novoRegistro.vinculo_id}_${novoRegistro.data_atendimento}`
+    setRegistrosSemana((prev) => ({
+      ...prev,
+      [key]: novoRegistro,
+    }))
+    setModalDetalhesOpen(false)
+  }
 
   // --------------------------------------------------------------------------
   // Abertura do Modal com Registro da Sessão Específica
@@ -967,7 +1131,7 @@ export default function CalendarioAtendimentosPage() {
     }
   }
 
-  // Cálculos do Calendário Mensal
+  // Cálculos do Calendário Mensal (incluindo remarcações projetadas)
   const diasDoMes = useMemo(() => {
     const primeiroDia = new Date(anoSelecionado, mesSelecionado, 1)
     const ultimoDia = new Date(anoSelecionado, mesSelecionado + 1, 0)
@@ -982,26 +1146,61 @@ export default function CalendarioAtendimentosPage() {
       const dataObj = new Date(anoSelecionado, mesSelecionado, d)
       const diaJs = dataObj.getDay()
       const diaAee = diaJs === 0 ? 7 : diaJs
+      const dataIso = formatarDataIso(dataObj)
 
       const sessoesNesteDia = atendimentosFiltrados.filter(
         (v) => v.dia_semana === diaAee && isAtendimentoNaSemana(v, dataObj),
       )
 
+      // Sessões remarcadas para este dia do mês
+      const sessoesRemarcadasParaHoje: any[] = []
+      Object.values(registrosSemana).forEach((reg: any) => {
+        if (reg.status === 'remarcado' && reg.data_remarcada === dataIso) {
+          const v = vinculos.find((vnc) => vnc.id === reg.vinculo_id)
+          if (v) {
+            sessoesRemarcadasParaHoje.push({
+              ...v,
+              _idExibicao: `${v.id}_remarcado_${reg.data_atendimento}_${dataIso}`,
+              _isSessaoRemarcadaParaHoje: true,
+              _dataOrigemRemarcacao: reg.data_atendimento,
+              _dataRemarcada: reg.data_remarcada,
+              _horarioRemarcado: reg.horario_remarcado,
+              _motivoRemarcacao: reg.motivo_remarcacao,
+              _registroOrigem: reg,
+            })
+          }
+        }
+      })
+
+      const todasSessoesDia = [...sessoesNesteDia, ...sessoesRemarcadasParaHoje].sort((a, b) => {
+        const hA = a._horarioRemarcado || a.horario_inicio || ''
+        const hB = b._horarioRemarcado || b.horario_inicio || ''
+        return hA.localeCompare(hB)
+      })
+
       dias.push({
         numero: d,
         data: dataObj,
         diaAee,
-        dataIso: formatarDataIso(dataObj),
+        dataIso,
         isHoje:
           dataObj.getDate() === hoje.getDate() &&
           dataObj.getMonth() === hoje.getMonth() &&
           dataObj.getFullYear() === hoje.getFullYear(),
         isFimDeSemana: diaJs === 0 || diaJs === 6,
-        sessoes: sessoesNesteDia,
+        sessoes: todasSessoesDia,
       })
     }
     return dias
-  }, [anoSelecionado, mesSelecionado, atendimentosFiltrados, hoje, isAtendimentoNaSemana])
+  }, [
+    anoSelecionado,
+    mesSelecionado,
+    atendimentosFiltrados,
+    hoje,
+    isAtendimentoNaSemana,
+    registrosSemana,
+    vinculos,
+  ])
 
   const handleNavegarMes = (direcao: 'anterior' | 'proximo') => {
     if (direcao === 'anterior') {
@@ -1023,6 +1222,22 @@ export default function CalendarioAtendimentosPage() {
 
   return (
     <div className="space-y-6 pb-16">
+      {/* ==================================================================== */}
+      {/* Pequeno Modal Dedicado de Remarcação de Consulta                     */}
+      {/* ==================================================================== */}
+      {modalRemarcarOpen && atendimentoParaRemarcar && (
+        <ModalRemarcarAtendimento
+          open={modalRemarcarOpen}
+          onOpenChange={setModalRemarcarOpen}
+          atendimento={atendimentoParaRemarcar}
+          dataOriginal={dataParaRemarcar}
+          escolaId={escolaEmaeeId}
+          funcionarioId={funcionario?.id}
+          funcionarioNome={funcionario?.nome || funcionario?.email}
+          onSuccess={handleRemarcacaoSucesso}
+        />
+      )}
+
       {/* ==================================================================== */}
       {/* Modal de Detalhes & Registro de Atendimento                          */}
       {/* ==================================================================== */}
@@ -1225,6 +1440,7 @@ export default function CalendarioAtendimentosPage() {
                   onClick={() => {
                     setStatusForm('remarcado')
                     setAlunoNaoCompareceuForm(false)
+                    handleAbrirRemarcar(atendimentoSelecionado, dataAtendimentoSelecionada || new Date())
                   }}
                   className={`p-3 rounded-xl border flex flex-col items-center justify-center gap-1.5 text-center transition-all cursor-pointer ${
                     statusForm === 'remarcado'
@@ -2097,18 +2313,19 @@ export default function CalendarioAtendimentosPage() {
                             const espNome = getEspecialidadeNome(item)
                             const colors = getColorByCargo(espNome)
                             const avatarUrl = getAvatarUrl(prof)
-                            const hInicio = formatarHorario(item.horario_inicio)
+                            const isSessaoRemarcada = Boolean(item._isSessaoRemarcadaParaHoje)
+                            const hInicio = formatarHorario(item._horarioRemarcado || item.horario_inicio)
                             const hFim = formatarHorario(item.horario_fim)
 
                             // Status do registro para esta data específica da semana
                             const regKey = `${item.id}_${diaObj.dataIso}`
                             const reg = registrosSemana[regKey]
-                            const status = reg?.status || 'pendente'
+                            const status = reg?.status || (isSessaoRemarcada ? 'remarcado_pendente' : 'pendente')
 
                             // Classes de Borda Superior conforme especificação:
                             // Verde: Houve atendimento
                             // Vermelho: Não houve atendimento
-                            // Âmbar: Remarcado
+                            // Âmbar: Remarcado / Reposição
                             // Roxo: Feriado
                             // Azul: Recesso
                             // Neutro: Pendente
@@ -2118,7 +2335,7 @@ export default function CalendarioAtendimentosPage() {
                                 'border-t-4 border-t-emerald-500 shadow-emerald-500/5'
                             } else if (status === 'nao_realizado') {
                               borderTopClass = 'border-t-4 border-t-rose-500 shadow-rose-500/5'
-                            } else if (status === 'remarcado') {
+                            } else if (status === 'remarcado' || isSessaoRemarcada || status === 'remarcado_pendente') {
                               borderTopClass =
                                 'border-t-4 border-t-amber-500 shadow-amber-500/5'
                             } else if (status === 'feriado') {
@@ -2130,7 +2347,7 @@ export default function CalendarioAtendimentosPage() {
 
                             return (
                               <div
-                                key={item.id}
+                                key={item._idExibicao || item.id}
                                 onClick={() => handleVerDetalhes(item, diaObj.data)}
                                 className={`p-3 rounded-xl border ${colors.card} ${borderTopClass} cursor-pointer transition-all hover:scale-[1.01] shadow-xs relative group overflow-hidden flex flex-col justify-between`}
                               >
@@ -2149,7 +2366,7 @@ export default function CalendarioAtendimentosPage() {
                                     {status === 'realizado' ? (
                                       <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-300 border border-emerald-500/30 flex items-center gap-1">
                                         <CheckCircle2 className="w-2.5 h-2.5" />
-                                        <span>Realizado</span>
+                                        <span>{isSessaoRemarcada ? 'Realizado (Reposição)' : 'Realizado'}</span>
                                       </span>
                                     ) : status === 'nao_realizado' ? (
                                       <span
@@ -2168,23 +2385,27 @@ export default function CalendarioAtendimentosPage() {
                                             : 'Não Realizado'}
                                         </span>
                                       </span>
+                                    ) : isSessaoRemarcada ? (
+                                      <span
+                                        className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-amber-500/15 text-amber-600 dark:text-amber-300 border border-amber-500/30 flex items-center gap-1"
+                                        title={item._motivoRemarcacao || 'Atendimento remarcado para esta data'}
+                                      >
+                                        <CalendarRange className="w-2.5 h-2.5" />
+                                        <span>Remarcado (Reposição)</span>
+                                      </span>
                                     ) : status === 'remarcado' ? (
                                       <span
                                         className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-amber-500/15 text-amber-600 dark:text-amber-300 border border-amber-500/30 flex items-center gap-1"
                                         title={
                                           reg?.data_remarcada
-                                            ? `Remarcado para ${formatarDataCurta(
-                                                new Date(reg.data_remarcada),
-                                              )}`
+                                            ? `Remarcado para ${formatarDataIsoBr(reg.data_remarcada)}`
                                             : 'Atendimento Remarcado'
                                         }
                                       >
                                         <CalendarRange className="w-2.5 h-2.5" />
                                         <span>
                                           {reg?.data_remarcada
-                                            ? `Remarcado (${formatarDataCurta(
-                                                new Date(reg.data_remarcada),
-                                              )})`
+                                            ? `Remarcado (${formatarDataIsoCurta(reg.data_remarcada)})`
                                             : 'Remarcado'}
                                         </span>
                                       </span>
@@ -2228,12 +2449,24 @@ export default function CalendarioAtendimentosPage() {
                                         Obs: {reg.motivo_recusa_falta}
                                       </div>
                                     )}
-                                    {status === 'remarcado' && reg?.data_remarcada && (
-                                      <div className="text-[9.5px] text-amber-500 font-medium truncate mt-1 flex items-center gap-1">
+                                    {isSessaoRemarcada && item._dataOrigemRemarcacao && (
+                                      <div className="text-[9.5px] text-amber-600 dark:text-amber-400 font-medium truncate mt-1 flex items-center gap-1">
                                         <CalendarRange className="w-3 h-3 shrink-0" />
                                         <span>
-                                          Nova data:{' '}
-                                          {formatarDataCurta(new Date(reg.data_remarcada))}
+                                          Reposição da sessão de: {formatarDataIsoBr(item._dataOrigemRemarcacao)}
+                                        </span>
+                                      </div>
+                                    )}
+                                    {isSessaoRemarcada && item._motivoRemarcacao && (
+                                      <div className="text-[9px] text-muted-foreground italic truncate">
+                                        Motivo: {item._motivoRemarcacao}
+                                      </div>
+                                    )}
+                                    {!isSessaoRemarcada && status === 'remarcado' && reg?.data_remarcada && (
+                                      <div className="text-[9.5px] text-amber-600 dark:text-amber-400 font-medium truncate mt-1 flex items-center gap-1">
+                                        <CalendarRange className="w-3 h-3 shrink-0" />
+                                        <span>
+                                          Nova data: {formatarDataIsoBr(reg.data_remarcada)}
                                           {reg?.horario_remarcado
                                             ? ` às ${reg.horario_remarcado.substring(0, 5)}`
                                             : ''}
@@ -2278,16 +2511,33 @@ export default function CalendarioAtendimentosPage() {
                                     </div>
                                   </div>
 
-                                  {isEditMode && (
-                                    <button
-                                      type="button"
-                                      onClick={(e) => handleConfirmarExcluir(e, item)}
-                                      className="opacity-0 group-hover:opacity-100 p-1 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded transition-all shrink-0 mt-0.5"
-                                      title="Desvincular atendimento"
-                                    >
-                                      <Trash2 className="w-3.5 h-3.5" />
-                                    </button>
-                                  )}
+                                  <div className="flex items-center gap-1 shrink-0 mt-0.5">
+                                    {/* Botão Ação Rápida de Remarcar Consulta */}
+                                    {!isSessaoRemarcada && (
+                                      <button
+                                        type="button"
+                                        onClick={(e) => {
+                                          e.stopPropagation()
+                                          handleAbrirRemarcar(item, diaObj.data)
+                                        }}
+                                        className="p-1 text-muted-foreground hover:text-amber-600 dark:hover:text-amber-400 hover:bg-amber-500/10 rounded transition-all cursor-pointer"
+                                        title="Remarcar consulta"
+                                      >
+                                        <CalendarRange className="w-3.5 h-3.5" />
+                                      </button>
+                                    )}
+
+                                    {isEditMode && (
+                                      <button
+                                        type="button"
+                                        onClick={(e) => handleConfirmarExcluir(e, item)}
+                                        className="opacity-0 group-hover:opacity-100 p-1 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded transition-all cursor-pointer"
+                                        title="Desvincular atendimento"
+                                      >
+                                        <Trash2 className="w-3.5 h-3.5" />
+                                      </button>
+                                    )}
+                                  </div>
                                 </div>
                               </div>
                             )
@@ -2484,16 +2734,19 @@ export default function CalendarioAtendimentosPage() {
                           const espNome = getEspecialidadeNome(item)
                           const colors = getColorByCargo(espNome)
                           const avatarUrl = getAvatarUrl(prof)
+                          const isSessaoRemarcada = Boolean(item._isSessaoRemarcadaParaHoje)
                           const regKey = `${item.id}_${formatarDataIso(diaSelecionadoData)}`
                           const reg = registrosSemana[regKey]
-                          const status = reg?.status || 'pendente'
+                          const status = reg?.status || (isSessaoRemarcada ? 'remarcado_pendente' : 'pendente')
+                          const hInicio = formatarHorario(item._horarioRemarcado || item.horario_inicio)
+                          const hFim = formatarHorario(item.horario_fim)
 
                           let borderTopClass = 'border-t border-t-border'
                           if (status === 'realizado')
                             borderTopClass = 'border-t-4 border-t-emerald-500 shadow-emerald-500/5'
                           else if (status === 'nao_realizado')
                             borderTopClass = 'border-t-4 border-t-rose-500 shadow-rose-500/5'
-                          else if (status === 'remarcado')
+                          else if (status === 'remarcado' || isSessaoRemarcada || status === 'remarcado_pendente')
                             borderTopClass = 'border-t-4 border-t-amber-500 shadow-amber-500/5'
                           else if (status === 'feriado')
                             borderTopClass = 'border-t-4 border-t-purple-500 shadow-purple-500/5'
@@ -2502,7 +2755,7 @@ export default function CalendarioAtendimentosPage() {
 
                           return (
                             <div
-                              key={item.id}
+                              key={item._idExibicao || item.id}
                               onClick={() => handleVerDetalhes(item, diaSelecionadoData)}
                               className={`p-3 rounded-xl border ${colors.card} ${borderTopClass} cursor-pointer transition-all hover:scale-[1.01] overflow-hidden flex flex-col justify-between`}
                             >
@@ -2510,22 +2763,26 @@ export default function CalendarioAtendimentosPage() {
                                 <div className="flex flex-wrap items-center justify-between mb-2 gap-1.5 min-w-0">
                                   <span className="text-xs font-bold text-foreground flex items-center gap-1 shrink-0">
                                     <Clock className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
-                                    {formatarHorario(item.horario_inicio)}
-                                    {item.horario_fim
-                                      ? ` às ${formatarHorario(item.horario_fim)}`
-                                      : ''}
+                                    {hInicio}
+                                    {hFim ? ` às ${hFim}` : ''}
                                   </span>
                                   {status === 'realizado' ? (
                                     <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-300 border border-emerald-500/30">
-                                      Realizado
+                                      {isSessaoRemarcada ? 'Realizado (Reposição)' : 'Realizado'}
                                     </span>
                                   ) : status === 'nao_realizado' ? (
                                     <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-rose-500/15 text-rose-600 dark:text-rose-300 border border-rose-500/30">
                                       Não Realizado
                                     </span>
+                                  ) : isSessaoRemarcada ? (
+                                    <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-amber-500/15 text-amber-600 dark:text-amber-300 border border-amber-500/30">
+                                      Remarcado (Reposição)
+                                    </span>
                                   ) : status === 'remarcado' ? (
                                     <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-amber-500/15 text-amber-600 dark:text-amber-300 border border-amber-500/30">
-                                      Remarcado
+                                      {reg?.data_remarcada
+                                        ? `Remarcado (${formatarDataIsoCurta(reg.data_remarcada)})`
+                                        : 'Remarcado'}
                                     </span>
                                   ) : status === 'feriado' ? (
                                     <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-purple-500/15 text-purple-600 dark:text-purple-300 border border-purple-500/30">
@@ -2558,6 +2815,23 @@ export default function CalendarioAtendimentosPage() {
                                   <span className="font-medium text-foreground/70">Mãe:</span>{' '}
                                   {aluno?.nome_mae ?? 'Não informada'}
                                 </div>
+                                {isSessaoRemarcada && item._dataOrigemRemarcacao && (
+                                  <div className="text-[9.5px] text-amber-600 dark:text-amber-400 font-medium truncate mt-1 flex items-center gap-1">
+                                    <CalendarRange className="w-3 h-3 shrink-0" />
+                                    <span>
+                                      Reposição da sessão de: {formatarDataIsoBr(item._dataOrigemRemarcacao)}
+                                    </span>
+                                  </div>
+                                )}
+                                {!isSessaoRemarcada && status === 'remarcado' && reg?.data_remarcada && (
+                                  <div className="text-[9.5px] text-amber-600 dark:text-amber-400 font-medium truncate mt-1 flex items-center gap-1">
+                                    <CalendarRange className="w-3 h-3 shrink-0" />
+                                    <span>
+                                      Nova data: {formatarDataIsoBr(reg.data_remarcada)}
+                                      {reg?.horario_remarcado ? ` às ${reg.horario_remarcado.substring(0, 5)}` : ''}
+                                    </span>
+                                  </div>
+                                )}
                               </div>
 
                               <div className="mt-2.5 pt-2 border-t border-border/50 flex items-start gap-2">
@@ -2717,7 +2991,7 @@ export default function CalendarioAtendimentosPage() {
                             <CalendarRange className="w-3 h-3" />
                             <span>
                               {reg?.data_remarcada
-                                ? `Remarcado (${formatarDataCurta(new Date(reg.data_remarcada))})`
+                                ? `Remarcado (${formatarDataIsoCurta(reg.data_remarcada)})`
                                 : 'Remarcado'}
                             </span>
                           </span>
@@ -2747,6 +3021,15 @@ export default function CalendarioAtendimentosPage() {
                     className: 'text-right',
                     accessor: (item) => (
                       <div className="flex items-center justify-end gap-2">
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleAbrirRemarcar(item)}
+                          className="h-7 px-2 text-xs text-amber-600 dark:text-amber-400 hover:bg-amber-500/10 cursor-pointer"
+                        >
+                          Remarcar
+                        </Button>
                         <Button
                           type="button"
                           variant="ghost"

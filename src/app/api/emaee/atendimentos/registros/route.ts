@@ -23,26 +23,57 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    let query = (supabase as any)
-      .from('emaee_atendimentos_registros')
-      .select('*')
-      .eq('escola_id', escolaId)
+    let registros: any[] = []
 
     if (data) {
-      query = query.eq('data_atendimento', data)
+      const [resAtendimento, resRemarcado] = await Promise.all([
+        (supabase as any)
+          .from('emaee_atendimentos_registros')
+          .select('*')
+          .eq('escola_id', escolaId)
+          .eq('data_atendimento', data),
+        (supabase as any)
+          .from('emaee_atendimentos_registros')
+          .select('*')
+          .eq('escola_id', escolaId)
+          .eq('status', 'remarcado')
+          .eq('data_remarcada', data),
+      ])
+
+      const map = new Map<string, any>()
+      ;(resAtendimento.data || []).forEach((r: any) => map.set(r.id, r))
+      ;(resRemarcado.data || []).forEach((r: any) => map.set(r.id, r))
+      registros = Array.from(map.values())
     } else if (dataInicio && dataFim) {
-      query = query.gte('data_atendimento', dataInicio).lte('data_atendimento', dataFim)
+      const [resAtendimentos, resRemarcados] = await Promise.all([
+        (supabase as any)
+          .from('emaee_atendimentos_registros')
+          .select('*')
+          .eq('escola_id', escolaId)
+          .gte('data_atendimento', dataInicio)
+          .lte('data_atendimento', dataFim),
+        (supabase as any)
+          .from('emaee_atendimentos_registros')
+          .select('*')
+          .eq('escola_id', escolaId)
+          .eq('status', 'remarcado')
+          .gte('data_remarcada', dataInicio)
+          .lte('data_remarcada', dataFim),
+      ])
+
+      const map = new Map<string, any>()
+      ;(resAtendimentos.data || []).forEach((r: any) => map.set(r.id, r))
+      ;(resRemarcados.data || []).forEach((r: any) => map.set(r.id, r))
+      registros = Array.from(map.values())
+    } else {
+      const { data: resGeral } = await (supabase as any)
+        .from('emaee_atendimentos_registros')
+        .select('*')
+        .eq('escola_id', escolaId)
+      registros = resGeral || []
     }
 
-    const { data: registros, error } = await query
-
-    if (error) {
-      // Caso a tabela ainda esteja sendo criada/sincronizada, retornar vazio sem quebrar
-      console.warn('[api/emaee/atendimentos/registros] Aviso na busca:', error)
-      return NextResponse.json({ registros: [] })
-    }
-
-    return NextResponse.json({ registros: registros || [] })
+    return NextResponse.json({ registros })
   } catch (err) {
     console.error('[api/emaee/atendimentos/registros] Erro:', err)
     return NextResponse.json({ error: 'Erro ao buscar registros de atendimentos' }, { status: 500 })
@@ -170,6 +201,16 @@ export async function POST(req: NextRequest) {
             error:
               'Para atendimentos não realizados, é obrigatório indicar que o aluno não compareceu ou fornecer outras razões.',
           },
+          { status: 400 },
+        )
+      }
+    }
+
+    // Validação estrita: se remarcado, a nova data é obrigatória
+    if (status === 'remarcado') {
+      if (!data_remarcada) {
+        return NextResponse.json(
+          { error: 'Para atendimentos remarcados, informe a nova data prevista.' },
           { status: 400 },
         )
       }
