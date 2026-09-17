@@ -24,10 +24,47 @@ function normalizarData(data?: string | null): string {
   return limpo
 }
 
+function normalizarNome(nome?: string | null): string {
+  if (!nome) return ''
+  return nome
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '') // remove acentos e cedilhas
+    .toLowerCase()
+    .replace(/['"`´^~]/g, '') // remove aspas/apóstrofos
+    .trim()
+    .replace(/\s+/g, ' ') // normaliza múltiplos espaços
+}
+
+function compararNomesMae(nomeDigitado: string, nomeCadastrado: string): boolean {
+  const normDigitado = normalizarNome(nomeDigitado)
+  const normCadastrado = normalizarNome(nomeCadastrado)
+
+  if (!normDigitado || !normCadastrado) return false
+
+  // 1. Match direto exato (sem acento / minúsculo)
+  if (normDigitado === normCadastrado) return true
+
+  // 2. Tolerância a preposições comuns no português (de, da, do, dos, das, e)
+  const removerConectivos = (str: string) =>
+    str
+      .split(' ')
+      .filter((w) => !['de', 'da', 'do', 'dos', 'das', 'e'].includes(w))
+      .join(' ')
+
+  const semConectivosDigitado = removerConectivos(normDigitado)
+  const semConectivosCadastrado = removerConectivos(normCadastrado)
+
+  if (semConectivosDigitado && semConectivosDigitado === semConectivosCadastrado) {
+    return true
+  }
+
+  return false
+}
+
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json().catch(() => ({}))
-    const { respostaId, cpf, dataNascimento } = body
+    const { respostaId, dataNascimento, nomeMae, cpf } = body
 
     if (!respostaId) {
       return NextResponse.json(
@@ -36,12 +73,13 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    const cpfDigitado = normalizarCpf(cpf)
     const dataNascDigitada = normalizarData(dataNascimento)
+    const nomeMaeDigitado = (nomeMae || '').trim()
+    const cpfDigitado = normalizarCpf(cpf)
 
-    if (!cpfDigitado || !dataNascDigitada) {
+    if (!dataNascDigitada || (!nomeMaeDigitado && !cpfDigitado)) {
       return NextResponse.json(
-        { error: 'CPF e Data de Nascimento são obrigatórios para acessar o resultado.' },
+        { error: 'Data de Nascimento e Nome Completo da Mãe são obrigatórios para acessar o resultado.' },
         { status: 400 }
       )
     }
@@ -74,6 +112,8 @@ export async function POST(req: NextRequest) {
           numero_matricula,
           cpf,
           data_nascimento,
+          nome_mae,
+          dados_matricula,
           turma_id
         ),
         turma:turmas(id, nome)
@@ -88,27 +128,53 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // Validação das credenciais do aluno
+    // Extração com fallback cascata para nome da mãe e data de nascimento
+    const dm = (resposta.aluno?.dados_matricula as Record<string, any>) || {}
+    const nomeMaeCadastrado: string | null =
+      resposta.nome_mae_aluno ||
+      resposta.aluno?.nome_mae ||
+      dm.nomeMaeAluno ||
+      dm.maeAluno ||
+      dm.nomeMae ||
+      dm.mae ||
+      null
+
+    const dataNascCadastrada: string =
+      normalizarData(resposta.data_nascimento_aluno) ||
+      normalizarData(resposta.aluno?.data_nascimento) ||
+      normalizarData(dm.dataNascimento) ||
+      normalizarData(dm.data_nascimento) ||
+      ''
+
     const cpfCadastrado = normalizarCpf(resposta.cpf_aluno || resposta.aluno?.cpf)
-    const dataNascCadastrada = normalizarData(resposta.data_nascimento_aluno || resposta.aluno?.data_nascimento)
 
-    let cpfConfere = false
-    let dataNascConfere = false
-
-    if (cpfCadastrado && cpfDigitado === cpfCadastrado) {
-      cpfConfere = true
-    }
-
-    if (dataNascCadastrada && dataNascDigitada === dataNascCadastrada) {
-      dataNascConfere = true
-    }
-
-    // Se no cadastro do aluno não havia CPF ou data informada, ou não confere:
-    if (!cpfConfere || !dataNascConfere) {
+    // Caso a ficha do aluno esteja com dados incompletos no banco
+    if (!dataNascCadastrada || (!nomeMaeCadastrado && !cpfCadastrado)) {
       return NextResponse.json(
         {
           error:
-            'CPF ou Data de Nascimento não conferem com o registro deste simulado. Em caso de dúvidas, consulte a coordenação.'
+            'Os dados de filiação materna ou data de nascimento não constam completos no cadastro deste estudante. Por favor, solicite a atualização da sua ficha junto à coordenação do Cursinho.'
+        },
+        { status: 403 }
+      )
+    }
+
+    // Validação da Data de Nascimento
+    const dataNascConfere = Boolean(dataNascCadastrada && dataNascDigitada === dataNascCadastrada)
+
+    // Validação do Nome da Mãe (ou fallback por CPF se informado)
+    let identidadeConfere = false
+    if (nomeMaeDigitado && nomeMaeCadastrado) {
+      identidadeConfere = compararNomesMae(nomeMaeDigitado, nomeMaeCadastrado)
+    } else if (cpfDigitado && cpfCadastrado) {
+      identidadeConfere = cpfDigitado === cpfCadastrado
+    }
+
+    if (!dataNascConfere || !identidadeConfere) {
+      return NextResponse.json(
+        {
+          error:
+            'Data de Nascimento ou Nome Completo da Mãe não conferem com a ficha deste estudante no Cursinho. Verifique a digitação e tente novamente.'
         },
         { status: 401 }
       )

@@ -48,6 +48,7 @@ export interface SimuladoResposta {
   lingua_estrangeira?: 'ingles' | 'espanhol' | null
   cpf_aluno?: string | null
   data_nascimento_aluno?: string | null
+  nome_mae_aluno?: string | null
   respostas: Record<string, string | null> // "A", "B", "C", "D", "E", "ANULADA", "BRANCO"
   total_acertos: number
   total_erros: number
@@ -68,6 +69,7 @@ export interface SimuladoResposta {
     numero_matricula?: string
     cpf?: string | null
     data_nascimento?: string | null
+    nome_mae?: string | null
     foto?: string | null
   } | null
   turma?: {

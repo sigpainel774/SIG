@@ -45,6 +45,8 @@ interface AlunoSIG {
   numero_matricula?: string
   cpf?: string | null
   data_nascimento?: string | null
+  nome_mae?: string | null
+  dados_matricula?: any
   turma_id?: string
   turmas?: { nome: string } | null
 }
@@ -66,6 +68,7 @@ export function ModalAdicionarAlunoSimulado({
   // Dados para validação de acesso ao QR Code
   const [cpfAluno, setCpfAluno] = useState('')
   const [dataNascimentoAluno, setDataNascimentoAluno] = useState('')
+  const [nomeMaeAluno, setNomeMaeAluno] = useState('')
 
   // Estado para Aluno Avulso
   const [nomeAvulso, setNomeAvulso] = useState('')
@@ -103,7 +106,7 @@ export function ModalAdicionarAlunoSimulado({
       try {
         let query = (supabase as any)
           .from('alunos')
-          .select('id, nome, numero_matricula, cpf, data_nascimento, turma_id, turmas(nome)')
+          .select('id, nome, numero_matricula, cpf, data_nascimento, nome_mae, dados_matricula, turma_id, turmas(nome)')
           .is('deleted_at', null)
           .order('nome', { ascending: true })
 
@@ -131,6 +134,7 @@ export function ModalAdicionarAlunoSimulado({
     setTurmaAvulsa('')
     setCpfAluno('')
     setDataNascimentoAluno('')
+    setNomeMaeAluno('')
     setLinguaEscolhida('ingles')
     setRespostasAluno({})
     setAcertosDireto(0)
@@ -293,6 +297,7 @@ export function ModalAdicionarAlunoSimulado({
         nome_identificado: nomeFinal,
         cpf_aluno: cpfAluno.trim() || null,
         data_nascimento_aluno: dataNascimentoAluno.trim() || null,
+        nome_mae_aluno: nomeMaeAluno.trim() || null,
         lingua_estrangeira: simulado.possui_lingua_estrangeira ? linguaEscolhida : null,
         respostas: respostasSalvar,
         total_acertos: metricasCalculadas.totalAcertos,
@@ -574,7 +579,11 @@ export function ModalAdicionarAlunoSimulado({
                         onClick={() => {
                           setAlunoSelecionado(aluno)
                           setCpfAluno(aluno.cpf || '')
-                          setDataNascimentoAluno(aluno.data_nascimento || '')
+                          const dm = (aluno.dados_matricula as Record<string, any>) || {}
+                          const dataNasc = aluno.data_nascimento || dm.dataNascimento || dm.data_nascimento || ''
+                          const mae = aluno.nome_mae || dm.nomeMaeAluno || dm.maeAluno || dm.nomeMae || dm.mae || ''
+                          setDataNascimentoAluno(dataNasc)
+                          setNomeMaeAluno(mae)
                         }}
                         className="p-2.5 px-3 hover:bg-muted/50 cursor-pointer transition-colors flex items-center justify-between text-xs"
                       >
@@ -629,7 +638,7 @@ export function ModalAdicionarAlunoSimulado({
             </div>
           )}
 
-          {/* DADOS DE ACESSO DO ALUNO (CPF E DATA DE NASCIMENTO PARA O QR CODE) */}
+          {/* DADOS DE ACESSO DO ALUNO (DATA DE NASCIMENTO E NOME DA MÃE PARA O QR CODE) */}
           <div className="p-3.5 bg-muted/40 dark:bg-zinc-900/60 border border-border rounded-xl space-y-3">
             <div className="flex items-center gap-2">
               <ShieldCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
@@ -638,26 +647,29 @@ export function ModalAdicionarAlunoSimulado({
               </span>
             </div>
             <p className="text-[11px] text-muted-foreground">
-              Para visualizar a própria prova no QR Code, o aluno precisará confirmar seu CPF e data de nascimento.
+              Para visualizar a própria prova no QR Code, o aluno precisará confirmar sua data de nascimento e o nome completo da mãe registrado na ficha do Cursinho.
             </p>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div className="space-y-1">
-                <Label className="text-[11px] font-bold text-foreground">CPF do Aluno</Label>
-                <Input
-                  value={cpfAluno}
-                  onChange={(e) => setCpfAluno(e.target.value)}
-                  placeholder="000.000.000-00"
-                  className="bg-background border-border text-xs font-mono h-8"
-                />
-              </div>
-
               <div className="space-y-1">
                 <Label className="text-[11px] font-bold text-foreground">Data de Nascimento</Label>
                 <Input
                   type="date"
                   value={dataNascimentoAluno}
                   onChange={(e) => setDataNascimentoAluno(e.target.value)}
+                  className="bg-background border-border text-xs h-8"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <Label className="text-[11px] font-bold text-foreground">Nome Completo da Mãe</Label>
+                <Input
+                  value={nomeMaeAluno}
+                  onChange={(e) => setNomeMaeAluno(e.target.value)}
+                  placeholder="Nome da mãe conforme ficha"
+                  autoCapitalize="words"
+                  autoCorrect="off"
+                  spellCheck="false"
                   className="bg-background border-border text-xs h-8"
                 />
               </div>
@@ -845,7 +857,7 @@ export function ModalAdicionarAlunoSimulado({
             Aponte a câmera do smartphone para ler o QR Code ou copie o link para envio via WhatsApp.
           </p>
           <p className="text-[10px] text-amber-600 dark:text-amber-400 font-semibold">
-            🔒 O aluno precisará digitar seu CPF e data de nascimento para visualizar o espelho.
+            🔒 O aluno precisará digitar sua data de nascimento e o nome completo da mãe para visualizar o espelho.
           </p>
         </div>
 

@@ -772,7 +772,7 @@ export function ModalRankingSimulado({
 
           <div className="space-y-1 px-4">
             <p className="text-xs text-muted-foreground">
-              O aluno precisará confirmar seu CPF e data de nascimento ao escanear o QR Code para visualizar o espelho.
+              O aluno precisará confirmar sua data de nascimento e o nome completo da mãe ao escanear o QR Code para visualizar o espelho.
             </p>
           </div>
 

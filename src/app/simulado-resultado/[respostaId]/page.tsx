@@ -32,35 +32,21 @@ export default function SimuladoResultadoPage({ params }: SimuladoResultadoPageP
   const respostaId = resolvedParams.respostaId
 
   // Estado de Autenticação
-  const [cpfInput, setCpfInput] = useState('')
   const [dataNascInput, setDataNascInput] = useState('')
+  const [nomeMaeInput, setNomeMaeInput] = useState('')
   const [autenticando, setAutenticando] = useState(false)
   const [erroAuth, setErroAuth] = useState<string | null>(null)
 
   // Dados do Resultado Desbloqueado
   const [dadosResultado, setDadosResultado] = useState<any | null>(null)
 
-  // Máscara simples de CPF
-  const handleCpfChange = (valor: string) => {
-    const digitos = valor.replace(/\D/g, '').slice(0, 11)
-    let formatado = digitos
-    if (digitos.length > 9) {
-      formatado = `${digitos.slice(0, 3)}.${digitos.slice(3, 6)}.${digitos.slice(6, 9)}-${digitos.slice(9)}`
-    } else if (digitos.length > 6) {
-      formatado = `${digitos.slice(0, 3)}.${digitos.slice(3, 6)}.${digitos.slice(6)}`
-    } else if (digitos.length > 3) {
-      formatado = `${digitos.slice(0, 3)}.${digitos.slice(3)}`
-    }
-    setCpfInput(formatado)
-  }
-
   // Validação de acesso via API
   const handleAutenticar = async (e: React.FormEvent) => {
     e.preventDefault()
     setErroAuth(null)
 
-    if (!cpfInput.trim() || !dataNascInput.trim()) {
-      setErroAuth('Por favor, preencha seu CPF e data de nascimento.')
+    if (!dataNascInput.trim() || !nomeMaeInput.trim()) {
+      setErroAuth('Por favor, preencha sua data de nascimento e o nome completo da mãe.')
       return
     }
 
@@ -71,15 +57,15 @@ export default function SimuladoResultadoPage({ params }: SimuladoResultadoPageP
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           respostaId,
-          cpf: cpfInput,
-          dataNascimento: dataNascInput
+          dataNascimento: dataNascInput,
+          nomeMae: nomeMaeInput
         })
       })
 
       const data = await res.json()
 
       if (!res.ok || !data.sucesso) {
-        setErroAuth(data.error || 'Credenciais inválidas. Verifique os dados digitados.')
+        setErroAuth(data.error || 'Dados incorretos. Verifique as informações digitadas.')
         return
       }
 
@@ -101,12 +87,12 @@ export default function SimuladoResultadoPage({ params }: SimuladoResultadoPageP
 
   const handleSair = () => {
     setDadosResultado(null)
-    setCpfInput('')
     setDataNascInput('')
+    setNomeMaeInput('')
     setErroAuth(null)
   }
 
-  // TELA 1: AUTENTICAÇÃO DO ALUNO VIA CPF E DATA DE NASCIMENTO
+  // TELA 1: AUTENTICAÇÃO DO ALUNO VIA DATA DE NASCIMENTO E NOME DA MÃE
   if (!dadosResultado) {
     return (
       <div className="min-h-screen bg-background flex flex-col justify-center items-center p-4 sm:p-6">
@@ -136,7 +122,7 @@ export default function SimuladoResultadoPage({ params }: SimuladoResultadoPageP
             </div>
 
             <p className="text-xs text-muted-foreground">
-              Para proteger sua privacidade e acessar seu cartão de respostas, confirme seus dados:
+              Para proteger sua privacidade e acessar sua nota e espelho de respostas, confirme seus dados conforme cadastrados na sua ficha de matrícula:
             </p>
 
             {erroAuth && (
@@ -148,23 +134,27 @@ export default function SimuladoResultadoPage({ params }: SimuladoResultadoPageP
 
             <form onSubmit={handleAutenticar} className="space-y-4">
               <div className="space-y-1.5">
-                <Label className="text-xs font-bold text-foreground">CPF do Estudante</Label>
-                <Input
-                  value={cpfInput}
-                  onChange={(e) => handleCpfChange(e.target.value)}
-                  placeholder="000.000.000-00"
-                  required
-                  className="bg-background border-border text-xs font-mono h-10"
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <Label className="text-xs font-bold text-foreground">Data de Nascimento</Label>
+                <Label className="text-xs font-bold text-foreground">Data de Nascimento do Estudante</Label>
                 <Input
                   type="date"
                   value={dataNascInput}
                   onChange={(e) => setDataNascInput(e.target.value)}
                   required
+                  className="bg-background border-border text-xs h-10"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <Label className="text-xs font-bold text-foreground">Nome Completo da Mãe</Label>
+                <Input
+                  value={nomeMaeInput}
+                  onChange={(e) => setNomeMaeInput(e.target.value)}
+                  placeholder="Nome da mãe registrado na ficha"
+                  required
+                  autoCapitalize="words"
+                  autoComplete="name"
+                  autoCorrect="off"
+                  spellCheck="false"
                   className="bg-background border-border text-xs h-10"
                 />
               </div>
@@ -187,7 +177,7 @@ export default function SimuladoResultadoPage({ params }: SimuladoResultadoPageP
             </form>
 
             <div className="pt-2 text-center text-[11px] text-muted-foreground">
-              Em caso de dúvidas sobre seu CPF ou data cadastrados, entre em contato com a coordenação pedagógica.
+              Em caso de dúvidas sobre a data ou o nome da mãe cadastrados, entre em contato com a coordenação pedagógica do Cursinho.
             </div>
           </div>
         </div>
