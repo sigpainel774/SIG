@@ -123,7 +123,7 @@ export function ModalDetalhesInvestigacaoEmaee({
     >
       <div className="space-y-4 pt-1">
         {/* 1. Cards de Resumo Sintético */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+        <div className={`grid gap-2.5 ${totalFila > 0 ? 'grid-cols-2 sm:grid-cols-4' : 'grid-cols-1 sm:grid-cols-3'}`}>
           <div className="p-3 rounded-xl bg-card border border-border flex flex-col justify-between">
             <span className="text-[11px] font-medium text-muted-foreground uppercase flex items-center gap-1.5">
               <FileQuestion className="w-3.5 h-3.5 text-primary" /> Total Casos
@@ -138,12 +138,14 @@ export function ModalDetalhesInvestigacaoEmaee({
             <span className="text-xl font-bold text-amber-500 mt-1">{totalEmInvestigacao}</span>
           </div>
 
-          <div className="p-3 rounded-xl bg-card border border-border flex flex-col justify-between">
-            <span className="text-[11px] font-medium text-indigo-400 uppercase flex items-center gap-1.5">
-              <Activity className="w-3.5 h-3.5" /> Na Fila
-            </span>
-            <span className="text-xl font-bold text-indigo-400 mt-1">{totalFila}</span>
-          </div>
+          {totalFila > 0 && (
+            <div className="p-3 rounded-xl bg-card border border-border flex flex-col justify-between">
+              <span className="text-[11px] font-medium text-indigo-400 uppercase flex items-center gap-1.5">
+                <Activity className="w-3.5 h-3.5" /> Na Fila
+              </span>
+              <span className="text-xl font-bold text-indigo-400 mt-1">{totalFila}</span>
+            </div>
+          )}
 
           <div className="p-3 rounded-xl bg-card border border-border flex flex-col justify-between">
             <span className="text-[11px] font-medium text-emerald-400 uppercase flex items-center gap-1.5">
@@ -172,7 +174,7 @@ export function ModalDetalhesInvestigacaoEmaee({
                 [
                   { key: 'TODOS', label: 'Todos' },
                   { key: 'EM_INVESTIGACAO', label: 'Investigação' },
-                  { key: 'FILA_ESPERA', label: 'Fila' },
+                  ...(totalFila > 0 ? [{ key: 'FILA_ESPERA', label: 'Fila' } as const] : []),
                   { key: 'ATIVO', label: 'Ativos' },
                 ] as const
               ).map((tab) => (

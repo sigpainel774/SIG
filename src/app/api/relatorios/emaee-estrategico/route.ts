@@ -66,7 +66,7 @@ export async function GET(req: NextRequest) {
             emaee_especialidades_vinculadas(id, especialidade, especialidade_outros, ativo, profissional_id)
           `)
           .is('deleted_at', null)
-          .in('status', ['ATIVO', 'FILA_ESPERA', 'EM_INVESTIGACAO'])
+          .in('status', ['ATIVO', 'EM_INVESTIGACAO'])
 
         if (escolaId) {
           matQuery = matQuery.eq('escola_atendimento_id', escolaId)
@@ -306,11 +306,10 @@ export async function GET(req: NextRequest) {
               hasExplicitCondition = true
             }
 
-            // Em Investigação:
+            // Em Investigação (Apenas confirmação clínica expressa ou status formal):
             const isInvestigacao =
               Boolean(cs.em_investigacao?.selecionado) ||
-              status === 'EM_INVESTIGACAO' ||
-              (!hasExplicitCondition && !rawCid.trim())
+              status === 'EM_INVESTIGACAO'
 
             if (isInvestigacao) {
               counts.em_investigacao++
@@ -368,7 +367,7 @@ export async function GET(req: NextRequest) {
             )
           `)
           .is('deleted_at', null)
-          .in('status', ['ATIVO', 'FILA_ESPERA', 'EM_INVESTIGACAO'])
+          .in('status', ['ATIVO', 'EM_INVESTIGACAO'])
 
         if (escolaId) {
           demografiaQuery = demografiaQuery.eq('escola_atendimento_id', escolaId)
