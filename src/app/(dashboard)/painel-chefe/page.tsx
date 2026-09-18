@@ -95,7 +95,7 @@ export default function PainelChefePage() {
 
     let queryFunc = supabase
       .from('funcionarios')
-      .select('id, nome, cargo, orgao, status, email, is_superadmin, is_conta_especial, acessos_usuarios(nivel, ativo, escola_id), vinculos_funcionarios(escola_id, ativo)')
+      .select('id, nome, cargo, status, email, is_superadmin, is_conta_especial, acessos_usuarios(nivel, ativo, escola_id, escolas(nome)), vinculos_funcionarios(escola_id, ativo, escolas(nome))')
       .order('nome')
 
     if (isDir) {
@@ -121,7 +121,15 @@ export default function PainelChefePage() {
     }
     if (!isMountedRef.current) return
 
-    let filteredEquipe = (funcData || []).filter((f: any) => !f.is_conta_especial)
+    let filteredEquipe = (funcData || []).map((f: any) => {
+      const vincAtivo = (f.vinculos_funcionarios as Array<{ escola_id: string; ativo: boolean; escolas?: { nome: string } | null }>)?.find(v => v.ativo && v.escolas?.nome)
+      const acAtivo = (f.acessos_usuarios as Array<{ escola_id?: string | null; ativo: boolean; escolas?: { nome: string } | null }>)?.find(a => a.ativo && a.escolas?.nome)
+      const escolaNome = vincAtivo?.escolas?.nome || acAtivo?.escolas?.nome || '-'
+      return {
+        ...f,
+        escolaNome,
+      }
+    }).filter((f: any) => !f.is_conta_especial)
     
     // Se o usuário estiver numa unidade escolar ativa (ex: Diretor ou Chefe), filtra apenas servidores vinculados/com acesso àquela escola
     if (state.escolaAtivaId && !isAdmin) {
@@ -184,6 +192,8 @@ export default function PainelChefePage() {
     }
   }
 
+  const escolaAtivaId = useAuthStore((state) => state.escolaAtivaId)
+
   useEffect(() => {
     if (!funcionario || isEMAEE) return
     if (!isDiretor() && !isChefe() && !isAdminGlobalOrRoot()) return
@@ -193,13 +203,13 @@ export default function PainelChefePage() {
     return () => {
       isMountedRef.current = false
     }
-  }, [funcionario, isDiretor, isChefe, isAdminGlobalOrRoot, isEMAEE])
+  }, [funcionario, isDiretor, isChefe, isAdminGlobalOrRoot, isEMAEE, escolaAtivaId])
 
   const equipeFiltrada = equipe.filter(
     (membro) => 
       (membro.nome || '').toLowerCase().includes(busca.toLowerCase()) ||
       (membro.cargo || '').toLowerCase().includes(busca.toLowerCase()) ||
-      (membro.orgao || '').toLowerCase().includes(busca.toLowerCase())
+      (membro.escolaNome || '').toLowerCase().includes(busca.toLowerCase())
   )
 
   const handleAprovar = async (id: string, tipo: 'Escala' | 'Solicitacao') => {
@@ -407,14 +417,14 @@ export default function PainelChefePage() {
                     <TableRow key={membro.id} className="border-borderCustom hover:bg-hoverCustom transition-colors">
                       <TableCell className="font-semibold text-foreground">{membro.nome}</TableCell>
                       <TableCell className="text-muted-foreground">{membro.cargo || '-'}</TableCell>
-                      <TableCell className="text-muted-foreground">{membro.orgao || '-'}</TableCell>
+                      <TableCell className="text-muted-foreground">{membro.escolaNome || '-'}</TableCell>
                       <TableCell>
                         <span className={`px-2.5 py-0.5 text-xs font-bold rounded-full border ${
                           (membro.status || 'ATIVO').toUpperCase() === 'ATIVO'
                             ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
                             : (membro.status || '').toUpperCase() === 'SUSPENSO'
                             ? 'bg-rose-500/10 text-rose-400 border-rose-500/30'
-                            : 'bg-slate-800 text-slate-300 border-slate-700'
+                            : 'bg-muted text-muted-foreground border-border'
                         }`}>
                           {membro.status || 'ATIVO'}
                         </span>

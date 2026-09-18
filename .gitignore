@@ -72,9 +72,12 @@ PERMISSOES_ARQUITETURA.md
 PLANOS_FUTUROS.md
 PLANO_DE_ZERO_TRUST.md
 plano_de_zero_trust.md
-roadmap*
-ROADMAP*
+/roadmap*
+/ROADMAP*
 roadmap.dp
+ROADMAP.md
+roadmap.md
+!src/lib/roadmap-data.ts
 deep_scalability_audit.md
 project_performance_audit.md
 project_performance_audit_updated.md
