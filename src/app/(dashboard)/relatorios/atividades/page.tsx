@@ -25,6 +25,8 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 import { toast } from 'sonner'
+import { PrintRelatorioAtividades, ResumoAtividadesPrint } from '@/components/print/print-relatorio-atividades'
+
 
 interface AuditLogItem {
   id: string
@@ -54,12 +56,14 @@ export default function CentralAtividadesPage() {
 
   const [logs, setLogs] = useState<AuditLogItem[]>([])
   const [loading, setLoading] = useState(true)
+  const [showPrintModal, setShowPrintModal] = useState(false)
 
   // Filtros
   const [busca, setBusca] = useState('')
   const [filtroAcao, setFiltroAcao] = useState<string>('todas')
   const [filtroEntidade, setFiltroEntidade] = useState<string>('todas')
   const [filtroPeriodo, setFiltroPeriodo] = useState<string>('7dias')
+
 
   // Paginação
   const [paginaAtual, setPaginaAtual] = useState<number>(1)
@@ -259,6 +263,60 @@ export default function CentralAtividadesPage() {
     return logsFiltrados.slice(inicio, inicio + ITEMS_PER_PAGE)
   }, [logsFiltrados, paginaAtual])
 
+  const resumoAtividades: ResumoAtividadesPrint = useMemo(() => {
+    let creates = 0
+    let updates = 0
+    let deletes = 0
+    let reads = 0
+    let outros = 0
+
+    logsFiltrados.forEach((l) => {
+      if (l.action === 'CREATE') creates++
+      else if (l.action === 'UPDATE') updates++
+      else if (l.action === 'DELETE' || l.action === 'PURGE') deletes++
+      else if (l.action === 'READ') reads++
+      else outros++
+    })
+
+    return {
+      total: logsFiltrados.length,
+      creates,
+      updates,
+      deletes,
+      reads,
+      outros,
+    }
+  }, [logsFiltrados])
+
+  const periodoLabels: Record<string, string> = {
+    hoje: 'Hoje',
+    '7dias': 'Últimos 7 dias',
+    '30dias': 'Últimos 30 dias',
+    todos: 'Todo o Histórico',
+  }
+
+  const acaoLabels: Record<string, string> = {
+    todas: 'Todas as Ações',
+    CREATE: 'Cadastros / Inserções',
+    UPDATE: 'Edições de Fichas',
+    DELETE: 'Exclusões / Arquivamentos',
+    READ: 'Visualizações de Fichas',
+  }
+
+  const entidadeLabels: Record<string, string> = {
+    todas: 'Todos os Módulos',
+    alunos: 'Alunos',
+    emaee: 'EMAEE (Matrículas & Evoluções)',
+    responsaveis: 'Portal da Família / Responsáveis',
+    funcionarios: 'Servidores',
+    atestados: 'Atestados Médicos',
+    documentos: 'Documentos Oficiais',
+    turmas: 'Turmas & Matérias',
+    ocorrencias: 'Ocorrências Disciplinares',
+    trash_bin: 'Lixeira Geral',
+  }
+
+
   // Renderizador de Ícone por Ação
   const getActionBadge = (action: string) => {
     switch (action) {
@@ -452,12 +510,13 @@ export default function CentralAtividadesPage() {
         <div className="flex items-center gap-3 no-print">
           <SchoolSelector />
           <Button
-            onClick={() => window.print()}
+            onClick={() => setShowPrintModal(true)}
             className="bg-secondary hover:bg-hoverCustom text-foreground border border-border rounded-xl px-4 py-2 text-sm font-semibold flex items-center gap-2 transition-colors cursor-pointer"
           >
             <Printer className="w-4 h-4" /> Imprimir Relatório
           </Button>
         </div>
+
       </div>
 
       {/* Banner de Isolamento e Contexto de Unidade */}
@@ -601,8 +660,23 @@ export default function CentralAtividadesPage() {
           </div>
         )}
       </div>
+
+      {/* Modal de Impressão Oficial A4 */}
+      {showPrintModal && (
+        <PrintRelatorioAtividades
+          escolaNome={selectedEscola?.nome}
+          isSaude={isSaude}
+          periodoLabel={periodoLabels[filtroPeriodo] || 'Período Personalizado'}
+          acaoFiltroLabel={acaoLabels[filtroAcao] || 'Todas as Ações'}
+          entidadeFiltroLabel={entidadeLabels[filtroEntidade] || 'Todos os Módulos'}
+          resumo={resumoAtividades}
+          logs={logsFiltrados}
+          onClose={() => setShowPrintModal(false)}
+        />
+      )}
     </div>
   )
 }
+
 
 

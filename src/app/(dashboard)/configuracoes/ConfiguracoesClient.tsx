@@ -15,7 +15,10 @@ import {
   Bell,
   Building2,
   MapPin,
+  Clock,
+  LayoutGrid,
 } from 'lucide-react'
+
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { cn } from '@/lib/utils'
@@ -97,6 +100,30 @@ const LocalidadesTab = dynamic(() => import('@/components/configuracoes/Localida
   ),
 })
 
+const HorariosSlotsSection = dynamic(
+  () => import('@/components/HorariosSlotsSection').then((m) => ({ default: m.HorariosSlotsSection })),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="flex items-center justify-center h-32">
+        <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+      </div>
+    ),
+  }
+)
+
+const GradeSemanalSection = dynamic(
+  () => import('@/components/GradeSemanalSection').then((m) => ({ default: m.GradeSemanalSection })),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="flex items-center justify-center h-32">
+        <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+      </div>
+    ),
+  }
+)
+
 // Fix #8: Tipo explícito derivado do schema Supabase — sem any
 type FuncionarioRow = Database['public']['Tables']['funcionarios']['Row']
 type FuncionarioLocal = Pick<
@@ -104,7 +131,8 @@ type FuncionarioLocal = Pick<
   'id' | 'nome' | 'email' | 'cargo' | 'status' | 'assinatura_url' | 'auth_user_id'
 >
 
-type ActiveTab = 'perfil' | 'push-notifications' | 'sessoes' | 'assinatura-diretor' | 'assinatura-pessoal' | 'materias' | 'prazo-frequencia' | 'prazo-atividades' | 'localidades' | 'notificacoes-emaee'
+type ActiveTab = 'perfil' | 'push-notifications' | 'sessoes' | 'assinatura-diretor' | 'assinatura-pessoal' | 'materias' | 'prazo-frequencia' | 'prazo-atividades' | 'localidades' | 'notificacoes-emaee' | 'horarios-slots' | 'grade-semanal'
+
 type Category = 'pessoal' | 'escola' | 'rede'
 
 export function ConfiguracoesClient() {
@@ -118,6 +146,8 @@ export function ConfiguracoesClient() {
   const { funcionario, vinculos, isAdminGlobalOrRoot, escolaAtivaId } = useAuthStore()
   const { selectedEscola } = useSchoolStore()
   const isAdmin = isAdminGlobalOrRoot()
+
+
 
   // Função centralizada para alternar categoria/aba e refletir na URL
   const selectTab = useCallback((newCategory: Category, newTab: ActiveTab) => {
@@ -157,7 +187,8 @@ export function ConfiguracoesClient() {
       if (tabParam === 'localidades') {
         setCategory('rede')
         setActiveTab('localidades')
-      } else if (['assinatura-diretor', 'materias', 'prazo-frequencia', 'prazo-atividades', 'notificacoes-emaee'].includes(tabParam)) {
+      } else if (['assinatura-diretor', 'materias', 'prazo-frequencia', 'prazo-atividades', 'notificacoes-emaee', 'horarios-slots', 'grade-semanal'].includes(tabParam)) {
+
         setCategory('escola')
         setActiveTab(tabParam)
       } else if (['perfil', 'push-notifications', 'sessoes', 'assinatura-pessoal'].includes(tabParam)) {
@@ -436,7 +467,8 @@ export function ConfiguracoesClient() {
     ['perfil', 'push-notifications', 'sessoes', 'assinatura-pessoal'].includes(tab)
 
   const isEscolaTab = (tab: ActiveTab) =>
-    ['assinatura-diretor', 'materias', 'prazo-frequencia', 'prazo-atividades', 'notificacoes-emaee'].includes(tab)
+    ['assinatura-diretor', 'materias', 'prazo-frequencia', 'prazo-atividades', 'notificacoes-emaee', 'horarios-slots', 'grade-semanal'].includes(tab)
+
 
   const isRedeTab = (tab: ActiveTab) =>
     ['localidades'].includes(tab)
@@ -737,7 +769,62 @@ export function ConfiguracoesClient() {
             </div>
           </button>
 
+          {!isEmaee && (
+            <button
+              onClick={() => selectTab('escola', 'horarios-slots')}
+              className={cn(
+                'flex items-center gap-4 p-5 rounded-xl border text-left transition-all cursor-pointer shadow-sm',
+                activeTab === 'horarios-slots'
+                  ? 'bg-card border-[#185FA5] dark:border-[#3ea6ff] ring-1 ring-[#185FA5]/50 dark:ring-[#3ea6ff]/50'
+                  : 'bg-card border-borderCustom hover:bg-hoverCustom'
+              )}
+            >
+              <div
+                className={cn(
+                  'p-3 rounded-xl',
+                  activeTab === 'horarios-slots'
+                    ? 'bg-[#185FA5]/10 text-[#185FA5] dark:bg-[#3ea6ff]/10 dark:text-[#3ea6ff]'
+                    : 'bg-muted text-muted-foreground'
+                )}
+              >
+                <Clock className="h-6 w-6" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-foregroundCustom text-base">Configurar Horários</h3>
+                <p className="text-xs text-muted-foreground mt-0.5">Cadastrar slots de aula por turno para montar a grade semanal</p>
+              </div>
+            </button>
+          )}
+
+          {!isEmaee && (
+            <button
+              onClick={() => selectTab('escola', 'grade-semanal')}
+              className={cn(
+                'flex items-center gap-4 p-5 rounded-xl border text-left transition-all cursor-pointer shadow-sm',
+                activeTab === 'grade-semanal'
+                  ? 'bg-card border-[#185FA5] dark:border-[#3ea6ff] ring-1 ring-[#185FA5]/50 dark:ring-[#3ea6ff]/50'
+                  : 'bg-card border-borderCustom hover:bg-hoverCustom'
+              )}
+            >
+              <div
+                className={cn(
+                  'p-3 rounded-xl',
+                  activeTab === 'grade-semanal'
+                    ? 'bg-[#185FA5]/10 text-[#185FA5] dark:bg-[#3ea6ff]/10 dark:text-[#3ea6ff]'
+                    : 'bg-muted text-muted-foreground'
+                )}
+              >
+                <LayoutGrid className="h-6 w-6" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-foregroundCustom text-base">Montar Grade Semanal</h3>
+                <p className="text-xs text-muted-foreground mt-0.5">Distribuir disciplinas por turma, turno e dia da semana</p>
+              </div>
+            </button>
+          )}
+
           {isEmaee && (
+
             <button
               onClick={() => selectTab('escola', 'notificacoes-emaee')}
               className={cn(
@@ -997,7 +1084,20 @@ export function ConfiguracoesClient() {
         </div>
       )}
 
+      {category === 'escola' && activeTab === 'horarios-slots' && !isEmaee && (isDiretor || isAdmin) && (
+        <div className="animate-in fade-in-50 duration-200">
+          <HorariosSlotsSection />
+        </div>
+      )}
+
+      {category === 'escola' && activeTab === 'grade-semanal' && !isEmaee && (isDiretor || isAdmin) && (
+        <div className="animate-in fade-in-50 duration-200">
+          <GradeSemanalSection />
+        </div>
+      )}
+
       {category === 'rede' && activeTab === 'localidades' && isAdmin && (
+
         <div className="animate-in fade-in-50 duration-200">
           <LocalidadesTab />
         </div>

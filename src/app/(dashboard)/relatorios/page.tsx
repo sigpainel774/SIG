@@ -64,15 +64,16 @@ import {
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
-type ReportType = 'desempenho' | 'censo' | 'ocorrencias' | 'mapa' | 'presenca' | 'atividades' | 'servidores' | 'fila_espera' | 'emaee_estrategico' | 'frequencia_evasao' | 'matriculas_vagas' | 'diarios_classe' | 'produtividade_secretarios' | null
+type ReportType = 'desempenho_frequencia' | 'censo' | 'ocorrencias' | 'mapa' | 'presenca' | 'atividades' | 'servidores' | 'fila_espera' | 'emaee_estrategico' | 'matriculas_vagas' | 'diarios_classe' | 'produtividade_secretarios' | null
+
 type MapaAba = 'funcionarios' | 'alunos'
 
 // Report cards definition moved to module scope for stable reference
 const REPORT_CARDS = [
   {
-    id: 'frequencia_evasao' as const,
-    title: 'Frequência & Controle de Evasão',
-    description: 'Acompanhamento nominal de assiduidade, alunos abaixo de 75% e alertas de evasão escolar.',
+    id: 'desempenho_frequencia' as const,
+    title: 'Desempenho, Frequência & Evasão',
+    description: 'Boletim vermelho, médias por turma, assiduidade nominal, alunos abaixo de 75% e alertas de evasão escolar.',
     icon: TrendingDown,
     variant: 'destructive' as const,
   },
@@ -95,13 +96,6 @@ const REPORT_CARDS = [
     title: 'Relatório de Servidores',
     description: 'Quadro geral de servidores ativos, cargos ocupados, vínculos e modalidades.',
     icon: Users,
-    variant: 'primary' as const,
-  },
-  {
-    id: 'desempenho' as const,
-    title: 'Desempenho & Assiduidade',
-    description: 'Boletim vermelho, controle de faltas e risco de evasão.',
-    icon: TrendingUp,
     variant: 'primary' as const,
   },
   {
@@ -154,6 +148,7 @@ const REPORT_CARDS = [
     variant: 'primary' as const,
   },
 ]
+
 
 export default function RelatoriosPage() {
   const router = useRouter()
@@ -223,6 +218,7 @@ export default function RelatoriosPage() {
   const [isLoadingMapAlunos, setIsLoadingMapAlunos] = useState(false)
   const [mapaAba, setMapaAba] = useState<MapaAba>('funcionarios')
   const [mostrarLocalidades, setMostrarLocalidades] = useState<boolean>(true)
+  const [abaDesempenhoFrequencia, setAbaDesempenhoFrequencia] = useState<'desempenho' | 'frequencia'>('desempenho')
 
   // Redefine relatório ativo se a escola selecionada não for mais EMAEE
   useEffect(() => {
@@ -624,7 +620,7 @@ export default function RelatoriosPage() {
           </div>
 
           <div className="flex items-center gap-3">
-            {activeReport === 'desempenho' && selectedEscola && (
+            {activeReport === 'desempenho_frequencia' && selectedEscola && abaDesempenhoFrequencia === 'desempenho' && (
               <Button
                 onClick={() => setPrintableSubView('ficha')}
                 className="bg-emerald-600 hover:bg-emerald-700 text-white font-medium text-xs rounded-xl gap-2"
@@ -650,9 +646,8 @@ export default function RelatoriosPage() {
           <RelatorioServidores />
         ) : activeReport === 'emaee_estrategico' ? (
           <RelatorioEmaeeEstrategico selectedEscola={selectedEscola} />
-        ) : activeReport === 'desempenho' ? (
-          <RelatorioNotas selectedEscola={selectedEscola} />
         ) : activeReport === 'mapa' ? (
+
           <div className="space-y-6">
             <div className="bg-card border border-border rounded-2xl p-6">
               <div className="flex flex-wrap items-center justify-between gap-3 mb-4 border-b border-border pb-4">
@@ -742,14 +737,52 @@ export default function RelatoriosPage() {
           </div>
         ) : activeReport === 'ocorrencias' ? (
           <RelatorioOcorrencias selectedEscola={selectedEscola} />
-        ) : activeReport === 'frequencia_evasao' ? (
-          <RelatorioFrequenciaEvasao selectedEscola={selectedEscola} />
+        ) : activeReport === 'desempenho_frequencia' ? (
+          <div className="space-y-4">
+            {/* Abas internas: Desempenho / Frequência & Evasão */}
+            <div className="flex items-center gap-1 bg-secondary/60 border border-border rounded-xl p-1 w-fit">
+              <button
+                type="button"
+                onClick={() => setAbaDesempenhoFrequencia('desempenho')}
+                className={cn(
+                  'flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200',
+                  abaDesempenhoFrequencia === 'desempenho'
+                    ? 'bg-primary text-primary-foreground shadow-sm'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-hoverCustom'
+                )}
+              >
+                <TrendingUp className="w-4 h-4" />
+                Desempenho & Notas
+              </button>
+              <button
+                type="button"
+                onClick={() => setAbaDesempenhoFrequencia('frequencia')}
+                className={cn(
+                  'flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200',
+                  abaDesempenhoFrequencia === 'frequencia'
+                    ? 'bg-destructive text-destructive-foreground shadow-sm'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-hoverCustom'
+                )}
+              >
+                <TrendingDown className="w-4 h-4" />
+                Frequência & Evasão
+              </button>
+            </div>
+
+            {/* Conteúdo da aba ativa */}
+            {abaDesempenhoFrequencia === 'desempenho' ? (
+              <RelatorioNotas selectedEscola={selectedEscola} />
+            ) : (
+              <RelatorioFrequenciaEvasao selectedEscola={selectedEscola} />
+            )}
+          </div>
         ) : activeReport === 'matriculas_vagas' ? (
           <RelatorioMatriculasVagas selectedEscola={selectedEscola} />
         ) : activeReport === 'diarios_classe' ? (
           <RelatorioDiariosClasse selectedEscola={selectedEscola} />
         ) : activeReport === 'produtividade_secretarios' ? (
           <RelatorioProdutividadeSecretarios selectedEscola={selectedEscola} />
+
         ) : (
           <div className="flex flex-col items-center justify-center border border-dashed border-border rounded-2xl bg-card/50 py-16 px-6 text-center shadow-inner mt-6">
             <h3 className="text-xl font-bold text-foreground mb-3">
@@ -811,11 +844,10 @@ export default function RelatoriosPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 md:gap-6">
         {REPORT_CARDS.filter((card) => {
           const moduloPorReportCard: Record<string, string> = {
-            'frequencia_evasao': 'alunos',
+            'desempenho_frequencia': 'alunos',
             'matriculas_vagas': 'alunos',
             'diarios_classe': 'alunos',
             'servidores': 'funcionarios-basico',
-            'desempenho': 'alunos',
             'censo': 'alunos',
             'ocorrencias': 'ocorrencias',
             'mapa': 'geolocalizacao',
@@ -824,6 +856,7 @@ export default function RelatoriosPage() {
             'emaee_estrategico': 'pacientes',
             'fila_espera': 'fila-espera',
           }
+
           const modulosSecretaria = selectedSecretaria?.modulos_ativos
           if (modulosSecretaria) {
             const moduloNecessario = moduloPorReportCard[card.id]

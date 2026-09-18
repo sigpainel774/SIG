@@ -29,6 +29,8 @@ import {
   Heart,
 } from 'lucide-react';
 import { CardLogsAcessoRelatorios } from '@/components/admin/CardLogsAcessoRelatorios';
+import { SectionRoadmapSistema } from '@/components/admin/SectionRoadmapSistema';
+
 import { cn } from '@/lib/utils';
 
 export default function RelatoriosAdministrativosPage() {
@@ -468,8 +470,13 @@ export default function RelatoriosAdministrativosPage() {
         })}
       </div>
 
+      {/* ── Roadmap do Sistema ── */}
+      <div className="mt-10">
+        <SectionRoadmapSistema />
+      </div>
+
       {/* ── Auditoria de Acessos ao Relatório Estratégico EMAEE (LGPD) ── */}
-      <div className="mt-12">
+      <div className="mt-8">
         <CardLogsAcessoRelatorios />
       </div>
     </div>
