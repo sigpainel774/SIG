@@ -560,7 +560,7 @@ export function ModalAssociarAlunoAEE({
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <Label className="text-xs font-semibold text-foreground">
-                  Data Inicial do Atendimento <span className="text-destructive">*</span>
+                  Data de Início do Atendimento / Mudança <span className="text-destructive">*</span>
                 </Label>
                 <input
                   type="date"
@@ -590,8 +590,8 @@ export function ModalAssociarAlunoAEE({
                 </Select>
               </div>
             </div>
-            <p className="text-[10px] text-muted-foreground">
-              📅 <strong>Preenchimento no Calendário:</strong> Ao marcar uma data inicial retroativa (ex: meses anteriores de 2026), a grade do calendário exibirá automaticamente essas sessões para você lançar as presenças e ausências passadas.
+            <p className="text-[10px] text-muted-foreground leading-relaxed">
+              📅 <strong>Vigência e Lançamentos Retroativos:</strong> Ao cadastrar ou alterar horários retroativos de 2026, informe a data em que este horário começou a valer para que a grade do calendário posicione as sessões a partir desta data exata.
             </p>
           </div>
 

@@ -47,9 +47,13 @@ import {
   Clock,
   MapPin,
   Radio,
+  Lock,
+  Unlock,
 } from 'lucide-react'
 
 import { ModalSessionTimeout } from '@/components/modals/modal-session-timeout'
+import { ModalGestaoBloqueios } from '@/components/modals/modal-gestao-bloqueios'
+import type { ConfigRedeBloqueioParcial } from '@/lib/verificarTravaBloqueio'
 
 import { cn } from '@/lib/utils'
 
@@ -309,16 +313,9 @@ export default function AdminHubPage() {
   const [permitirMensagensGlobais, setPermitirMensagensGlobais] = useState<boolean>(true)
   const [updatingMensagens, setUpdatingMensagens] = useState(false)
 
-  // Estados granulares de bloqueio de edição de funcionários
-  type BloqueioEscopo = 'desativado' | 'rede' | 'secretarias' | 'escolas'
-  const [bloqueioEscopo, setBloqueioEscopo] = useState<BloqueioEscopo>('desativado')
-  const [bloqueioSecretariasSel, setBloqueioSecretariasSel] = useState<string[]>([])
-  const [bloqueioEscolasSel, setBloqueioEscolasSel] = useState<string[]>([])
-  const [secretariasOptions, setSecretariasOptions] = useState<{ id: string; nome: string }[]>([])
-  const [escolasOptions, setEscolasOptions] = useState<{ id: string; nome: string }[]>([])
-  const [savingBloqueio, setSavingBloqueio] = useState(false)
-  const [searchSecretaria, setSearchSecretaria] = useState('')
-  const [searchEscola, setSearchEscola] = useState('')
+  // Estados granulares de bloqueio de edição de funcionários (Modal Avançado)
+  const [isGestaoBloqueiosModalOpen, setIsGestaoBloqueiosModalOpen] = useState(false)
+  const [bloqueioConfig, setBloqueioConfig] = useState<ConfigRedeBloqueioParcial | null>(null)
 
   // Estados do Controle de Tempo de Sessões (Logoff por Horário)
   const [isSessionTimeoutModalOpen, setIsSessionTimeoutModalOpen] = useState(false)
@@ -389,45 +386,26 @@ export default function AdminHubPage() {
           }
         }
 
-        // 2. Carrega config granular de bloqueio de edição de funcionários
+        // 2. Carrega config avançada de bloqueio de edição de funcionários
         const { data: redeData } = await supabase
           .from('configuracoes_rede')
-          .select('bloquear_edicao_funcionarios_rede, bloquear_por_secretarias, bloquear_por_escolas')
+          .select(`
+            bloquear_edicao_funcionarios_rede,
+            bloquear_por_secretarias,
+            bloquear_por_escolas,
+            bloquear_emaee,
+            bloquear_por_anos_letivos,
+            bloquear_por_usuarios,
+            liberar_por_usuarios
+          `)
           .limit(1)
           .single()
 
         if (redeData) {
-          const redeInteira = redeData.bloquear_edicao_funcionarios_rede ?? false
-          const porSecretarias = (redeData.bloquear_por_secretarias as string[] | null) ?? []
-          const porEscolas = (redeData.bloquear_por_escolas as string[] | null) ?? []
-
-          if (redeInteira) {
-            setBloqueioEscopo('rede')
-          } else if (porSecretarias.length > 0 && porEscolas.length > 0) {
-            // Cumulativo com ambos preenchidos: heurística = prioriza secretarias na UI
-            setBloqueioEscopo('secretarias')
-            setBloqueioSecretariasSel(porSecretarias)
-            setBloqueioEscolasSel(porEscolas)
-          } else if (porSecretarias.length > 0) {
-            setBloqueioEscopo('secretarias')
-            setBloqueioSecretariasSel(porSecretarias)
-          } else if (porEscolas.length > 0) {
-            setBloqueioEscopo('escolas')
-            setBloqueioEscolasSel(porEscolas)
-          } else {
-            setBloqueioEscopo('desativado')
-          }
+          setBloqueioConfig(redeData as ConfigRedeBloqueioParcial)
         }
 
-        // 3. Carrega listas de secretarias e escolas para o seletor
-        const [secRes, escRes] = await Promise.all([
-          supabase.from('secretarias').select('id, nome').eq('ativo', true).order('nome'),
-          supabase.from('escolas').select('id, nome').is('deleted_at', null).or('is_teste.is.null,is_teste.eq.false').order('nome'),
-        ])
-        if (secRes.data) setSecretariasOptions(secRes.data as { id: string; nome: string }[])
-        if (escRes.data) setEscolasOptions(escRes.data as { id: string; nome: string }[])
-
-        // 4. Carrega lista de funcionários para o Simulador de Permissões
+        // 3. Carrega lista de funcionários para o Simulador de Permissões
         setLoadingFuncionariosList(true)
         const { data: funcs } = await supabase
           .from('funcionarios')
@@ -545,58 +523,6 @@ export default function AdminHubPage() {
       toast.error('Erro ao atualizar preferência de chat.')
     } finally {
       setUpdatingMensagens(false)
-    }
-  }
-
-  const handleSalvarBloqueioGranular = async () => {
-    setSavingBloqueio(true)
-
-    const isRedeInteira = bloqueioEscopo === 'rede'
-    const secretariasFinal = bloqueioEscopo === 'secretarias' || (bloqueioEscopo === 'escolas' && bloqueioSecretariasSel.length > 0)
-      ? bloqueioSecretariasSel
-      : []
-    const escolasFinal = bloqueioEscopo === 'escolas' || (bloqueioEscopo === 'secretarias' && bloqueioEscolasSel.length > 0)
-      ? bloqueioEscolasSel
-      : []
-
-    try {
-      const { data: config } = await supabase
-        .from('configuracoes_rede')
-        .select('id')
-        .limit(1)
-        .single()
-
-      const payload = {
-        bloquear_edicao_funcionarios_rede: isRedeInteira,
-        bloquear_por_secretarias: isRedeInteira ? [] : secretariasFinal,
-        bloquear_por_escolas: isRedeInteira ? [] : escolasFinal,
-      }
-
-      if (config?.id) {
-        const { error } = await supabase
-          .from('configuracoes_rede')
-          .update(payload)
-          .eq('id', config.id)
-        if (error) throw error
-      } else {
-        const { error } = await supabase
-          .from('configuracoes_rede')
-          .insert({ ...payload, secretario_educacao: 'MARCUS ALANO CORREIA OLIVEIRA' })
-        if (error) throw error
-      }
-
-      const msgs: Record<BloqueioEscopo, string> = {
-        desativado: 'Bloqueio DESATIVADO: edição de funcionários liberada conforme regras ABAC normais.',
-        rede: 'Bloqueio ATIVADO para toda a rede: edição bloqueada para usuários abaixo de Nível 1.',
-        secretarias: `Bloqueio por secretaria ATIVADO: ${secretariasFinal.length} secretaria(s) bloqueada(s)${escolasFinal.length > 0 ? ` + ${escolasFinal.length} escola(s) adicionais` : ''}.`,
-        escolas: `Bloqueio por escola ATIVADO: ${escolasFinal.length} escola(s) bloqueada(s)${secretariasFinal.length > 0 ? ` + ${secretariasFinal.length} secretaria(s) adicionais` : ''}.`,
-      }
-      toast.success(msgs[bloqueioEscopo])
-    } catch (err: unknown) {
-      console.error('Erro ao salvar configuração de bloqueio:', err)
-      toast.error('Erro ao salvar parâmetro global da rede.')
-    } finally {
-      setSavingBloqueio(false)
     }
   }
 
@@ -773,142 +699,94 @@ export default function AdminHubPage() {
               </div>
             </div>
 
-            {/* Card 2: Bloqueio Granular de Edição de Funcionários */}
-            <div className="bg-card border border-border p-4 rounded-xl flex flex-col gap-3">
-              <div className="space-y-1">
-                <span className="text-xs font-bold text-foreground block">
-                  Bloquear Edição de Funcionários (&lt; Nível 1)
-                </span>
+            {/* Card 2: Gestão Avançada de Bloqueios e Exceções */}
+            <div className="bg-card border border-border p-4 rounded-xl flex flex-col justify-between gap-3 bg-gradient-to-br from-card to-muted/20">
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-foreground flex items-center gap-1.5">
+                    <Lock className="w-3.5 h-3.5 text-rose-600 dark:text-rose-400" />
+                    Gestão de Bloqueios & Travas
+                  </span>
+                  <span className="text-[10px] font-extrabold px-1.5 py-0.5 rounded bg-rose-500/15 text-rose-700 dark:text-rose-300 border border-rose-500/30 uppercase">
+                    NÍVEL 1
+                  </span>
+                </div>
                 <p className="text-[11px] text-muted-foreground leading-tight">
-                  Impede alterações em fichas por usuários abaixo de Nível 1. Escolha o escopo do bloqueio.
+                  Controle centralizado de bloqueios estruturais da rede, EMAEE, anos letivos e permissões/exceções individuais.
                 </p>
-              </div>
 
-              {/* Radio group de escopo */}
-              <div className="grid grid-cols-2 gap-1.5 pt-1">
-                {([
-                  { value: 'desativado', label: 'Desativado' },
-                  { value: 'rede', label: 'Toda a Rede' },
-                  { value: 'secretarias', label: 'Por Secretaria' },
-                  { value: 'escolas', label: 'Por Escola' },
-                ] as { value: BloqueioEscopo; label: string }[]).map((opt) => (
-                  <button
-                    key={opt.value}
-                    type="button"
-                    onClick={() => setBloqueioEscopo(opt.value)}
-                    className={cn(
-                      'text-[11px] font-semibold px-2 py-1.5 rounded-lg border transition-colors text-left',
-                      bloqueioEscopo === opt.value
-                        ? opt.value === 'desativado'
-                          ? 'bg-emerald-500/15 border-emerald-500/40 text-emerald-700 dark:text-emerald-400'
-                          : 'bg-rose-500/15 border-rose-500/40 text-rose-700 dark:text-rose-400'
-                        : 'bg-background border-border text-muted-foreground hover:border-foreground/30'
-                    )}
-                  >
-                    {opt.label}
-                  </button>
-                ))}
-              </div>
+                {/* Resumo de Badges em Tempo Real */}
+                <div className="grid grid-cols-2 gap-1.5 pt-1">
+                  {/* Badge Rede / Escopo */}
+                  <div className="p-2 rounded-lg bg-background border border-border/80 flex flex-col">
+                    <span className="text-[10px] text-muted-foreground font-semibold uppercase">Escopo</span>
+                    <span className="text-xs font-bold text-foreground truncate mt-0.5">
+                      {bloqueioConfig?.bloquear_edicao_funcionarios_rede
+                        ? 'Rede Bloqueada'
+                        : (bloqueioConfig?.bloquear_por_secretarias?.length ?? 0) > 0
+                        ? `${bloqueioConfig?.bloquear_por_secretarias?.length} Sec. Bloqueada(s)`
+                        : (bloqueioConfig?.bloquear_por_escolas?.length ?? 0) > 0
+                        ? `${bloqueioConfig?.bloquear_por_escolas?.length} Esc. Bloqueada(s)`
+                        : 'Rede Liberada'}
+                    </span>
+                  </div>
 
-              {/* Seletor de Secretarias */}
-              {(bloqueioEscopo === 'secretarias' || (bloqueioEscopo === 'escolas' && bloqueioSecretariasSel.length > 0)) && (
-                <div className="space-y-1.5">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-                    Secretarias bloqueadas {bloqueioEscopo === 'escolas' ? '(adicionais)' : ''}
-                  </span>
-                  <input
-                    type="text"
-                    placeholder="Buscar secretaria…"
-                    value={searchSecretaria}
-                    onChange={(e) => setSearchSecretaria(e.target.value)}
-                    className="w-full text-[11px] bg-background border border-border rounded-lg px-2 py-1.5 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
-                  />
-                  <div className="max-h-32 overflow-y-auto space-y-0.5 pr-0.5">
-                    {secretariasOptions
-                      .filter((s) => s.nome.toLowerCase().includes(searchSecretaria.toLowerCase()))
-                      .map((sec) => (
-                        <label key={sec.id} className="flex items-center gap-2 px-2 py-1 rounded-md hover:bg-muted/50 cursor-pointer">
-                          <input
-                            type="checkbox"
-                            checked={bloqueioSecretariasSel.includes(sec.id)}
-                            onChange={(e) => {
-                              setBloqueioSecretariasSel(prev =>
-                                e.target.checked ? [...prev, sec.id] : prev.filter(id => id !== sec.id)
-                              )
-                            }}
-                            className="accent-rose-500 w-3.5 h-3.5 shrink-0"
-                          />
-                          <span className="text-[11px] text-foreground truncate">{sec.nome}</span>
-                        </label>
-                      ))
-                    }
-                    {secretariasOptions.filter((s) => s.nome.toLowerCase().includes(searchSecretaria.toLowerCase())).length === 0 && (
-                      <p className="text-[11px] text-muted-foreground px-2 py-1">Nenhuma secretaria encontrada.</p>
-                    )}
+                  {/* Badge EMAEE */}
+                  <div className="p-2 rounded-lg bg-background border border-border/80 flex flex-col">
+                    <span className="text-[10px] text-muted-foreground font-semibold uppercase">EMAEE / AEE</span>
+                    <span
+                      className={cn(
+                        'text-xs font-bold truncate mt-0.5',
+                        bloqueioConfig?.bloquear_emaee
+                          ? 'text-rose-600 dark:text-rose-400'
+                          : 'text-emerald-600 dark:text-emerald-400'
+                      )}
+                    >
+                      {bloqueioConfig?.bloquear_emaee ? 'Bloqueado' : 'Liberado'}
+                    </span>
+                  </div>
+
+                  {/* Badge Anos Letivos */}
+                  <div className="p-2 rounded-lg bg-background border border-border/80 flex flex-col">
+                    <span className="text-[10px] text-muted-foreground font-semibold uppercase">Anos Travados</span>
+                    <span className="text-xs font-bold text-foreground truncate mt-0.5">
+                      {(bloqueioConfig?.bloquear_por_anos_letivos?.length ?? 0) > 0
+                        ? (bloqueioConfig?.bloquear_por_anos_letivos ?? []).join(', ')
+                        : 'Nenhum'}
+                    </span>
+                  </div>
+
+                  {/* Badge Usuários */}
+                  <div className="p-2 rounded-lg bg-background border border-border/80 flex flex-col">
+                    <span className="text-[10px] text-muted-foreground font-semibold uppercase">Usuários</span>
+                    <span className="text-xs font-bold text-foreground truncate mt-0.5">
+                      {(bloqueioConfig?.bloquear_por_usuarios?.length ?? 0) > 0 ||
+                      (bloqueioConfig?.liberar_por_usuarios?.length ?? 0) > 0 ? (
+                        <>
+                          <span className="text-rose-600 dark:text-rose-400">
+                            {bloqueioConfig?.bloquear_por_usuarios?.length ?? 0} Blq.
+                          </span>
+                          {' / '}
+                          <span className="text-emerald-600 dark:text-emerald-400">
+                            {bloqueioConfig?.liberar_por_usuarios?.length ?? 0} Exc.
+                          </span>
+                        </>
+                      ) : (
+                        'Sem exceções'
+                      )}
+                    </span>
                   </div>
                 </div>
-              )}
-
-              {/* Seletor de Escolas */}
-              {(bloqueioEscopo === 'escolas' || (bloqueioEscopo === 'secretarias' && bloqueioEscolasSel.length > 0)) && (
-                <div className="space-y-1.5">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-                    Escolas bloqueadas {bloqueioEscopo === 'secretarias' ? '(adicionais)' : ''}
-                  </span>
-                  <input
-                    type="text"
-                    placeholder="Buscar escola…"
-                    value={searchEscola}
-                    onChange={(e) => setSearchEscola(e.target.value)}
-                    className="w-full text-[11px] bg-background border border-border rounded-lg px-2 py-1.5 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
-                  />
-                  <div className="max-h-40 overflow-y-auto space-y-0.5 pr-0.5">
-                    {escolasOptions
-                      .filter((e) => e.nome.toLowerCase().includes(searchEscola.toLowerCase()))
-                      .map((esc) => (
-                        <label key={esc.id} className="flex items-center gap-2 px-2 py-1 rounded-md hover:bg-muted/50 cursor-pointer">
-                          <input
-                            type="checkbox"
-                            checked={bloqueioEscolasSel.includes(esc.id)}
-                            onChange={(e) => {
-                              setBloqueioEscolasSel(prev =>
-                                e.target.checked ? [...prev, esc.id] : prev.filter(id => id !== esc.id)
-                              )
-                            }}
-                            className="accent-rose-500 w-3.5 h-3.5 shrink-0"
-                          />
-                          <span className="text-[11px] text-foreground truncate">{esc.nome}</span>
-                        </label>
-                      ))
-                    }
-                    {escolasOptions.filter((e) => e.nome.toLowerCase().includes(searchEscola.toLowerCase())).length === 0 && (
-                      <p className="text-[11px] text-muted-foreground px-2 py-1">Nenhuma escola encontrada.</p>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {/* Rodapé com status e botão salvar */}
-              <div className="flex items-center justify-between pt-2 border-t border-border/40 gap-2">
-                <span className={cn(
-                  'text-[11px] font-bold uppercase tracking-wider',
-                  bloqueioEscopo === 'desativado' ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'
-                )}>
-                  {bloqueioEscopo === 'desativado' && 'Liberado'}
-                  {bloqueioEscopo === 'rede' && 'Toda a rede bloqueada'}
-                  {bloqueioEscopo === 'secretarias' && `${bloqueioSecretariasSel.length} sec. bloqueada(s)`}
-                  {bloqueioEscopo === 'escolas' && `${bloqueioEscolasSel.length} escola(s) bloqueada(s)`}
-                </span>
-                <button
-                  type="button"
-                  onClick={handleSalvarBloqueioGranular}
-                  disabled={savingBloqueio}
-                  className="flex items-center gap-1.5 text-[11px] font-bold px-3 py-1.5 rounded-lg bg-foreground text-background hover:opacity-80 transition-opacity disabled:opacity-50 shrink-0"
-                >
-                  {savingBloqueio ? <Loader2 className="w-3 h-3 animate-spin" /> : null}
-                  Salvar
-                </button>
               </div>
+
+              <button
+                type="button"
+                onClick={() => setIsGestaoBloqueiosModalOpen(true)}
+                className="w-full flex items-center justify-center gap-1.5 text-[11px] font-bold py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-all shadow-sm active:scale-[0.99]"
+              >
+                <SlidersHorizontal className="w-3.5 h-3.5" />
+                Configurar Bloqueios & Exceções
+              </button>
             </div>
 
             {/* Controle 3: Tempo de Sessões (Logoff por Horário) */}
@@ -1391,6 +1269,15 @@ export default function AdminHubPage() {
           onRulesChanged={refreshSessionRulesSummary}
         />
       )}
+
+      {/* Modal Avançado de Gestão de Bloqueios & Exceções */}
+      <ModalGestaoBloqueios
+        open={isGestaoBloqueiosModalOpen}
+        onOpenChange={setIsGestaoBloqueiosModalOpen}
+        onSaved={(newConfig) => {
+          setBloqueioConfig(newConfig)
+        }}
+      />
     </div>
   )
 }

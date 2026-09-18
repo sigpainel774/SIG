@@ -45,7 +45,8 @@ function ModalMatriculaEmaeeContent({ activeOpen, handleOpenChange }: { activeOp
     adicionarVinculoAEE,
     atualizarVinculoAEE,
     vinculoParaEditar,
-    escolaAtendimentoId
+    escolaAtendimentoId,
+    dataMatricula
   } = useMatriculaEmaeeContext()
   const [activeStep, setActiveStep] = useState<number>(1)
   const formRef = useRef<HTMLFormElement>(null)
@@ -255,6 +256,7 @@ function ModalMatriculaEmaeeContent({ activeOpen, handleOpenChange }: { activeOp
           onSalvarEdicao={atualizarVinculoAEE}
           escolaEmaeeId={escolaAtendimentoId}
           modoInicial={modoModalVincular}
+          dataMatriculaPadrao={dataMatricula}
         />
       )}
     </StandardDialog>

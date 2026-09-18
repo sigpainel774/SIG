@@ -324,6 +324,7 @@ export default function CalendarioAtendimentosPage() {
           frequencia,
           dia_semana,
           data_inicio,
+          data_fim,
           horario_inicio,
           horario_fim,
           ativo,
@@ -364,9 +365,9 @@ export default function CalendarioAtendimentosPage() {
       espData = res.data
       espError = res.error
 
-      // Se der erro de coluna inexistente (migration pendente), faz fallback para a query sem data_inicio
-      if (espError && (espError.code === '42703' || espError.message?.includes('data_inicio'))) {
-        console.warn('[calendario-atendimentos] Coluna data_inicio ainda não existe no banco, executando fallback compatível.')
+      // Se der erro de coluna inexistente (migration pendente), faz fallback para a query sem data_inicio / data_fim
+      if (espError && (espError.code === '42703' || espError.message?.includes('data_inicio') || espError.message?.includes('data_fim'))) {
+        console.warn('[calendario-atendimentos] Colunas data_inicio/data_fim em transição, executando fallback compatível.')
         const fallbackRes = await supabase
           .from('emaee_especialidades_vinculadas')
           .select(`
@@ -670,6 +671,14 @@ export default function CalendarioAtendimentosPage() {
       return false
     }
 
+    // Se houver data de término/corte (data_fim) e a sessão for posterior, não ocorre mais nesta rotina
+    if (item.data_fim) {
+      const dFimIso = item.data_fim.includes('T') ? item.data_fim.split('T')[0] : item.data_fim
+      if (dataSessaoIso > dFimIso) {
+        return false
+      }
+    }
+
     // Se for frequência Quinzenal, calcula o ciclo de 14 dias a partir da semana da data inicial
     if (item.frequencia === 'QUINZENAL') {
       const parts = dInicioIso.split('-').map(Number)
@@ -690,7 +699,7 @@ export default function CalendarioAtendimentosPage() {
       return diffSemanas % 2 === 0
     }
 
-    // Para SEMANAL e demais frequências: ocorre normalmente a partir da data de início
+    // Para SEMANAL e demais frequências: ocorre normalmente a partir da data de início até eventual data_fim
     return true
   }, [])
 

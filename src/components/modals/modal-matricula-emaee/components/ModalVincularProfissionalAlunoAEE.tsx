@@ -65,6 +65,7 @@ export interface ModalVincularProfissionalAlunoAEEProps {
   onSalvarEdicao?: (vinculoEditado: VinculoAEEConfig) => void
   escolaEmaeeId?: string
   modoInicial?: 'ATENDIMENTO' | 'FILA_ESPERA'
+  dataMatriculaPadrao?: string
 }
 
 export const DIAS_SEMANA = [
@@ -84,7 +85,8 @@ export function ModalVincularProfissionalAlunoAEE({
   vinculoParaEditar,
   onSalvarEdicao,
   escolaEmaeeId,
-  modoInicial = 'ATENDIMENTO'
+  modoInicial = 'ATENDIMENTO',
+  dataMatriculaPadrao
 }: ModalVincularProfissionalAlunoAEEProps) {
   const isEditing = Boolean(vinculoParaEditar)
   const [tipoModal, setTipoModal] = useState<'ATENDIMENTO' | 'FILA_ESPERA'>(modoInicial)
@@ -98,7 +100,7 @@ export function ModalVincularProfissionalAlunoAEE({
 
   // Estados da Escala / Atendimento
   const [frequencia, setFrequencia] = useState<'SEMANAL' | 'QUINZENAL'>('SEMANAL')
-  const [dataInicio, setDataInicio] = useState<string>(() => new Date().toISOString().split('T')[0])
+  const [dataInicio, setDataInicio] = useState<string>(() => dataMatriculaPadrao || new Date().toISOString().split('T')[0])
   const [diaSemana, setDiaSemana] = useState<number>(1)
   const [horarioInicio, setHorarioInicio] = useState('08:00')
   const [horarioFim, setHorarioFim] = useState('09:00')
@@ -171,7 +173,7 @@ export function ModalVincularProfissionalAlunoAEE({
             foto_visualizacao_path: null,
             foto_updated_at: null,
           })
-          const dataIniStr = vinculoParaEditar.dataInicio || new Date().toISOString().split('T')[0]
+          const dataIniStr = vinculoParaEditar.dataInicio || dataMatriculaPadrao || new Date().toISOString().split('T')[0]
           setDataInicio(dataIniStr)
           // Se já houver dia da semana válido no vínculo preserva, caso contrário calcula a partir da data de início
           if (vinculoParaEditar.diaSemana && vinculoParaEditar.diaSemana >= 1 && vinculoParaEditar.diaSemana <= 6) {
@@ -198,8 +200,20 @@ export function ModalVincularProfissionalAlunoAEE({
         setProfSelecionado(null)
         setTermoBusca('')
         setFrequencia('SEMANAL')
-        setDataInicio(new Date().toISOString().split('T')[0])
-        setDiaSemana(1)
+        const dataPadraoInicial = dataMatriculaPadrao || new Date().toISOString().split('T')[0]
+        setDataInicio(dataPadraoInicial)
+        if (dataPadraoInicial) {
+          const parts = dataPadraoInicial.split('-').map(Number)
+          if (parts.length === 3 && parts[0] && parts[1] && parts[2]) {
+            const dt = new Date(parts[0], parts[1] - 1, parts[2])
+            const jsDay = dt.getDay()
+            setDiaSemana(jsDay >= 1 && jsDay <= 6 ? jsDay : 1)
+          } else {
+            setDiaSemana(1)
+          }
+        } else {
+          setDiaSemana(1)
+        }
         setHorarioInicio('08:00')
         setHorarioFim('09:00')
         setEspecialidadeFila('Psicologia')
@@ -209,7 +223,7 @@ export function ModalVincularProfissionalAlunoAEE({
         carregarProfissionaisAEE()
       }
     }
-  }, [open, vinculoParaEditar, escolaEmaeeId, modoInicial])
+  }, [open, vinculoParaEditar, escolaEmaeeId, modoInicial, dataMatriculaPadrao])
 
   const carregarProfissionaisAEE = async () => {
     setLoading(true)
@@ -795,7 +809,7 @@ export function ModalVincularProfissionalAlunoAEE({
                   <div className="space-y-1.5">
                     <Label className="text-xs font-bold text-foreground flex items-center gap-1.5">
                       <CalendarDays className="w-3.5 h-3.5 text-primary" />
-                      Data Inicial do Atendimento <span className="text-rose-500">*</span>
+                      {isEditing ? 'Data de Início da Mudança / Vigência' : 'Data de Início do Atendimento'} <span className="text-rose-500">*</span>
                     </Label>
                     <Input
                       type="date"
@@ -828,8 +842,8 @@ export function ModalVincularProfissionalAlunoAEE({
                     </Select>
                   </div>
                 </div>
-                <p className="text-[10px] text-muted-foreground">
-                  📅 <strong>Preenchimento no Calendário:</strong> Ao definir uma data inicial retroativa (ex: meses anteriores de 2026), a grade do calendário exibirá automaticamente essas sessões para você registrar presenças e faltas passadas.
+                <p className="text-[10px] text-muted-foreground leading-relaxed">
+                  📅 <strong>Vigência e Lançamentos Retroativos:</strong> Ao cadastrar ou alterar horários retroativos (ex: no início ou decorrer de 2026), informe a data exata em que este horário passou a valer. O calendário posicionará as sessões na grade a partir desta data, preservando o histórico anterior.
                 </p>
               </div>
 

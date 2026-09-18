@@ -1745,10 +1745,14 @@ export type Database = {
       configuracoes_rede: {
         Row: {
           bloquear_edicao_funcionarios_rede: boolean | null
+          bloquear_emaee: boolean | null
+          bloquear_por_anos_letivos: number[] | null
           bloquear_por_escolas: string[] | null
           bloquear_por_secretarias: string[] | null
+          bloquear_por_usuarios: string[] | null
           cargo_secretario: string | null
           id: string
+          liberar_por_usuarios: string[] | null
           nome_rede: string | null
           prazo_envio_atividades_dias: number
           prazo_frequencia_dias: number | null
@@ -1757,10 +1761,14 @@ export type Database = {
         }
         Insert: {
           bloquear_edicao_funcionarios_rede?: boolean | null
+          bloquear_emaee?: boolean | null
+          bloquear_por_anos_letivos?: number[] | null
           bloquear_por_escolas?: string[] | null
           bloquear_por_secretarias?: string[] | null
+          bloquear_por_usuarios?: string[] | null
           cargo_secretario?: string | null
           id?: string
+          liberar_por_usuarios?: string[] | null
           nome_rede?: string | null
           prazo_envio_atividades_dias?: number
           prazo_frequencia_dias?: number | null
@@ -1769,10 +1777,14 @@ export type Database = {
         }
         Update: {
           bloquear_edicao_funcionarios_rede?: boolean | null
+          bloquear_emaee?: boolean | null
+          bloquear_por_anos_letivos?: number[] | null
           bloquear_por_escolas?: string[] | null
           bloquear_por_secretarias?: string[] | null
+          bloquear_por_usuarios?: string[] | null
           cargo_secretario?: string | null
           id?: string
+          liberar_por_usuarios?: string[] | null
           nome_rede?: string | null
           prazo_envio_atividades_dias?: number
           prazo_frequencia_dias?: number | null
@@ -6376,7 +6388,12 @@ export type Database = {
         Returns: Json
       }
       verificar_trava_edicao_funcionario: {
-        Args: { p_funcionario_alvo_id: string }
+        Args: {
+          p_ano_letivo?: number | null
+          p_funcionario_alvo_id?: string | null
+          p_is_emaee?: boolean | null
+          p_usuario_executor_id?: string | null
+        }
         Returns: boolean
       }
     }

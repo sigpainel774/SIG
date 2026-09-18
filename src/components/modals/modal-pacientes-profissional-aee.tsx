@@ -821,7 +821,7 @@ export function ModalPacientesProfissionalAEE({
                 <div className="space-y-1.5">
                   <Label className="text-xs font-bold text-foreground flex items-center gap-1.5">
                     <CalendarDays className="w-3.5 h-3.5 text-primary" />
-                    Data Inicial do Atendimento <span className="text-rose-500">*</span>
+                    Data de Início da Mudança / Vigência <span className="text-rose-500">*</span>
                   </Label>
                   <Input
                     type="date"
@@ -869,8 +869,8 @@ export function ModalPacientesProfissionalAEE({
                   </Select>
                 </div>
               </div>
-              <p className="text-[10px] text-muted-foreground">
-                📅 <strong>Preenchimento no Calendário:</strong> Ao definir uma data inicial retroativa (ex: meses passados de 2026), essas sessões aparecerão automaticamente no calendário para lançamento de presenças e faltas.
+              <p className="text-[10px] text-muted-foreground leading-relaxed">
+                📅 <strong>Vigência e Lançamentos Retroativos:</strong> Ao alterar horários retroativos de 2026, defina a data em que a nova rotina passou a vigorar. O sistema manterá as presenças anteriores no histórico e posicionará os novos atendimentos no calendário a partir desta data exata.
               </p>
             </div>
 
