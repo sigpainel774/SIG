@@ -101,7 +101,7 @@ const adminGroups: AdminGroup[] = [
         subtitle: 'Mapeamento rural e rótulos do mapa',
         icon: MapPin,
         iconColor: 'text-amber-500 dark:text-amber-400',
-        path: '/configuracoes?tab=localidades',
+        path: '/admin/localidades',
       },
     ],
   },
@@ -982,7 +982,7 @@ export default function AdminHubPage() {
                 </div>
 
                 <Link
-                  href="/configuracoes?tab=localidades"
+                  href="/admin/localidades"
                   prefetch={true}
                   className="w-full bg-[#0067c0] hover:bg-[#005aab] dark:bg-amber-600 dark:hover:bg-amber-500 text-white font-bold text-xs py-1.5 rounded-lg flex items-center justify-center gap-1.5 cursor-pointer transition-colors shadow-sm"
                 >

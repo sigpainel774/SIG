@@ -100,7 +100,6 @@ const ACESSO_RAPIDO_SEMED_ITEMS = [
 
 const ACESSO_RAPIDO_SAUDE_ITEMS = [
   { label: 'Servidores', icon: Users, href: '/funcionarios' },
-  { label: 'Escalas & Plantões', icon: UserCheck, href: '/painel-chefe' },
   { label: 'Atestados Médicos', icon: Stethoscope, href: '/atestados' },
   { label: 'Documentos', icon: FileText, href: '/documentos' },
   { label: 'Relatórios', icon: FileBarChart, href: '/relatorios' },
@@ -1053,7 +1052,6 @@ export default function HomePage() {
                 value={saudeKpi?.escalasHoje ?? 0}
                 loading={loadingKpi}
                 color="violet"
-                href="/painel-chefe"
               />
               <KPICard
                 icon={Stethoscope}

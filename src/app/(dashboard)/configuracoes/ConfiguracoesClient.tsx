@@ -91,15 +91,6 @@ const GradeCurricularTab = dynamic(() => import('./GradeCurricularTab'), {
   ),
 })
 
-const LocalidadesTab = dynamic(() => import('@/components/configuracoes/LocalidadesTab'), {
-  ssr: false,
-  loading: () => (
-    <div className="flex items-center justify-center h-48">
-      <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
-    </div>
-  ),
-})
-
 const HorariosSlotsSection = dynamic(
   () => import('@/components/HorariosSlotsSection').then((m) => ({ default: m.HorariosSlotsSection })),
   {
@@ -131,9 +122,9 @@ type FuncionarioLocal = Pick<
   'id' | 'nome' | 'email' | 'cargo' | 'status' | 'assinatura_url' | 'auth_user_id'
 >
 
-type ActiveTab = 'perfil' | 'push-notifications' | 'sessoes' | 'assinatura-diretor' | 'assinatura-pessoal' | 'materias' | 'prazo-frequencia' | 'prazo-atividades' | 'localidades' | 'notificacoes-emaee' | 'horarios-slots' | 'grade-semanal'
+type ActiveTab = 'perfil' | 'push-notifications' | 'sessoes' | 'assinatura-diretor' | 'assinatura-pessoal' | 'materias' | 'prazo-frequencia' | 'prazo-atividades' | 'notificacoes-emaee' | 'horarios-slots' | 'grade-semanal'
 
-type Category = 'pessoal' | 'escola' | 'rede'
+type Category = 'pessoal' | 'escola'
 
 export function ConfiguracoesClient() {
   const searchParams = useSearchParams()
@@ -178,28 +169,31 @@ export function ConfiguracoesClient() {
     setMounted(true)
   }, [])
 
-  // Sincroniza estado com parâmetros da URL (ex: ?tab=localidades ou ?categoria=rede)
+  // Sincroniza estado com parâmetros da URL (ex: ?tab=materias ou ?categoria=escola)
   useEffect(() => {
-    const tabParam = searchParams.get('tab') as ActiveTab | null
-    const catParam = searchParams.get('categoria') as Category | null
+    const tabParam = searchParams.get('tab')
+    const catParam = searchParams.get('categoria')
+
+    if (tabParam === 'localidades' || catParam === 'rede') {
+      if (isAdmin) {
+        router.replace('/admin/localidades')
+      } else {
+        setCategory('pessoal')
+        setActiveTab('perfil')
+      }
+      return
+    }
 
     if (tabParam) {
-      if (tabParam === 'localidades') {
-        setCategory('rede')
-        setActiveTab('localidades')
-      } else if (['assinatura-diretor', 'materias', 'prazo-frequencia', 'prazo-atividades', 'notificacoes-emaee', 'horarios-slots', 'grade-semanal'].includes(tabParam)) {
-
+      if (['assinatura-diretor', 'materias', 'prazo-frequencia', 'prazo-atividades', 'notificacoes-emaee', 'horarios-slots', 'grade-semanal'].includes(tabParam)) {
         setCategory('escola')
-        setActiveTab(tabParam)
+        setActiveTab(tabParam as ActiveTab)
       } else if (['perfil', 'push-notifications', 'sessoes', 'assinatura-pessoal'].includes(tabParam)) {
         setCategory('pessoal')
-        setActiveTab(tabParam)
+        setActiveTab(tabParam as ActiveTab)
       }
     } else if (catParam) {
-      if (catParam === 'rede') {
-        setCategory('rede')
-        setActiveTab('localidades')
-      } else if (catParam === 'escola') {
+      if (catParam === 'escola') {
         setCategory('escola')
         setActiveTab('assinatura-diretor')
       } else if (catParam === 'pessoal') {
@@ -207,7 +201,7 @@ export function ConfiguracoesClient() {
         setActiveTab('perfil')
       }
     }
-  }, [searchParams])
+  }, [searchParams, isAdmin, router])
 
   // Fix #1: Race condition corrigida com flag `cancelled`
   // Fix #7: ilike → eq para e-mails; select apenas campos necessários
@@ -470,9 +464,6 @@ export function ConfiguracoesClient() {
     ['assinatura-diretor', 'materias', 'prazo-frequencia', 'prazo-atividades', 'notificacoes-emaee', 'horarios-slots', 'grade-semanal'].includes(tab)
 
 
-  const isRedeTab = (tab: ActiveTab) =>
-    ['localidades'].includes(tab)
-
   return (
     <div className="mx-auto max-w-6xl space-y-6">
       {/* Header */}
@@ -486,7 +477,7 @@ export function ConfiguracoesClient() {
         </p>
       </div>
 
-      {/* Alternância Principal: Preferências Pessoais vs Configurações da Escola vs Localidades da Rede */}
+      {/* Alternância Principal: Preferências Pessoais vs Configurações da Escola */}
       <div className="flex flex-wrap items-center gap-2 border-b border-borderCustom pb-4">
         <button
           type="button"
@@ -519,24 +510,6 @@ export function ConfiguracoesClient() {
           >
             <Building2 className="h-4 w-4" />
             Configurações da Escola (Administrativo)
-          </button>
-        )}
-
-        {isAdmin && (
-          <button
-            type="button"
-            onClick={() => {
-              selectTab('rede', 'localidades')
-            }}
-            className={cn(
-              'flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-sm transition-all cursor-pointer shadow-sm',
-              category === 'rede'
-                ? 'bg-[#185FA5] text-white dark:bg-[#3ea6ff] dark:text-zinc-950 font-bold ring-2 ring-[#185FA5]/30'
-                : 'bg-card border border-borderCustom text-muted-foreground hover:text-foreground hover:bg-hoverCustom'
-            )}
-          >
-            <MapPin className="h-4 w-4" />
-            Localidades &amp; Território (Rede)
           </button>
         )}
       </div>
@@ -1093,13 +1066,6 @@ export function ConfiguracoesClient() {
       {category === 'escola' && activeTab === 'grade-semanal' && !isEmaee && (isDiretor || isAdmin) && (
         <div className="animate-in fade-in-50 duration-200">
           <GradeSemanalSection />
-        </div>
-      )}
-
-      {category === 'rede' && activeTab === 'localidades' && isAdmin && (
-
-        <div className="animate-in fade-in-50 duration-200">
-          <LocalidadesTab />
         </div>
       )}
     </div>

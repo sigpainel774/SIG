@@ -79,9 +79,9 @@ export function Sidebar() {
     isEMAEE 
       ? ['coleta-local', 'configuracoes-basicas', 'geolocalizacao', 'funcionarios-basico', 'mural', 'pacientes', 'fila-espera', 'especialistas', 'calendario-atendimentos', 'relatorios-escola', 'arquivos', 'relatorios']
       : isEducacao
-      ? ['coleta-local', 'configuracoes-basicas', 'geolocalizacao', 'funcionarios-basico', 'mural', 'alunos', 'turmas', 'matriculas', 'avaliacoes', 'ocorrencias', 'documentos', 'transferencias', 'arquivos', 'relatorios', 'central-atividades', 'lideranca']
+      ? ['coleta-local', 'configuracoes-basicas', 'geolocalizacao', 'funcionarios-basico', 'mural', 'alunos', 'turmas', 'matriculas', 'avaliacoes', 'ocorrencias', 'documentos', 'transferencias', 'arquivos', 'relatorios', 'central-atividades']
       : isSaude
-      ? ['coleta-local', 'configuracoes-basicas', 'geolocalizacao', 'funcionarios-basico', 'mural', 'atestados', 'documentos', 'relatorios', 'central-atividades', 'lideranca', 'arquivos']
+      ? ['coleta-local', 'configuracoes-basicas', 'geolocalizacao', 'funcionarios-basico', 'mural', 'atestados', 'documentos', 'relatorios', 'central-atividades', 'arquivos']
       : ['coleta-local', 'configuracoes-basicas', 'geolocalizacao', 'funcionarios-basico']
   )
 
@@ -300,7 +300,6 @@ export function Sidebar() {
           items: [
             { href: '/relatorios', label: 'Relatórios', icon: FileBarChart },
             { href: '/relatorios/atividades', label: 'Central de Atividades', icon: Activity },
-            { href: '/painel-chefe', label: 'Painel Liderança', icon: UserCheck },
             { href: '/funcionarios', label: 'Funcionários', icon: Users },
           ]
         },
@@ -318,7 +317,6 @@ export function Sidebar() {
           label: 'GESTÃO DE SAÚDE & UNIDADE',
           items: [
             { href: '/funcionarios', label: 'Servidores da Saúde', icon: Users },
-            { href: '/painel-chefe', label: 'Escalas & Plantões', icon: UserCheck },
             { href: '/atestados', label: 'Atestados Médicos', icon: Stethoscope },
             { href: '/documentos', label: 'Documentos Oficiais', icon: FileText },
           ]
@@ -344,7 +342,6 @@ export function Sidebar() {
           label: 'GESTÃO DA UNIDADE',
           items: [
             { href: '/funcionarios', label: 'Servidores / Funcionários', icon: Users },
-            { href: '/painel-chefe', label: 'Painel Liderança', icon: UserCheck },
             { href: '/documentos', label: 'Documentos', icon: FileText },
           ]
         },
@@ -488,17 +485,12 @@ export function Sidebar() {
               return permitidos.includes(item.href)
             }
             if (!isAdmin && isChefe()) {
-              const permitidos = ['/home', '/mural', '/painel-chefe']
+              const permitidos = ['/home', '/mural']
               return permitidos.includes(item.href)
             }
             if (item.href === '/painel-chefe') {
-              if (isEMAEE) {
-                return false
-              }
-              if (isNivel1OrSuperior && !temEscolaSelecionada) {
-                return false
-              }
-              return isDiretor() || isChefe() || isAdmin
+              // Módulo Painel de Liderança desativado no sistema para futura deliberação
+              return false
             }
             return true
           })
