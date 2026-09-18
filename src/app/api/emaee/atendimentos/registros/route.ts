@@ -22,19 +22,69 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
   }
 
+  const apenasPendentes = searchParams.get('apenasPendentes') === 'true'
+
   try {
     let registros: any[] = []
 
-    if (data) {
+    const selectCampos = `
+      *,
+      vinculo:emaee_especialidades_vinculadas (
+        id,
+        especialidade,
+        especialidade_outros,
+        dia_semana,
+        horario_inicio,
+        horario_fim,
+        frequencia,
+        data_inicio,
+        data_fim,
+        ativo,
+        funcionarios:profissional_id (
+          id,
+          nome,
+          cargo,
+          foto_url,
+          foto_avatar_path,
+          foto_visualizacao_path,
+          foto_updated_at
+        ),
+        emaee_matriculas:emaee_matricula_id (
+          id,
+          numero_matricula_emaee,
+          escola_atendimento_id,
+          alunos:aluno_id (
+            id,
+            nome,
+            cpf,
+            data_nascimento,
+            nome_mae,
+            telefone,
+            endereco
+          )
+        )
+      )
+    `
+
+    if (apenasPendentes) {
+      const { data: resPendentes } = await (supabase as any)
+        .from('emaee_atendimentos_registros')
+        .select(selectCampos)
+        .eq('escola_id', escolaId)
+        .eq('status', 'pendente')
+        .order('data_atendimento', { ascending: false })
+
+      registros = resPendentes || []
+    } else if (data) {
       const [resAtendimento, resRemarcado] = await Promise.all([
         (supabase as any)
           .from('emaee_atendimentos_registros')
-          .select('*')
+          .select(selectCampos)
           .eq('escola_id', escolaId)
           .eq('data_atendimento', data),
         (supabase as any)
           .from('emaee_atendimentos_registros')
-          .select('*')
+          .select(selectCampos)
           .eq('escola_id', escolaId)
           .eq('status', 'remarcado')
           .eq('data_remarcada', data),
@@ -48,13 +98,13 @@ export async function GET(req: NextRequest) {
       const [resAtendimentos, resRemarcados] = await Promise.all([
         (supabase as any)
           .from('emaee_atendimentos_registros')
-          .select('*')
+          .select(selectCampos)
           .eq('escola_id', escolaId)
           .gte('data_atendimento', dataInicio)
           .lte('data_atendimento', dataFim),
         (supabase as any)
           .from('emaee_atendimentos_registros')
-          .select('*')
+          .select(selectCampos)
           .eq('escola_id', escolaId)
           .eq('status', 'remarcado')
           .gte('data_remarcada', dataInicio)
@@ -68,7 +118,7 @@ export async function GET(req: NextRequest) {
     } else {
       const { data: resGeral } = await (supabase as any)
         .from('emaee_atendimentos_registros')
-        .select('*')
+        .select(selectCampos)
         .eq('escola_id', escolaId)
       registros = resGeral || []
     }

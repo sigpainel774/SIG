@@ -220,6 +220,7 @@ export default function CalendarioAtendimentosPage() {
   const [motivoRemarcacaoForm, setMotivoRemarcacaoForm] = useState<string>('')
   const [salvandoRegistro, setSalvandoRegistro] = useState<boolean>(false)
   const [processandoLoteDia, setProcessandoLoteDia] = useState<string | null>(null)
+  const [totalPendenciasUnidade, setTotalPendenciasUnidade] = useState<number>(0)
 
   // Modal de Exclusão
   const [modalExcluirOpen, setModalExcluirOpen] = useState(false)
@@ -512,15 +513,23 @@ export default function CalendarioAtendimentosPage() {
   // --------------------------------------------------------------------------
   useEffect(() => {
     if (!escolaEmaeeId) return
-    // Dispara a verificação em background de forma silenciosa e resiliente
+    // Dispara a verificação e materialização em background de forma silenciosa e resiliente
     fetch('/api/emaee/atendimentos/verificar-pendencias', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ escolaId: escolaEmaeeId }),
     })
       .then((res) => res.json())
+      .then((data) => {
+        if (data?.result?.pendentes !== undefined) {
+          setTotalPendenciasUnidade(Number(data.result.pendentes) || 0)
+        }
+        if (data?.result?.materializados_novos > 0) {
+          carregarRegistros()
+        }
+      })
       .catch((e) => console.warn('Aviso verificação pendências:', e))
-  }, [escolaEmaeeId])
+  }, [escolaEmaeeId, carregarRegistros])
 
   useEffect(() => {
     carregarDados()
@@ -863,6 +872,80 @@ export default function CalendarioAtendimentosPage() {
             }
           }
         })
+
+        // 3. Atendimentos com registro histórico nesta data específica (preservação do dia original passado)
+        Object.values(registrosSemana).forEach((reg: any) => {
+          if (reg.data_atendimento === diaObj.dataIso && reg.status !== 'remarcado') {
+            const jaExiste = agrupado[diaNum].some(
+              (s: any) => s.id === reg.vinculo_id || s._registroOrigem?.id === reg.id
+            )
+            if (!jaExiste) {
+              const vincEncontrado =
+                vinculos.find((v) => v.id === reg.vinculo_id) || reg.vinculo
+              if (vincEncontrado) {
+                const aluno =
+                  vincEncontrado.emaee_matriculas?.alunos ||
+                  reg.vinculo?.emaee_matriculas?.alunos
+                const prof =
+                  vincEncontrado.funcionarios || reg.vinculo?.funcionarios
+                const termo = normalizar(termoBusca)
+                if (termo) {
+                  const nomeAluno = normalizar(aluno?.nome || '')
+                  const nomeMae = normalizar(aluno?.nome_mae || '')
+                  const nomeProf = normalizar(prof?.nome || '')
+                  const numMatr = normalizar(
+                    vincEncontrado.emaee_matriculas?.numero_matricula_emaee ||
+                      reg.vinculo?.emaee_matriculas?.numero_matricula_emaee ||
+                      '',
+                  )
+                  if (
+                    !nomeAluno.includes(termo) &&
+                    !nomeMae.includes(termo) &&
+                    !nomeProf.includes(termo) &&
+                    !numMatr.includes(termo)
+                  ) {
+                    return
+                  }
+                }
+                if (
+                  filtroProfissional !== 'todos' &&
+                  (vincEncontrado.profissional_id || reg.vinculo?.profissional_id) !==
+                    filtroProfissional
+                ) {
+                  return
+                }
+                if (filtroEspecialidade !== 'todos') {
+                  const filtroNorm = normalizar(filtroEspecialidade)
+                  const espResolvidaNorm = normalizar(
+                    getEspecialidadeNome(vincEncontrado),
+                  )
+                  const espNorm = normalizar(vincEncontrado.especialidade || '')
+                  const profCargoNorm = normalizar(prof?.cargo || '')
+                  if (
+                    espResolvidaNorm !== filtroNorm &&
+                    espNorm !== filtroNorm &&
+                    profCargoNorm !== filtroNorm
+                  ) {
+                    return
+                  }
+                }
+                if (filtroTurno !== 'todos') {
+                  const hInicio = vincEncontrado.horario_inicio || ''
+                  const isMatutino = hInicio < '12:00:00'
+                  if (filtroTurno === 'matutino' && !isMatutino) return
+                  if (filtroTurno === 'vespertino' && isMatutino) return
+                }
+
+                agrupado[diaNum].push({
+                  ...vincEncontrado,
+                  _idExibicao: `${vincEncontrado.id}_historico_${diaObj.dataIso}`,
+                  _isSessaoHistorica: true,
+                  _registroOrigem: reg,
+                })
+              }
+            }
+          }
+        })
       }
     })
 
@@ -1156,7 +1239,7 @@ export default function CalendarioAtendimentosPage() {
       const sessoesRemarcadasParaHoje: any[] = []
       Object.values(registrosSemana).forEach((reg: any) => {
         if (reg.status === 'remarcado' && reg.data_remarcada === dataIso) {
-          const v = vinculos.find((vnc) => vnc.id === reg.vinculo_id)
+          const v = vinculos.find((vnc) => vnc.id === reg.vinculo_id) || reg.vinculo
           if (v) {
             sessoesRemarcadasParaHoje.push({
               ...v,
@@ -1172,7 +1255,30 @@ export default function CalendarioAtendimentosPage() {
         }
       })
 
-      const todasSessoesDia = [...sessoesNesteDia, ...sessoesRemarcadasParaHoje].sort((a, b) => {
+      // Sessões históricas preservadas registradas neste dia
+      const sessoesHistoricasNesteDia: any[] = []
+      Object.values(registrosSemana).forEach((reg: any) => {
+        if (reg.data_atendimento === dataIso && reg.status !== 'remarcado') {
+          const jaNaLista = sessoesNesteDia.some((s: any) => s.id === reg.vinculo_id)
+          if (!jaNaLista) {
+            const v = vinculos.find((vnc) => vnc.id === reg.vinculo_id) || reg.vinculo
+            if (v) {
+              sessoesHistoricasNesteDia.push({
+                ...v,
+                _idExibicao: `${v.id}_historico_${dataIso}`,
+                _isSessaoHistorica: true,
+                _registroOrigem: reg,
+              })
+            }
+          }
+        }
+      })
+
+      const todasSessoesDia = [
+        ...sessoesNesteDia,
+        ...sessoesHistoricasNesteDia,
+        ...sessoesRemarcadasParaHoje,
+      ].sort((a, b) => {
         const hA = a._horarioRemarcado || a.horario_inicio || ''
         const hB = b._horarioRemarcado || b.horario_inicio || ''
         return hA.localeCompare(hB)
@@ -2083,6 +2189,18 @@ export default function CalendarioAtendimentosPage() {
                 <span className="w-2.5 h-2.5 bg-muted-foreground/40 rounded-full" /> Pendente
               </span>
             </div>
+
+            {totalPendenciasUnidade > 0 && (
+              <div
+                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-600 dark:text-amber-400 text-xs font-bold animate-in fade-in"
+                title="Atendimentos passados materializados no banco aguardando preenchimento"
+              >
+                <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                <span>
+                  {totalPendenciasUnidade} pendência{totalPendenciasUnidade > 1 ? 's' : ''} a regularizar
+                </span>
+              </div>
+            )}
           </div>
         </div>
 

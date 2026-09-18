@@ -121,10 +121,16 @@ export function ModalPacientesProfissionalAEE({
     id: string
     alunoNome: string
     dataInicio: string
+    dataInicioOriginal?: string
     diaSemana: number
+    diaSemanaOriginal?: number
     frequencia: string
     horarioInicio: string
     horarioFim: string
+    emaee_matricula_id?: string
+    especialidade?: string
+    especialidade_outros?: string | null
+    profissional_id?: string
   } | null>(null)
   const [salvandoEdicao, setSalvandoEdicao] = useState(false)
 
@@ -277,6 +283,70 @@ export function ModalPacientesProfissionalAEE({
         vinculoEdicao.horarioInicio.length === 5 ? `${vinculoEdicao.horarioInicio}:00` : vinculoEdicao.horarioInicio
       const formattedFim =
         vinculoEdicao.horarioFim.length === 5 ? `${vinculoEdicao.horarioFim}:00` : vinculoEdicao.horarioFim
+
+      // Verifica se houve mudança de dia da semana OU avanço de data inicial com histórico de presenças
+      const mudouDia = vinculoEdicao.diaSemana !== vinculoEdicao.diaSemanaOriginal
+      const dataInicioOriginal = vinculoEdicao.dataInicioOriginal || ''
+      const mudouDataParaFrente = Boolean(
+        vinculoEdicao.dataInicio &&
+        dataInicioOriginal &&
+        vinculoEdicao.dataInicio > dataInicioOriginal
+      )
+
+      if ((mudouDia || mudouDataParaFrente) && vinculoEdicao.dataInicio && dataInicioOriginal && vinculoEdicao.emaee_matricula_id) {
+        // Checa se existem registros passados para este vínculo
+        const { count } = await supabase
+          .from('emaee_atendimentos_registros')
+          .select('id', { count: 'exact', head: true })
+          .eq('vinculo_id', vinculoEdicao.id)
+
+        if (count && count > 0) {
+          // Calcula a véspera da nova data de início para data_fim
+          const partes = vinculoEdicao.dataInicio.split('-').map(Number)
+          const dtNova = new Date(partes[0], partes[1] - 1, partes[2])
+          dtNova.setDate(dtNova.getDate() - 1)
+          const anoVesp = dtNova.getFullYear()
+          const mesVesp = String(dtNova.getMonth() + 1).padStart(2, '0')
+          const diaVesp = String(dtNova.getDate()).padStart(2, '0')
+          const dataFimVespera = `${anoVesp}-${mesVesp}-${diaVesp}`
+
+          // 1. Encerra o vínculo anterior com data_fim e ativo = false (preserva todas as presenças antigas)
+          const { error: errOld } = await supabase
+            .from('emaee_especialidades_vinculadas')
+            .update({
+              data_fim: dataFimVespera,
+              ativo: false,
+            } as any)
+            .eq('id', vinculoEdicao.id)
+
+          if (errOld) throw errOld
+
+          // 2. Cria o novo vínculo para a nova rotina a partir da nova data
+          const { error: errNew } = await supabase
+            .from('emaee_especialidades_vinculadas')
+            .insert({
+              emaee_matricula_id: vinculoEdicao.emaee_matricula_id,
+              profissional_id: vinculoEdicao.profissional_id,
+              especialidade: vinculoEdicao.especialidade,
+              especialidade_outros: vinculoEdicao.especialidade_outros,
+              frequencia: vinculoEdicao.frequencia,
+              dia_semana: vinculoEdicao.diaSemana,
+              data_inicio: vinculoEdicao.dataInicio,
+              horario_inicio: formattedInicio,
+              horario_fim: formattedFim,
+              ativo: true,
+              status: 'EM_ATENDIMENTO',
+            } as any)
+
+          if (errNew) throw errNew
+
+          toast.success('Nova rotina criada a partir da data informada, preservando o histórico anterior!')
+          setVinculoEdicao(null)
+          if (onSuccess) onSuccess()
+          await carregarPacientes()
+          return
+        }
+      }
 
       let { error } = await supabase
         .from('emaee_especialidades_vinculadas')
@@ -655,10 +725,16 @@ export function ModalPacientesProfissionalAEE({
                               id: item.id,
                               alunoNome: aluno?.nome ?? 'Aluno',
                               dataInicio: item.data_inicio || new Date().toISOString().split('T')[0],
+                              dataInicioOriginal: item.data_inicio || '',
                               diaSemana: item.dia_semana || 1,
+                              diaSemanaOriginal: item.dia_semana || 1,
                               frequencia: item.frequencia || 'SEMANAL',
                               horarioInicio: item.horario_inicio ? item.horario_inicio.slice(0, 5) : '08:00',
                               horarioFim: item.horario_fim ? item.horario_fim.slice(0, 5) : '09:00',
+                              emaee_matricula_id: item.matricula?.id,
+                              especialidade: item.especialidade,
+                              especialidade_outros: (item as any).especialidade_outros,
+                              profissional_id: profissional.id,
                             })
                           }
                           className="h-7 px-2.5 text-[11px] border-border bg-card hover:bg-accent text-foreground rounded-lg gap-1 transition-colors cursor-pointer"

@@ -98,12 +98,26 @@ export async function POST(req: NextRequest) {
       })
     }
 
-    // Buscar destinatários: Secretárias e Direção
-    const { data: escolaData } = await supabaseAdmin
+    // Buscar destinatários: Secretárias e Direção, e verificar se notificações estão ativas na escola
+    const { data: escolaData } = await (supabaseAdmin as any)
       .from('escolas')
-      .select('diretor_id')
+      .select('diretor_id, notificar_pendencias_emaee')
       .eq('id', escolaId)
       .single()
+
+    const notificarAtivo = escolaData?.notificar_pendencias_emaee ?? true
+    if (!notificarAtivo) {
+      return NextResponse.json({
+        success: true,
+        notificacoes_habilitadas: false,
+        data_referencia: dataRefIso,
+        total_agendados: totalAgendados,
+        preenchidos: preenchidosCount,
+        pendentes: pendentesCount,
+        notificados: 0,
+        mensagem: 'Notificações desabilitadas nas configurações da escola.',
+      })
+    }
 
     const { data: secretariasData } = await supabaseAdmin
       .from('funcionarios')

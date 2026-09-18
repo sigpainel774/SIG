@@ -104,7 +104,7 @@ type FuncionarioLocal = Pick<
   'id' | 'nome' | 'email' | 'cargo' | 'status' | 'assinatura_url' | 'auth_user_id'
 >
 
-type ActiveTab = 'perfil' | 'push-notifications' | 'sessoes' | 'assinatura-diretor' | 'assinatura-pessoal' | 'materias' | 'prazo-frequencia' | 'prazo-atividades' | 'localidades'
+type ActiveTab = 'perfil' | 'push-notifications' | 'sessoes' | 'assinatura-diretor' | 'assinatura-pessoal' | 'materias' | 'prazo-frequencia' | 'prazo-atividades' | 'localidades' | 'notificacoes-emaee'
 type Category = 'pessoal' | 'escola' | 'rede'
 
 export function ConfiguracoesClient() {
@@ -157,7 +157,7 @@ export function ConfiguracoesClient() {
       if (tabParam === 'localidades') {
         setCategory('rede')
         setActiveTab('localidades')
-      } else if (['assinatura-diretor', 'materias', 'prazo-frequencia', 'prazo-atividades'].includes(tabParam)) {
+      } else if (['assinatura-diretor', 'materias', 'prazo-frequencia', 'prazo-atividades', 'notificacoes-emaee'].includes(tabParam)) {
         setCategory('escola')
         setActiveTab(tabParam)
       } else if (['perfil', 'push-notifications', 'sessoes', 'assinatura-pessoal'].includes(tabParam)) {
@@ -378,11 +378,65 @@ export function ConfiguracoesClient() {
     }
   }
 
+  // Controle de Notificações de Pendências do EMAEE (Restrito ao Diretor ou Superior)
+  const isEmaee = useMemo(
+    () => (selectedEscola?.nome || '').toUpperCase().includes('EMAEE'),
+    [selectedEscola]
+  )
+
+  const [notificarEmaee, setNotificarEmaee] = useState<boolean>(true)
+  const [salvandoNotifEmaee, setSalvandoNotifEmaee] = useState<boolean>(false)
+
+  useEffect(() => {
+    if (selectedEscola) {
+      setNotificarEmaee(selectedEscola.notificar_pendencias_emaee ?? true)
+    }
+  }, [selectedEscola])
+
+  const handleToggleNotificacoesEmaee = async () => {
+    if (!escolaAtivaId) {
+      toast.error('Selecione uma escola para gerenciar as notificações.')
+      return
+    }
+    const novoValor = !notificarEmaee
+    setSalvandoNotifEmaee(true)
+    const supabase = createClient()
+    try {
+      const { data, error } = await (supabase as any).rpc('atualizar_configuracao_notificacoes_emaee', {
+        p_escola_id: escolaAtivaId,
+        p_notificar: novoValor,
+      })
+      if (error) throw error
+      const res = data as any
+      if (res && res.success === false) {
+        throw new Error(res.error || 'Erro ao atualizar configuração.')
+      }
+
+      setNotificarEmaee(novoValor)
+      if (selectedEscola) {
+        useSchoolStore.getState().setSelectedEscola({
+          ...selectedEscola,
+          notificar_pendencias_emaee: novoValor,
+        })
+      }
+      toast.success(
+        novoValor
+          ? 'Notificações automáticas de pendências do EMAEE ativadas!'
+          : 'Notificações automáticas de pendências do EMAEE desativadas!'
+      )
+    } catch (err: any) {
+      console.error('Erro ao atualizar notificações do EMAEE:', err)
+      toast.error(err?.message || 'Erro ao alterar configuração de notificações.')
+    } finally {
+      setSalvandoNotifEmaee(false)
+    }
+  }
+
   const isPessoalTab = (tab: ActiveTab) =>
     ['perfil', 'push-notifications', 'sessoes', 'assinatura-pessoal'].includes(tab)
 
   const isEscolaTab = (tab: ActiveTab) =>
-    ['assinatura-diretor', 'materias', 'prazo-frequencia', 'prazo-atividades'].includes(tab)
+    ['assinatura-diretor', 'materias', 'prazo-frequencia', 'prazo-atividades', 'notificacoes-emaee'].includes(tab)
 
   const isRedeTab = (tab: ActiveTab) =>
     ['localidades'].includes(tab)
@@ -682,6 +736,33 @@ export function ConfiguracoesClient() {
               <p className="text-xs text-muted-foreground mt-0.5">Antecedência mínima para envio de atividades à secretaria</p>
             </div>
           </button>
+
+          {isEmaee && (
+            <button
+              onClick={() => selectTab('escola', 'notificacoes-emaee')}
+              className={cn(
+                'flex items-center gap-4 p-5 rounded-xl border text-left transition-all cursor-pointer shadow-sm',
+                activeTab === 'notificacoes-emaee'
+                  ? 'bg-card border-[#185FA5] dark:border-[#3ea6ff] ring-1 ring-[#185FA5]/50 dark:ring-[#3ea6ff]/50'
+                  : 'bg-card border-borderCustom hover:bg-hoverCustom'
+              )}
+            >
+              <div
+                className={cn(
+                  'p-3 rounded-xl',
+                  activeTab === 'notificacoes-emaee'
+                    ? 'bg-[#185FA5]/10 text-[#185FA5] dark:bg-[#3ea6ff]/10 dark:text-[#3ea6ff]'
+                    : 'bg-muted text-muted-foreground'
+                )}
+              >
+                <Bell className="h-6 w-6" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-foregroundCustom text-base">Notificações EMAEE</h3>
+                <p className="text-xs text-muted-foreground mt-0.5">Ativar ou suspender alertas de pendências</p>
+              </div>
+            </button>
+          )}
         </div>
       )}
 
@@ -839,6 +920,80 @@ export function ConfiguracoesClient() {
       {category === 'escola' && activeTab === 'prazo-atividades' && (isDiretor || isAdmin) && (
         <div className="animate-in fade-in-50 duration-200">
           <PrazoAtividadesTab />
+        </div>
+      )}
+
+      {category === 'escola' && activeTab === 'notificacoes-emaee' && isEmaee && (isDiretor || isAdmin) && (
+        <div className="animate-in fade-in-50 duration-200">
+          <Card className="border-borderCustom bg-card p-6">
+            <h2 className="mb-5 flex items-center gap-2 border-b border-borderCustom pb-4 text-lg font-semibold text-foregroundCustom">
+              <Bell className="h-5 w-5 text-highlight" />
+              Notificações de Atendimentos Pendentes do EMAEE
+            </h2>
+            <div className="space-y-6 max-w-2xl">
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                Configure o envio automático de notificações no painel para a diretoria e secretárias quando existirem atendimentos do EMAEE que não tiveram a presença, falta ou justificativa preenchida no calendário.
+              </p>
+
+              <div className="p-5 rounded-2xl bg-card border border-borderCustom flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-sm">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <span className="font-bold text-sm text-foregroundCustom">
+                      Alertas Automáticos de Pendências
+                    </span>
+                    <span
+                      className={cn(
+                        'text-[10px] font-bold px-2 py-0.5 rounded-full border',
+                        notificarEmaee
+                          ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20'
+                          : 'bg-zinc-500/10 text-zinc-600 dark:text-zinc-400 border-zinc-500/20'
+                      )}
+                    >
+                      {notificarEmaee ? 'Ativado' : 'Desativado'}
+                    </span>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    {notificarEmaee
+                      ? 'O sistema alerta a equipe quando houver atendimentos passados pendentes de registro.'
+                      : 'O envio de alertas automáticos está suspenso para esta unidade EMAEE.'}
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-3 shrink-0">
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={notificarEmaee}
+                    disabled={salvandoNotifEmaee}
+                    onClick={handleToggleNotificacoesEmaee}
+                    className={cn(
+                      'relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2',
+                      notificarEmaee
+                        ? 'bg-emerald-500'
+                        : 'bg-zinc-300 dark:bg-zinc-700',
+                      salvandoNotifEmaee && 'opacity-60 cursor-not-allowed'
+                    )}
+                  >
+                    <span
+                      className={cn(
+                        'pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out',
+                        notificarEmaee ? 'translate-x-5' : 'translate-x-0'
+                      )}
+                    />
+                  </button>
+                </div>
+              </div>
+
+              <div className="p-4 rounded-xl bg-muted/50 border border-borderCustom text-xs text-muted-foreground space-y-1">
+                <span className="font-bold text-foregroundCustom block">
+                  Preservação do Histórico:
+                </span>
+                <span>
+                  Mesmo se desativado, o sistema continuará registrando e materializando com segurança os atendimentos no banco de dados, permitindo que a equipe regularize presenças e faltas no calendário a qualquer momento.
+                </span>
+              </div>
+            </div>
+          </Card>
         </div>
       )}
 
