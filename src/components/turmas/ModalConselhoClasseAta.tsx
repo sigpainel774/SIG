@@ -696,9 +696,10 @@ export function ModalConselhoClasseAta({
       </StandardDialog>
 
       {/* Componente Invisível para Impressão Nativa da Ata */}
-      <div className="hidden print:block">
+      <div className="print-portal-container hidden print:block">
         <PrintAtaResultadosFinais ref={printRef} dados={dadosParaImpressao} />
       </div>
+
     </>
   )
 }

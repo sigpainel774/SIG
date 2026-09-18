@@ -73,8 +73,9 @@ export function PrintRelatorioFrequenciaEvasao({
   })
 
   return createPortal(
-    <div className="fixed inset-0 z-[9999] bg-[#09090b]/95 flex flex-col items-center p-4 overflow-y-auto print:static print:block print:p-0 print:bg-white print:overflow-visible">
+    <div className="print-portal-container fixed inset-0 z-[9999] bg-[#09090b]/95 flex flex-col items-center p-4 overflow-y-auto print:static print:block print:p-0 print:bg-white print:overflow-visible">
       {/* Estilos CSS específicos para Impressão */}
+
       <style>{`
         @media print {
           @page {

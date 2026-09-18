@@ -56,7 +56,29 @@ export function PrintBoletim({
   }
 
   return (
-    <div className="p-6 bg-white text-black max-w-4xl mx-auto rounded-xl border border-gray-300 shadow-sm print:shadow-none print:border-none print:p-0">
+    <div className="print-portal-container p-6 bg-white text-black max-w-4xl mx-auto rounded-xl border border-gray-300 shadow-sm print:shadow-none print:border-none print:p-0 print:max-w-none print:w-full">
+      <style>{`
+        @media print {
+          @page {
+            size: A4 portrait;
+            margin: 10mm 10mm 10mm 10mm;
+          }
+          body {
+            background-color: #ffffff !important;
+            color: #000000 !important;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+          }
+          .no-print {
+            display: none !important;
+          }
+          .print-portal-container {
+            display: block !important;
+            position: static !important;
+            width: 100% !important;
+          }
+        }
+      `}</style>
       <div className="flex justify-between items-center mb-4 no-print border-b pb-4">
         <h2 className="text-lg font-bold text-slate-800">Visualização de Impressão — Boletim Escolar</h2>
         <button 
@@ -66,6 +88,7 @@ export function PrintBoletim({
           🖨️ Imprimir Boletim (A4)
         </button>
       </div>
+
 
       <div className="border border-black p-4 font-sans text-xs space-y-4">
         {/* Header Oficial */}

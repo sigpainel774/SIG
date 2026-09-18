@@ -430,14 +430,10 @@
 
 /* Regra de isolamento para impressao de documentos e relatorios */
 @media print {
-  @page {
-    size: landscape;
-    margin: 5mm 8mm;
-  }
-
-  body > *:not(.print-portal-container) {
+  body:has(.print-portal-container) > *:not(.print-portal-container) {
     display: none !important;
   }
+
 
   .print-portal-container {
     position: static !important;
